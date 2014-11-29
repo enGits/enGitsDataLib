@@ -57,9 +57,15 @@ set(ENGITSDATALIB_VERSION ${ENGITSDATALIB_MAJOR_VERSION}.${ENGITSDATALIB_MINOR_V
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(engitsdatalib_HEADERS
-edl.h
 edlerror.h
+edl.h
+linsolve.h
 list.h
+mathvector.h
+mathvector_methods.h
+mathvector_operators.h
+mathvector_structs.h
+smallsquarematrix.h
 tlist.h
 )
 
