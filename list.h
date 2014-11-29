@@ -497,15 +497,16 @@ inline size_t List::numEntries() const
   return endIdx();
 }
 
-/** 
+
+} // namsepace
+
+/**
  * a loop over all active entries of a List.
  * This macro expands to for(size_t I = L begin(); I < L end(); I = L next(I)).
  * @param I the index variable
- * @param L the List, including the member-operator (for example "this->") 
+ * @param L the List, including the member-operator (for example "this->")
  */
 #define FORALL(I,L) for (size_t I = L beginIdx(); I < L endIdx(); I = L nextIdx(I))
-
-} // namsepace
 
 #endif
 
