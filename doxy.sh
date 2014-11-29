@@ -1,5 +1,5 @@
 #!/usr/bin/sh
-cd /tmp/edl/src
+cd /tmp/edl/
 doxygen
 cp ./logo.png /srv/www/htdocs/edl
 cd /tmp
