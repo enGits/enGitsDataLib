@@ -24,11 +24,17 @@
 
 #include "mathvector.h"
 
+namespace EDL_NAMESPACE
+{
 template <class T, uint_t N> class SmallSquareMatrix;
+}
 
 #include <vector>
 #include <cstdarg>
 #include <cstdlib>
+
+namespace EDL_NAMESPACE
+{
 
 template <class T, uint_t N>
 class SmallSquareMatrix : public MathVector<StaticVector<MathVector<StaticVector<double,N> >,N> >
@@ -636,5 +642,8 @@ SmallSquareMatrix<T,N-1> SmallSquareMatrix<T,N>::subMatrix(uint_t row, uint_t co
   }
   return M;
 }
+
+
+} // namespace
 
 #endif

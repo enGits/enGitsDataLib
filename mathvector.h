@@ -21,13 +21,21 @@
 #ifndef mathvector_h
 #define mathvector_h
 
+#include "edl.h"
+
+namespace EDL_NAMESPACE
+{
 template <class V> struct MathVector;
+}
 
 #include <iostream>
 #include <vector>
 #include <cmath>
 
 using namespace std;
+
+namespace EDL_NAMESPACE
+{
 
 typedef unsigned int uint_t;
 
@@ -188,5 +196,7 @@ typedef MathVector<StaticVector<double,6> > vec6_t;
 
 #include "mathvector_operators.h"
 #include "mathvector_methods.h"
+
+} // namespace
 
 #endif
