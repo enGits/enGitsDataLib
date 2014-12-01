@@ -26,6 +26,7 @@ set(A_DEBUG_BUILD OFF CACHE BOOL "Build a debug version?")
 if (${A_DEBUG_BUILD})
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
+  add_definitions(-DEDL_DEBUG)
 else()
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
@@ -34,6 +35,11 @@ endif()
 set(A_SINGLE_PRECISION CACHE BOOL "Use single precision floating point data?")
 if (${A_SINGLE_PRECISION})
   add_definitions(-DREAL_FLOAT)
+endif()
+
+set(A_ENABLE_VAR3 ON CACHE BOOL "Enable var3_t")
+if (${A_ENABLE_VAR3})
+  add_definitions(-DWITH_VAR3)
 endif()
 
 if (NOT INITIAL_CONFIG)
@@ -57,22 +63,33 @@ set(ENGITSDATALIB_VERSION ${ENGITSDATALIB_MAJOR_VERSION}.${ENGITSDATALIB_MINOR_V
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(engitsdatalib_HEADERS
-edlerror.h
-edl.h
-linsolve.h
-list.h
-mathvector.h
-mathvector_methods.h
-mathvector_operators.h
-mathvector_structs.h
-smallsquarematrix.h
-tlist.h
+edl/bmap.h
+edl/edlerror.h
+edl/edl.h
+edl/linsolve.h
+edl/list.h
+edl/mathvector.h
+edl/mathvector_methods.h
+edl/mathvector_operators.h
+edl/mathvector_structs.h
+edl/pmap.h
+edl/smallsquarematrix.h
+edl/stringtools.h
+edl/tkeylist.h
+edl/tlist.h
+edl/tmappedvar.h
+edl/tmdimindex.h
+edl/tmdimlist.h
+edl/tmdimvar.h
+edl/tsdimvar.h
+edl/varcontainer.h
 )
 
 SET(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
-edlerror.cpp
-list.cpp
+edl/edlerror.cpp
+edl/list.cpp
+edl/varcontainer.cpp
 )
 
 ADD_LIBRARY(engitsdatalib SHARED ${engitsdatalib_SOURCES})

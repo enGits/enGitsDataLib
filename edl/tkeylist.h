@@ -45,24 +45,28 @@ template<class TKey, class TValue>
 class TKeyList : public TList<TKey>
 {
 protected:
+
   /** list for the corresponding values. */
-  TList<TValue> *Value;
+  TList<TValue> *m_Value;
+
 
 public:
+
   /** constructor. */
-  TKeyList (size_t max, size_t delta, TKey default_key, TValue default_value);
+  TKeyList(size_t max, size_t delta, TKey default_key, TValue default_value);
 
   /** @return the index for a given key. */
-  size_t Find (TKey key) const;
+  size_t find(TKey key) const;
 
   /** @return the value for a given key. */
-  TValue& At (TKey key);
+  TValue& at(TKey key);
 
-  TValue& ViAt(size_t i) { return Value->At(i); };
-  TKey& KiAt(size_t i) { return TList<TKey>::At(i); };
+  TValue& viAt(size_t i) { return m_Value->at(i); }
+  TKey& kiAt(size_t i) { return TList<TKey>::at(i); }
 
   /** enter a new entry. */
-  TValue& NewEntry (TKey key);
+  TValue& newEntry (TKey key);
+
 };
 
 
@@ -70,48 +74,47 @@ public:
 //.. constructor
 //
 template<class TKey, class TValue>
-TKeyList<TKey, TValue>::TKeyList (size_t max, size_t delta,
-                                  TKey default_key, TValue default_value) : 
+TKeyList<TKey, TValue>::TKeyList(size_t max, size_t delta, TKey default_key, TValue default_value) :
   TList<TKey> (max, delta, default_key)
 {
-  Value = new TList<TValue> (this, default_value);
-};
+  m_Value = new TList<TValue> (this, default_value);
+}
 
 //
 //.. Find
 //
 template<class TKey, class TValue>
-size_t TKeyList<TKey, TValue>::Find (TKey key) const
+size_t TKeyList<TKey, TValue>::find(TKey key) const
 {
-  for(size_t i = this->begin_idx(); i < this->end_idx(); i = this->next_idx(i)) {
-    if (TList<TKey>::At(i) == key) return i;
-  };
+  for(size_t i = this->beginIdx(); i < this->endIdx(); i = this->nextIdx(i)) {
+    if (TList<TKey>::at(i) == key) return i;
+  }
   throw NotFound_error("TKeyList::Find");
-};
+}
 
 //
-//.. At
+//.. at
 //
 template<class TKey, class TValue>
-TValue& TKeyList<TKey, TValue>::At (TKey key)
+TValue& TKeyList<TKey, TValue>::at(TKey key)
 {
-  for(size_t i = this->begin_idx(); i < this->end_idx(); i = this->next_idx(i)) {
-    if (TList<TKey>::At(i) == key) return Value->At(i);
-  };
+  for(size_t i = this->beginIdx(); i < this->endIdx(); i = this->nextIdx(i)) {
+    if (TList<TKey>::at(i) == key) return m_Value->at(i);
+  }
   //return Value->default_value;
-  throw NotFound_error("TKeyList::At");
-};
+  throw NotFound_error("TKeyList::at");
+}
 
 //
 //.. NewEntry
 //
 template<class TKey, class TValue>
-TValue& TKeyList<TKey, TValue>::NewEntry (TKey key)
+TValue& TKeyList<TKey, TValue>::newEntry(TKey key)
 {
-  size_t i = List::AddEntry();
-  TList<TKey>::At(i) = key;
-  return Value->At(i);
-};
+  size_t i = List::addEntry();
+  TList<TKey>::at(i) = key;
+  return m_Value->at(i);
+}
 
 } // namespace
 

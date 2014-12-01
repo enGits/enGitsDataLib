@@ -46,21 +46,24 @@ template<class TIndex>
 class TMDimIndex
 {
 protected:
+
   int dim;
   TIndex *I;
 
+
 public:
+
   TMDimIndex(int a_dim);
   TMDimIndex();
   TMDimIndex(TIndex item);
-  void Resize(int a_dim);
+  void resize(int a_dim);
   void operator=(TMDimIndex<TIndex> other);
   void operator=(TIndex item);
   bool operator==(const TMDimIndex<TIndex> other) const;
   TMDimIndex<TIndex> operator+(const TIndex item); 
-  TIndex& operator[](int i) { return I[i]; };
-  TIndex operator[](int i) const { return I[i]; };
-  int Dim() const { return dim; };
+  TIndex& operator[](int i) { return I[i]; }
+  TIndex operator[](int i) const { return I[i]; }
+  int Dim() const { return dim; }
   template<class aTIndex>
   friend ostream& operator<< (ostream& s, const TMDimIndex<aTIndex>& I);
 };
@@ -112,7 +115,7 @@ bool TMDimIndex<TIndex>::operator==(const TMDimIndex<TIndex> other) const
 //.. Resize
 //
 template<class TIndex>
-void TMDimIndex<TIndex>::Resize(int a_dim)
+void TMDimIndex<TIndex>::resize(int a_dim)
 {
   delete [] I;
   dim = a_dim;
@@ -125,7 +128,7 @@ void TMDimIndex<TIndex>::Resize(int a_dim)
 template<class TIndex>
 void TMDimIndex<TIndex>::operator=(TMDimIndex<TIndex> other)
 {
-  Resize(other.dim);
+  resize(other.dim);
   for (int i = 0; i < dim; i++) I[i] = other[i];
 };
 
@@ -135,7 +138,7 @@ void TMDimIndex<TIndex>::operator=(TMDimIndex<TIndex> other)
 template<class TIndex>
 void TMDimIndex<TIndex>::operator=(TIndex item)
 {
-  Resize(1);
+  resize(1);
   I[0] = item;
 };
 

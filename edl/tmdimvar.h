@@ -33,7 +33,7 @@ namespace EDL_NAMESPACE
 template<class TValue, class TIndex, int DIM, class MAP, class MAPVALUE> class TMDimVar;
 }
 
-#include "edl/tmddimindex.h"
+#include "edl/tmdimindex.h"
 #include "edl/tmdimlist.h"
 #include "edl/tmappedvar.h"
 
@@ -44,30 +44,29 @@ class TMDimVar : public TMappedVar<TValue, TIndex, DIM, MAP>
 {
 protected:
 
-  MAPVALUE *value;
+  MAPVALUE *m_Value;
 
 public:
 
-  TMDimVar(TMDimList<TValue, TIndex, DIM, MAP> *a_mdim_list, 
-		  TMDimIndex<TIndex> an_index);
+  TMDimVar(TMDimList<TValue, TIndex, DIM, MAP> *a_mdim_list, TMDimIndex<TIndex> an_index);
   TMDimVar(const TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE> &other);
   TMDimVar();
-  virtual ~TMDimVar() { delete [] value; };
-  virtual void Update();
+  virtual ~TMDimVar() { delete [] m_Value; }
+  virtual void update();
   const MAPVALUE& operator[](size_t i) const { 
-#ifdef MDEBUG
+#ifdef EDL_DEBUG
     if (!TMappedVar<TValue, TIndex, DIM, MAP>::initialized) {
       cerr << "trying to use [] on an uninitialized variable" << endl;
       throw InvalidIndex_error(i);
-    };      
+    }
     //    if ((i < 0) || (i >= TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumSubIndices(TMappedVar<TValue, TIndex, DIM, MAP>::index.Dim()))) {
     if (i >= TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumSubIndices(TMappedVar<TValue, TIndex, DIM, MAP>::index.Dim())) {
       cerr << "index " << i << "out of bounds" << endl;
       throw InvalidIndex_error(i);
-    };
+    }
 #endif
-    return value[i]; 
-  };
+    return m_Value[i];
+  }
   virtual void operator=(const TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE> &other);
   virtual void print();
 };
@@ -83,28 +82,28 @@ TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::TMDimVar
   : TMappedVar<TValue, TIndex, DIM, MAP>(a_mdim_list, an_index)
 {
   // check if index is legal
-  if (TMappedVar<TValue, TIndex, DIM, MAP>::index.Dim() > DIM) {
+  if (TMappedVar<TValue, TIndex, DIM, MAP>::m_Index.Dim() > DIM) {
     cerr << "illegal index dimension for TMDimVar" << endl;
     exit(EXIT_FAILURE);
   };
-  value = NULL;
-  Update();
+  m_Value = NULL;
+  update();
 }
 
 template<class TValue, class TIndex, int DIM, class MAP, class MAPVALUE>
 TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::TMDimVar
 (const TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE> &other)
-  : TMappedVar<TValue, TIndex, DIM, MAP>(other.mdim_list, other.index)
+  : TMappedVar<TValue, TIndex, DIM, MAP>(other.m_MDimList, other.m_Index)
 {
-  value = NULL;
-  if (other.initialized) Update();
+  m_Value = NULL;
+  if (other.m_Initialised) update();
 }
 
 template<class TValue, class TIndex, int DIM, class MAP, class MAPVALUE>
 TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::TMDimVar() 
   : TMappedVar<TValue, TIndex, DIM, MAP>()
 {
-  value = NULL;
+  m_Value = NULL;
   //??Update();
 }
 
@@ -112,19 +111,19 @@ TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::TMDimVar()
 //.. Update
 //
 template<class TValue, class TIndex, int DIM, class MAP, class MAPVALUE>
-void TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::Update()
+void TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::update()
 {
   int i;
-  int level = TMappedVar<TValue, TIndex, DIM, MAP>::index.Dim();
-  int N = TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumSubIndices(level);
-  delete [] value;
-  value = new MAPVALUE [N];
+  int level = TMappedVar<TValue, TIndex, DIM, MAP>::m_Index.Dim();
+  int N = TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList->numSubIndices(level);
+  delete [] m_Value;
+  m_Value = new MAPVALUE [N];
   for(i = 0; i < N; i++) {
-    value[i] = MAPVALUE(TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list, 
-                        TMappedVar<TValue, TIndex, DIM, MAP>::index 
-                        + TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->SubIndex(level, i));
-  };
-  TMappedVar<TValue, TIndex, DIM, MAP>::initialized = true;
+    m_Value[i] = MAPVALUE(TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList,
+                        TMappedVar<TValue, TIndex, DIM, MAP>::m_Index
+                        + TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList->subIndex(level, i));
+  }
+  TMappedVar<TValue, TIndex, DIM, MAP>::m_Initialised = true;
 }
 
 //
@@ -135,7 +134,7 @@ void TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::operator=
 (const TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE> &other)
 {
   TMappedVar<TValue, TIndex, DIM, MAP>::operator=(other);
-  Update();
+  update();
 }
 
 //
@@ -144,13 +143,13 @@ void TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::operator=
 template<class TValue, class TIndex, int DIM, class MAP, class MAPVALUE>
 void TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::print()
 {
-  int level = TMappedVar<TValue, TIndex, DIM, MAP>::index.Dim();
-  int N = TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumSubIndices(level);
-  cout << "[" << TMappedVar<TValue, TIndex, DIM, MAP>::index << "->";
+  int level = TMappedVar<TValue, TIndex, DIM, MAP>::m_Index.Dim();
+  int N = TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList->numSubIndices(level);
+  cout << "[" << TMappedVar<TValue, TIndex, DIM, MAP>::m_Index << "->";
   for(int i = 0; i < N; i++) {
     if (i != 0) cout << ",";
-    value[i].print();
-  };
+    m_Value[i].print();
+  }
   cout << "]";
 }
 

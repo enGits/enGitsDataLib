@@ -50,7 +50,7 @@ namespace StringTools
    * @param t a variable which will contain the converted value
    * @return true if the operation succeeded
    */
-  template <class T> bool StringTo(string s, T &t);
+  template <class T> bool stringTo(string s, T &t);
 
   /**
    * convert another type into a string.
@@ -59,7 +59,7 @@ namespace StringTools
    * @param t the variable to convert
    * @param s the resulting string
    */
-  template <class T> void ToString(T t, string &s);
+  template <class T> void toString(T t, string &s);
 
   /**
    * convert another type into a string.
@@ -68,7 +68,7 @@ namespace StringTools
    * @param t the variable to convert
    * @return the resulting string
    */
-  template <class T> string ToString(T t, int fill = 0);
+  template <class T> string toString(T t, int fill = 0);
 
   /**
    * replace a character with a different one.
@@ -77,7 +77,7 @@ namespace StringTools
    * @param c_new the new character
    * return a string with the replaced characters
    */
-  string Replace(string s, char c_orig, char c_new);
+  string replace(string s, char c_orig, char c_new);
 
   /**
    * append a character to the left side of a string until a given length has been reached.
@@ -86,7 +86,7 @@ namespace StringTools
    * @param l the desired length
    * @return the filled string
    */
-  string LeftFill(string s, char c, size_t l);
+  string leftFill(string s, char c, size_t l);
 
   /**
    * append a character to the right side of a string until a given length has been reached.
@@ -95,14 +95,14 @@ namespace StringTools
    * @param l the desired length
    * @return the filled string
    */
-  string RightFill(string s, char c, size_t l);
+  string rightFill(string s, char c, size_t l);
 
   /**
    * read an entire line from an input stream
    * @param s the stream to read from
    * @return the line read
    */
-  string ReadLine(istream &s);
+  string readLine(istream &s);
 
   /**
    * extract a part of a string.
@@ -111,7 +111,7 @@ namespace StringTools
    * @param i2 index of the last character of the intended sub-string
    * @return the sub-string
    */
-  string SubString(string s, size_t i1, size_t i2);
+  string subString(string s, size_t i1, size_t i2);
 
   /**
    * extract a part at the end of a string.
@@ -119,7 +119,7 @@ namespace StringTools
    * @param n number of characters of the intended sub-string
    * @return the sub-string
    */
-  string Right(string s, size_t n);
+  string right(string s, size_t n);
 
   /**
    * extract a part at the beginning of a string.
@@ -127,7 +127,7 @@ namespace StringTools
    * @param n number of characters of the intended sub-string
    * @return the sub-string
    */
-  string Left(string s, size_t n);
+  string left(string s, size_t n);
 
   /**
    * split a string into several strings.
@@ -136,7 +136,7 @@ namespace StringTools
    * @param c the dividing character
    * @return the number of sub strings
    */
-  int Split(string s, list<string> &sub, char c = ' ');
+  int split(string s, list<string> &sub, char c = ' ');
 
   /**
    * split a string into several strings.
@@ -145,37 +145,37 @@ namespace StringTools
    * @param c the dividing character
    * @return the number of sub strings
    */
-  int Split(string s, vector<string> &sub, char c = ' ');
+  int split(string s, vector<string> &sub, char c = ' ');
 
   template <class T>
-  bool StringTo(string s, T &t)
+  bool stringTo(string s, T &t)
   {
     s += " -";
     istringstream stream(s);
     stream >> t;
     return stream.good();
-  };
+  }
   
   template <class T>
-  void ToString(T t, string &s)
+  void toString(T t, string &s)
   {
     ostringstream stream;
     stream << t;
     s = stream.str();
-  };
+  }
   
   template <class T>
-  string ToString(T t, int fill)
+  string toString(T t, int fill)
   {
     ostringstream stream;
     stream << t;
     string s = stream.str();
-    if      (fill < 0) s = LeftFill(s,' ',-fill);
-    else if (fill > 0) s = RightFill(s,' ',fill);
+    if      (fill < 0) s = leftFill(s,' ',-fill);
+    else if (fill > 0) s = rightFill(s,' ',fill);
     return s;
-  };
+  }
   
-  inline string Replace(string s, char c_orig, char c_new)
+  inline string replace(string s, char c_orig, char c_new)
   {
     string s_new = "";
     string::iterator i = s.begin();
@@ -185,9 +185,9 @@ namespace StringTools
       i++;
     };
     return s_new;
-  };
+  }
   
-  inline string ReadLine(istream &s)
+  inline string readLine(istream &s)
   {
     string line = "";
     bool done = false;
@@ -202,9 +202,9 @@ namespace StringTools
       };
     } while (!done);
     return line;
-  };
+  }
   
-  inline string SubString(string s, size_t i1, size_t i2)
+  inline string subString(string s, size_t i1, size_t i2)
   {
     string sub = "";
     size_t i = i1;
@@ -213,9 +213,9 @@ namespace StringTools
       ++i;
     };
     return sub;
-  };
+  }
 
-  inline string LeftFill(string s, char c, size_t l) 
+  inline string leftFill(string s, char c, size_t l)
   { 
     while (s.size() < l) {
       s = c + s;
@@ -223,25 +223,25 @@ namespace StringTools
     return s; 
   };
 
-  inline string RightFill(string s, char c, size_t l) 
+  inline string rightFill(string s, char c, size_t l)
   {
     while (s.size() < l) {
       s = s + c;
     };
     return s; 
-  };
+  }
 
-  inline string Right(string s, size_t n)
+  inline string right(string s, size_t n)
   {
-    return SubString(s,s.size()-n-1,s.size()-1);
-  };
+    return subString(s,s.size()-n-1,s.size()-1);
+  }
 
-  inline string Left(string s, size_t n)
+  inline string left(string s, size_t n)
   {
-    return SubString(s,0,n-1);
-  };
+    return subString(s,0,n-1);
+  }
 
-  inline int Split(string s, list<string> &sub, char c)
+  inline int split(string s, list<string> &sub, char c)
   {
     string word = "";
     bool first = true;
@@ -256,24 +256,24 @@ namespace StringTools
           ++N;
           word = "";
           first = true;
-        };
-      };
-    };
+        }
+      }
+    }
     if (word.size() > 0) {
       sub.push_back(word);
       ++N;
-    };
+    }
     return N;
-  };
+  }
 
-  inline int Split(string s, vector<string> &sub, char c)
+  inline int split(string s, vector<string> &sub, char c)
   {
     list<string> l;
-    int N = Split(s,l,c);
+    int N = split(s,l,c);
     sub.resize(N);
     copy(l.begin(),l.end(),sub.begin());
     return N;
-  };
+  }
 
 } // namespace StringTools
 

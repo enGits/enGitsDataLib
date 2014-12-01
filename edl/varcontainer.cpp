@@ -23,50 +23,46 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 // !!
 
-#include "VarContainer.hh"
+#include "edl/varcontainer.h"
+#include "edl/stringtools.h"
 
-#include <namespace_mouse.hh>
-#include <StringTools.hh>
-
-BEGIN_MOUSE
-
-VarContainer::VarContainer(ConstructArg arg, bool init_list) 
-  : MObject(arg)
+namespace EDL_NAMESPACE
 {
-  AddClassName();
+
+VarContainer::VarContainer(bool init_list)
+{
   if (init_list) {
-    InitList(100, 100);
+    initList(100, 100);
     varlist = new TMDimList<real, string, 2, map_t>(this, 0.0, "");
   } else {
     varlist = NULL;
-  };
-};
+  }
+}
 
-VarContainer::VarContainer(ConstructArg arg, List *a_master) : MObject(arg)
+VarContainer::VarContainer(List *a_master)
 {
-  AddClassName();
   Init(a_master);
-};
+}
 
 VarContainer::~VarContainer()
 {
   delete varlist;
-};
+}
 
 void VarContainer::Init(List *a_master) 
 {
-  Link(a_master);
+  link(a_master);
   varlist = new TMDimList<real, string, 2, map_t>(a_master, 0.0, "");
-};
+}
 
-void VarContainer::Reset()
+void VarContainer::reset()
 {
-  List *master = varlist->Master();
+  List *master = varlist->master();
   delete varlist;
   varlist = new TMDimList<real, string, 2, map_t>(master, 0.0, "");
-};
+}
   
-VarContainer::var1_t VarContainer::Get1DVar(string i, string j) 
+VarContainer::var1_t VarContainer::get1DVar(string i, string j)
 {
   TMDimIndex<string> I(i);
   I = I + j;
@@ -77,14 +73,14 @@ VarContainer::var1_t VarContainer::Get1DVar(string i, string j)
   }
   catch (NotFound_error) { 
     string msg;
-    StringTools::ToString(I,msg);
+    StringTools::toString(I,msg);
     msg = "unkown index '" + msg + "'";
-    Error(msg); 
-  };
+    throw EdlError(msg);
+  }
   return var;
-};
+}
 
-VarContainer::var2_t VarContainer::Get2DVar(string i) 
+VarContainer::var2_t VarContainer::get2DVar(string i)
 {
   TMDimIndex<string> I(i);
   var2_t var;
@@ -94,15 +90,15 @@ VarContainer::var2_t VarContainer::Get2DVar(string i)
   }
   catch (NotFound_error) { 
     string msg;
-    StringTools::ToString(I,msg);
+    StringTools::toString(I,msg);
     msg = "unkown index '" + msg + "'";
-    Error(msg); 
-  };
+    throw EdlError(msg);
+  }
   return var;
-};
+}
 
 #ifdef WITH_VAR3
-VarContainer::var3_t VarContainer::Get3DVar() 
+VarContainer::var3_t VarContainer::get3DVar()
 {
   TMDimIndex<string> I;
   var3_t var;
@@ -112,32 +108,32 @@ VarContainer::var3_t VarContainer::Get3DVar()
   }
   catch (NotFound_error) { 
     string msg;
-    StringTools::ToString(I,msg);
+    StringTools::toString(I,msg);
     msg = "unkown index '" + msg + "'";
-    Error(msg); 
-  };
+    throw EdlError(msg);
+  }
   return var;
-};
+}
 #endif
 
-bool VarContainer::FieldDefined(string field_name)
+bool VarContainer::fieldDefined(string field_name)
 {
   bool ok = false;
-  for (size_t i = 0; i < varlist->NumSubIndices(0); i++) {
-    if (field_name == varlist->SubIndex(0, i)) ok = true;
+  for (size_t i = 0; i < varlist->numSubIndices(0); i++) {
+    if (field_name == varlist->subIndex(0, i)) ok = true;
   };
   return ok;
-};
+}
 
-size_t VarContainer::VarIndex(string var_name)
+size_t VarContainer::varIndex(string var_name)
 {
-  for (int i = 0; i < NumVars(); ++i) {
-    if (VarName(i) == var_name) return i;
-  };
-  return NumVars();
-};
+  for (int i = 0; i < numVars(); ++i) {
+    if (varName(i) == var_name) return i;
+  }
+  return numVars();
+}
 
-END_MOUSE
+} // namespace
 
 
 

@@ -52,9 +52,10 @@ namespace EDL_NAMESPACE
  * updated if the VarContainer expands or shrinks. This functionality is
  * implemented in the more general class TMDimList.
  */
-class VarContainer : public MObject, public List
+class VarContainer : public List
 {
 public:
+
   typedef BMap<real, string, 2> map_t;
 
   /**
@@ -118,12 +119,16 @@ public:
   typedef TMDimVar<real, string, 2, map_t, var2_t> var3_t;
 #endif
   
+
 protected:
+
   TMDimList<real, string, 2, map_t> *varlist;
   
+
 public:
-  VarContainer(ConstructArg arg, bool init_list = true);
-  VarContainer(ConstructArg arg, List* a_master);
+
+  VarContainer(bool init_list = true);
+  VarContainer(List* a_master);
   virtual ~VarContainer();
   void Init(List* a_master);
 
@@ -131,90 +136,94 @@ public:
      Add a variable entry. (2.index) to the container. 
      @param var_name the name of the new variable
   */
-  void AddVar(string var_name) { 
+  void addVar(string var_name)
+  {
     if (!varlist->IndexExists(1, var_name)) varlist->AddIndex(1, var_name); 
-  };
+  }
 
   /**
      Add a field entry. (1.index) to the container. 
      @param field_name the name of the new field
   */
-  void AddField(string field_name) {
+  void addField(string field_name)
+  {
     if (!varlist->IndexExists(0, field_name)) varlist->AddIndex(0, field_name);
-  };
+  }
 
   /** 
      Get the number of variables 
      @return the number of variables 
   */
-  size_t NumVars() { return varlist->NumSubIndices(1); };
+  size_t numVars() { return varlist->numSubIndices(1); }
 
   /**
      get the name of a variable 
      @param i the number of the variable
      @return the name of the variable
   */ 
-  string VarName(int i) { return varlist->SubIndex(1, i); };
+  string varName(int i) { return varlist->subIndex(1, i); }
 
   /**
    * get the index of a variable.
    * @param name the name of the variable
    * @return the index of the variable
    */
-  size_t VarIndex(string var_name);
+  size_t varIndex(string var_name);
 
   /** 
      Get the number of fields
      @return the number of fields
   */
-  size_t NumFields() { return varlist->NumSubIndices(0); };
+  size_t numFields() { return varlist->numSubIndices(0); }
 
   /**
    * get the name of a field.
    * @param i the number of the field
    * @return the name of the field
    */
-  string FieldName(size_t i) { return varlist->SubIndex(0, i); };
+  string fieldName(size_t i) { return varlist->subIndex(0, i); }
 
   /**
      Find out if a field is defined or not.
      @param field_name the name of the field to check
      @return true if this field exists
    */ 
-  bool FieldDefined(string field_name);
+  bool fieldDefined(string field_name);
 
   /**
      add new empty entries.
      @param n the number of new entries
   */
-  void ExtendBy(size_t N) {
-    for (size_t i = 0; i < N; i++) varlist->AddEntry();
-  };
+  void extendBy(size_t N)
+  {
+    for (size_t i = 0; i < N; i++) varlist->addEntry();
+  }
 
   /**
    * Reset the VarContainer (delete all variables).
    */
-  void Reset();
+  void reset();
 
   /**  Get a one dimensional variable.\\
        (see also the documentation for var1_t)
        @param i the field name of the variable
        @param j the variable name
        @return the one dimensional variable */ 
-  var1_t Get1DVar(string i, string j);
+  var1_t get1DVar(string i, string j);
 
   /**  Get a two dimensional variable.\\
        (see also the documentation for var2_t)
        @param i the field name of the variable
        @return the two dimensional variable */ 
-  var2_t Get2DVar(string i);
+  var2_t get2DVar(string i);
 
 #ifdef WITH_VAR3
   /**  Get a three dimensional variable.\\
        (see also the documentation for var3_t)
        @return the three dimensional variable */ 
-  var3_t Get3DVar();
+  var3_t get3DVar();
 #endif
+
 };
 
 } // namespace

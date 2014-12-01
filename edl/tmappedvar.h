@@ -33,7 +33,7 @@ namespace EDL_NAMESPACE
 template<class TValue, class TIndex, int DIM, class MAP> class TMappedVar;
 }
 
-#include "edl/tmdimlist.h>
+#include "edl/tmdimlist.h"
 
 namespace EDL_NAMESPACE
 {
@@ -42,17 +42,16 @@ class TMappedVar
 {
 protected:
 
-  TMDimList<TValue, TIndex, DIM, MAP> *mdim_list;
-  TMDimIndex<TIndex> index;
-  bool initialized;
+  TMDimList<TValue, TIndex, DIM, MAP> *m_MDimList;
+  TMDimIndex<TIndex> m_Index;
+  bool m_Initialised;
 
 public:
 
-  TMappedVar(TMDimList<TValue, TIndex, DIM, MAP> *a_mdim_list,
-	     TMDimIndex<TIndex> an_index);
+  TMappedVar(TMDimList<TValue, TIndex, DIM, MAP> *a_mdim_list, TMDimIndex<TIndex> an_index);
   TMappedVar();
   virtual ~TMappedVar();
-  virtual void Update() = 0;
+  virtual void update() = 0;
   virtual void operator=(const TMappedVar<TValue, TIndex, DIM, MAP> &other);
 };
 
@@ -61,54 +60,54 @@ template<class TValue, class TIndex, int DIM, class MAP>
 TMappedVar<TValue, TIndex, DIM, MAP>::TMappedVar
 (TMDimList<TValue, TIndex, DIM, MAP> *a_mdim_list, TMDimIndex<TIndex> an_index)
 {
-  mdim_list = a_mdim_list;
-  index = an_index;
-  if (mdim_list != NULL) {
-    mdim_list->mapped_vars->NewEntry() = this;
-  };
-  initialized = false;
-};
+  m_MDimList = a_mdim_list;
+  m_Index = an_index;
+  if (m_MDimList != NULL) {
+    m_MDimList->m_MappedVars->newEntry() = this;
+  }
+  m_Initialised = false;
+}
 
 template<class TValue, class TIndex, int DIM, class MAP>
 TMappedVar<TValue, TIndex, DIM, MAP>::TMappedVar()
 {
-  mdim_list = NULL;
-  index = TMDimIndex<TIndex>();
-  initialized = false;
-};
+  m_MDimList = NULL;
+  m_Index = TMDimIndex<TIndex>();
+  m_Initialised = false;
+}
 
 template<class TValue, class TIndex, int DIM, class MAP>
 TMappedVar<TValue, TIndex, DIM, MAP>::~TMappedVar()
 {
-  if (mdim_list != NULL) {
+  if (m_MDimList != NULL) {
     try {
-      size_t i = mdim_list->mapped_vars->FindItem(this);
-      mdim_list->mapped_vars->DelEntry(i);
+      size_t i = m_MDimList->m_MappedVars->findItem(this);
+      m_MDimList->m_MappedVars->delEntry(i);
     } catch (NotFound_error) {
       cerr << "error in TMappedVar logic" << endl;
       exit(EXIT_FAILURE);
-    };
-  };
-};
+    }
+  }
+}
 
 template<class TValue, class TIndex, int DIM, class MAP>
 void TMappedVar<TValue, TIndex, DIM, MAP>::operator=
 (const TMappedVar<TValue, TIndex, DIM, MAP> &other)
 {
-  if (mdim_list != NULL) {
+  if (m_MDimList != NULL) {
     try {
-      size_t i = mdim_list->mapped_vars->FindItem(this);
-      mdim_list->mapped_vars->DelEntry(i);
+      size_t i = m_MDimList->m_MappedVars->findItem(this);
+      m_MDimList->m_MappedVars->delEntry(i);
     } catch (NotFound_error) {
       cerr << "error in TMappedVar logic" << endl;
       exit(EXIT_FAILURE);
-    };
-  };
-  mdim_list = other.mdim_list;
-  index = other.index;
-  if (mdim_list != NULL) mdim_list->mapped_vars->NewEntry() = this;
-  Update();
-};
+    }
+  }
+  m_MDimList = other.m_MDimList;
+  m_Index = other.m_Index;
+  if (m_MDimList != NULL) m_MDimList->m_MappedVars->newEntry() = this;
+  update();
+}
 
 } // namespace
 

@@ -21,9 +21,10 @@
 #ifndef linsolve_H
 #define linsolve_H
 
-struct LinSolveError {
+struct LinSolveError
+{
   double det;
-  LinSolveError(double d) { det = d; };
+  LinSolveError(double d) { det = d; }
 };
 
 // Rainers full matrix solver
@@ -45,8 +46,8 @@ void linsolve(const M &Ain, const V &rsv, V &b)
   for (int i = 0; i < A.size(); ++i) {
     for (int j = 0; j < A[i].size(); ++j) {
       ele_max = std::max(ele_max,A[i][j]);
-    };
-  };
+    }
+  }
   
   // Get in matrix reduction
   det = 1;
@@ -77,7 +78,7 @@ void linsolve(const M &Ain, const V &rsv, V &b)
       A[i][k] = A[i][k]/A[k][k];
       for(j = k+1; j < n; j++) {
         A[i][j] = A[i][j] - A[i][k]*A[k][j];
-      };
+      }
     }
   }
   det = det*A[n-1][n-1];
@@ -89,23 +90,23 @@ void linsolve(const M &Ain, const V &rsv, V &b)
       b[k]=b[p[k]];
       b[p[k]]=h;
     }
-  };
+  }
   for(i = 0; i < n; i++) {
     for(j = 0; j < i; j++) {
       b[i] = b[i] - A[i][j]*b[j];
-    };
+    }
   }
   for(i = n-1;i >= 0; i--) {
     s = b[i];
     for(k = i+1; k < n; k++)
       s = s - A[i][k]*b[k];
     b[i] = s/A[i][i];
-  };
+  }
   
   // Check Determinant and throw error, if needed
   if (fabs(det) < 1e-20) {
     throw LinSolveError(det);
-  };
-};
+  }
+}
 
 #endif
