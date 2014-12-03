@@ -33,9 +33,9 @@ VarContainer::VarContainer(bool init_list)
 {
   if (init_list) {
     initList(100, 100);
-    varlist = new TMDimList<real, string, 2, map_t>(this, 0.0, "");
+    m_VarList = new TMDimList<real, string, 2, map_t>(this, 0.0, "");
   } else {
-    varlist = NULL;
+    m_VarList = NULL;
   }
 }
 
@@ -46,20 +46,20 @@ VarContainer::VarContainer(List *a_master)
 
 VarContainer::~VarContainer()
 {
-  delete varlist;
+  delete m_VarList;
 }
 
 void VarContainer::Init(List *a_master) 
 {
   link(a_master);
-  varlist = new TMDimList<real, string, 2, map_t>(a_master, 0.0, "");
+  m_VarList = new TMDimList<real, string, 2, map_t>(a_master, 0.0, "");
 }
 
 void VarContainer::reset()
 {
-  List *master = varlist->master();
-  delete varlist;
-  varlist = new TMDimList<real, string, 2, map_t>(master, 0.0, "");
+  List *master = m_VarList->master();
+  delete m_VarList;
+  m_VarList = new TMDimList<real, string, 2, map_t>(master, 0.0, "");
 }
   
 VarContainer::var1_t VarContainer::get1DVar(string i, string j)
@@ -68,7 +68,7 @@ VarContainer::var1_t VarContainer::get1DVar(string i, string j)
   I = I + j;
   var1_t var;
   try { 
-    var = var1_t(varlist, I); 
+    var = var1_t(m_VarList, I);
     return var;
   }
   catch (NotFound_error) { 
@@ -85,7 +85,7 @@ VarContainer::var2_t VarContainer::get2DVar(string i)
   TMDimIndex<string> I(i);
   var2_t var;
   try { 
-    var = var2_t(varlist, I); 
+    var = var2_t(m_VarList, I);
     return var;
   }
   catch (NotFound_error) { 
@@ -103,7 +103,7 @@ VarContainer::var3_t VarContainer::get3DVar()
   TMDimIndex<string> I;
   var3_t var;
   try { 
-    var = var3_t(varlist, I); 
+    var = var3_t(m_VarList, I);
     return var;
   }
   catch (NotFound_error) { 
@@ -119,8 +119,8 @@ VarContainer::var3_t VarContainer::get3DVar()
 bool VarContainer::fieldDefined(string field_name)
 {
   bool ok = false;
-  for (size_t i = 0; i < varlist->numSubIndices(0); i++) {
-    if (field_name == varlist->subIndex(0, i)) ok = true;
+  for (size_t i = 0; i < m_VarList->numSubIndices(0); i++) {
+    if (field_name == m_VarList->subIndex(0, i)) ok = true;
   };
   return ok;
 }

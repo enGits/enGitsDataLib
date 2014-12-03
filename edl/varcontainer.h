@@ -122,7 +122,7 @@ public:
 
 protected:
 
-  TMDimList<real, string, 2, map_t> *varlist;
+  TMDimList<real, string, 2, map_t> *m_VarList;
   
 
 public:
@@ -138,7 +138,7 @@ public:
   */
   void addVar(string var_name)
   {
-    if (!varlist->IndexExists(1, var_name)) varlist->AddIndex(1, var_name); 
+    if (!m_VarList->IndexExists(1, var_name)) m_VarList->AddIndex(1, var_name);
   }
 
   /**
@@ -147,21 +147,21 @@ public:
   */
   void addField(string field_name)
   {
-    if (!varlist->IndexExists(0, field_name)) varlist->AddIndex(0, field_name);
+    if (!m_VarList->IndexExists(0, field_name)) m_VarList->AddIndex(0, field_name);
   }
 
   /** 
      Get the number of variables 
      @return the number of variables 
   */
-  size_t numVars() { return varlist->numSubIndices(1); }
+  size_t numVars() { return m_VarList->numSubIndices(1); }
 
   /**
      get the name of a variable 
      @param i the number of the variable
      @return the name of the variable
   */ 
-  string varName(int i) { return varlist->subIndex(1, i); }
+  string varName(int i) { return m_VarList->subIndex(1, i); }
 
   /**
    * get the index of a variable.
@@ -174,14 +174,14 @@ public:
      Get the number of fields
      @return the number of fields
   */
-  size_t numFields() { return varlist->numSubIndices(0); }
+  size_t numFields() { return m_VarList->numSubIndices(0); }
 
   /**
    * get the name of a field.
    * @param i the number of the field
    * @return the name of the field
    */
-  string fieldName(size_t i) { return varlist->subIndex(0, i); }
+  string fieldName(size_t i) { return m_VarList->subIndex(0, i); }
 
   /**
      Find out if a field is defined or not.
@@ -196,7 +196,7 @@ public:
   */
   void extendBy(size_t N)
   {
-    for (size_t i = 0; i < N; i++) varlist->addEntry();
+    for (size_t i = 0; i < N; i++) m_VarList->addEntry();
   }
 
   /**

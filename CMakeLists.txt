@@ -77,6 +77,7 @@ edl/smallsquarematrix.h
 edl/stringtools.h
 edl/tkeylist.h
 edl/tlist.h
+edl/tlist2d.h
 edl/tmappedvar.h
 edl/tmdimindex.h
 edl/tmdimlist.h
