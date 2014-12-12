@@ -51,24 +51,24 @@ class EdlError
 {
   /** the name of the exception. 
    */
-  string name;
+  string m_Name;
 
   /** a message to print if the exception is not caught.
    */
-  string message;
+  string m_Message;
 
 protected:
 
   /** has to be called by every derived constructor.
    *  (similiar to AddClassName() for MObject)
    */
-  virtual void SetName();
+  virtual void setName();
 
 public:
 
   /** constructor.
    */
-  EdlError(string a_message);
+  EdlError(string message);
 
   /** destructor.
    */
@@ -77,12 +77,12 @@ public:
   /** get the name of this exception.
    *  @return the name of the exception
    */
-  string Name();
+  string name();
 
   /** get the message of the exception.
    *  @return the message
    */
-  string Message() { return message; }
+  string message() { return m_Message; }
 
 };
 

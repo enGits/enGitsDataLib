@@ -32,24 +32,24 @@
 namespace EDL_NAMESPACE
 {
 
-EdlError::EdlError(string a_message)
+EdlError::EdlError(string message)
 {
-  message = a_message;
-  SetName();
+  m_Message = message;
+  setName();
 }
 
 EdlError::~EdlError()
 {
 }
 
-string EdlError::Name()
+string EdlError::name()
 {
-  return name;
+  return m_Name;
 }
 
-void EdlError::SetName()
+void EdlError::setName()
 {
-  name = typeid(*this).name();
+  m_Name = typeid(*this).name();
 }
 
 } // namespace

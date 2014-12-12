@@ -66,6 +66,7 @@ SET(engitsdatalib_HEADERS
 edl/bmap.h
 edl/edlerror.h
 edl/edl.h
+edl/interpolation.h
 edl/linsolve.h
 edl/list.h
 edl/mathvector.h
@@ -76,8 +77,8 @@ edl/pmap.h
 edl/smallsquarematrix.h
 edl/stringtools.h
 edl/tkeylist.h
-edl/tlist.h
 edl/tlist2d.h
+edl/tlist.h
 edl/tmappedvar.h
 edl/tmdimindex.h
 edl/tmdimlist.h
