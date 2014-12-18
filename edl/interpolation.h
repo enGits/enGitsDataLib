@@ -8,7 +8,7 @@ namespace EDL_NAMESPACE
 {
 
 template <typename VALUE_TYPE>
-struct StencilFunction
+struct InterpFunc
 {
 
   typedef VALUE_TYPE value_t;
@@ -34,12 +34,12 @@ struct StencilFunction
 
 
 template <typename VALUE_TYPE>
-struct Bezier0 : public StencilFunction<VALUE_TYPE>
+struct StepInterpFunc : public InterpFunc<VALUE_TYPE>
 {
-  typedef typename StencilFunction<VALUE_TYPE>::value_t value_t;
-  using StencilFunction<VALUE_TYPE>::m_X;
-  using StencilFunction<VALUE_TYPE>::m_Y;
-  using StencilFunction<VALUE_TYPE>::m_DyDx;
+  typedef typename InterpFunc<VALUE_TYPE>::value_t value_t;
+  using InterpFunc<VALUE_TYPE>::m_X;
+  using InterpFunc<VALUE_TYPE>::m_Y;
+  using InterpFunc<VALUE_TYPE>::m_DyDx;
 
   value_t compute(real x)
   {
@@ -51,12 +51,12 @@ struct Bezier0 : public StencilFunction<VALUE_TYPE>
 };
 
 template <typename VALUE_TYPE>
-struct Bezier1 : public StencilFunction<VALUE_TYPE>
+struct LinInterpFunc : public InterpFunc<VALUE_TYPE>
 {
-  typedef typename StencilFunction<VALUE_TYPE>::value_t value_t;
-  using StencilFunction<VALUE_TYPE>::m_X;
-  using StencilFunction<VALUE_TYPE>::m_Y;
-  using StencilFunction<VALUE_TYPE>::m_DyDx;
+  typedef typename InterpFunc<VALUE_TYPE>::value_t value_t;
+  using InterpFunc<VALUE_TYPE>::m_X;
+  using InterpFunc<VALUE_TYPE>::m_Y;
+  using InterpFunc<VALUE_TYPE>::m_DyDx;
 
   value_t compute(real x)
   {
@@ -66,50 +66,27 @@ struct Bezier1 : public StencilFunction<VALUE_TYPE>
 
 };
 
-template <typename VALUE_TYPE>
-struct Bezier2 : public StencilFunction<VALUE_TYPE>
-{
-  typedef typename StencilFunction<VALUE_TYPE>::value_t value_t;
-  using StencilFunction<VALUE_TYPE>::m_X;
-  using StencilFunction<VALUE_TYPE>::m_Y;
-  using StencilFunction<VALUE_TYPE>::m_DyDx;
 
-  edl::real m_Ye1;
-
-  value_t compute(real x)
-  {
-    real t = (x - m_X[0])/(m_X[1] - m_X[0]);
-    return (1-t)*((1-t)*m_Y[0]+t*m_Ye1) + t*((1-t)*m_Ye1+t*m_Y[1]);
-  }
-
-  void update()
-  {
-    m_Ye1 = m_Y[0] + 0.5*(m_Y[0] + 0.5*(m_X[1] - m_X[0])*m_DyDx[0] + m_Y[1] - 0.5*(m_X[1] - m_X[0])*m_DyDx[1]);
-  }
-
-};
-
-
-template <typename STENCIL_FUNCTION>
+template <typename INTERP_FUNC>
 class Interpolation
 {
 
 public: // data types
 
-  typedef typename STENCIL_FUNCTION::value_t value_t;
+  typedef typename INTERP_FUNC::value_t value_t;
 
 
 
 private: // attributes
 
-  TList<real>       *m_XList;
-  TList<value_t>    *m_YList;
-  STENCIL_FUNCTION   m_Stencil;
-  real               m_LowerBound;
-  real               m_UpperBound;
-  size_t             m_Idx;
-  bool               m_FirstCall;
-  bool               m_AllowExtrapolation;
+  TList<real>     *m_XList;
+  TList<value_t>  *m_YList;
+  INTERP_FUNC      m_Stencil;
+  real             m_LowerBound;
+  real             m_UpperBound;
+  size_t           m_Idx;
+  bool             m_FirstCall;
+  bool             m_AllowExtrapolation;
 
 
 private: // methods
@@ -176,6 +153,12 @@ private: // methods
       }
       if (m_Idx < m_XList->lastIdx() - 1) {
         m_Stencil.m_DyDx[1] = 1.0/(m_XList->at(m_Idx + 2) - m_XList->at(m_Idx))*(m_YList->at(m_Idx + 2) - m_YList->at(m_Idx));
+      }
+      if (m_Idx == 0) {
+        m_Stencil.m_DyDx[0] = 2*m_Stencil.m_DyDx[0] - m_Stencil.m_DyDx[1];
+      }
+      if (m_Idx >= m_XList->lastIdx() - 1) {
+        m_Stencil.m_DyDx[1] = 2*m_Stencil.m_DyDx[1] - m_Stencil.m_DyDx[0];
       }
 
     }
