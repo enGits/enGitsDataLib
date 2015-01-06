@@ -58,7 +58,7 @@ struct MathVector : public V
   // constructors
   // ------------
 
-  MathVector() : V() {};
+  MathVector() : V() {}
   MathVector(const MathVector<V>& vec);
   MathVector(const value_type *v);
   MathVector(const value_type v1, const value_type v2, const value_type v3, const value_type v4);
@@ -89,7 +89,7 @@ struct MathVector : public V
   scalar_t abs2() const;
   MathVector<V> normalise();
   scalar_t* c_array() const;
-  uint_t dim() { return this->size(); };
+  uint_t dim() { return this->size(); }
 
 
   // STL
@@ -110,20 +110,20 @@ struct MathVector : public V
     typedef value_type* pointer;
     typedef value_type& reference;
 
-    iterator(MathVector<V> *a_vec = NULL, uint_t an_i = 0) : vec(a_vec), i(an_i) {};
-    bool operator==(const iterator &iter) const { return (iter.vec == vec) && (iter.i == i); };
+    iterator(MathVector<V> *a_vec = NULL, uint_t an_i = 0) : vec(a_vec), i(an_i) {}
+    bool operator==(const iterator &iter) const { return (iter.vec == vec) && (iter.i == i); }
     bool operator==(const const_iterator &iter) const;
-    bool operator!=(const const_iterator &iter) const { return !operator==(iter); };
-    iterator operator++() { ++i; return iterator(vec,i); };
-    iterator operator++(int) { uint_t j = i; ++i; return iterator(vec,j); };
-    iterator operator--() { --i; return iterator(vec,i); };
-    iterator operator--(int) { uint_t j = i; --i; return iterator(vec,j); };
-    void operator+=(uint_t n) { i += n; };
-    void operator-=(uint_t n) { i -= n; };
-    scalar_t& operator*() const { return (*vec)[i]; };
-    scalar_t& operator[](uint_t n) const { return (*vec)[i+n]; };
-    bool operator<(const iterator &iter) const { return i < iter.i; };
-    uint_t operator-(const iterator &iter) const { return i - iter.i; };
+    bool operator!=(const const_iterator &iter) const { return !operator==(iter); }
+    iterator operator++() { ++i; return iterator(vec,i); }
+    iterator operator++(int) { uint_t j = i; ++i; return iterator(vec,j); }
+    iterator operator--() { --i; return iterator(vec,i); }
+    iterator operator--(int) { uint_t j = i; --i; return iterator(vec,j); }
+    void operator+=(uint_t n) { i += n; }
+    void operator-=(uint_t n) { i -= n; }
+    scalar_t& operator*() const { return (*vec)[i]; }
+    scalar_t& operator[](uint_t n) const { return (*vec)[i+n]; }
+    bool operator<(const iterator &iter) const { return i < iter.i; }
+    uint_t operator-(const iterator &iter) const { return i - iter.i; }
   };
 
   class const_iterator
