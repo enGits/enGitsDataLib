@@ -78,11 +78,11 @@ protected:
     m_Value[dest_point] = m_Value[source_point];
   }
 
-
-public:
-
   /// the default value for new entries
   T m_DefaultValue;
+
+
+public:
     
   /**
    * default constructor.
@@ -106,6 +106,12 @@ public:
   TList(const TList<T> &other, const T a_default_value = T());
   
   ~TList ();
+
+  /**
+   * @brief Set the default value of this container.
+   * @param default_value the new default value
+   */
+  void setDefaultValue(T default_value) { m_DefaultValue = default_value; }
   
   /**
    * Initialize all active entries with a value.
@@ -396,7 +402,8 @@ void TList<T>::operator=(const TList<T> &other)
 }
 
 template <class T>
-TList<T>::~TList () {
+TList<T>::~TList ()
+{
   if (m_Value) delete [] m_Value;
 } 
 
