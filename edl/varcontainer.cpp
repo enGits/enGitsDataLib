@@ -41,7 +41,7 @@ VarContainer::VarContainer(bool init_list)
 
 VarContainer::VarContainer(List *a_master)
 {
-  Init(a_master);
+  init(a_master);
 }
 
 VarContainer::~VarContainer()
@@ -49,7 +49,7 @@ VarContainer::~VarContainer()
   delete m_VarList;
 }
 
-void VarContainer::Init(List *a_master) 
+void VarContainer::init(List *a_master)
 {
   link(a_master);
   m_VarList = new TMDimList<real, string, 2, map_t>(a_master, 0.0, "");

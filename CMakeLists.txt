@@ -75,6 +75,7 @@ edl/mathvector_operators.h
 edl/mathvector_structs.h
 edl/pmap.h
 edl/smallsquarematrix.h
+edl/sparsetwodimarray.h
 edl/stringtools.h
 edl/tkeylist.h
 edl/tlist2d.h
@@ -84,6 +85,7 @@ edl/tmdimindex.h
 edl/tmdimlist.h
 edl/tmdimvar.h
 edl/tsdimvar.h
+edl/tsparsetwodimarray.h
 edl/varcontainer.h
 )
 
@@ -91,6 +93,7 @@ SET(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
 edl/edlerror.cpp
 edl/list.cpp
+edl/sparsetwodimarray.cpp
 edl/varcontainer.cpp
 )
 

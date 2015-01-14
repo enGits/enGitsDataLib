@@ -72,7 +72,7 @@ public:
       throw InvalidIndex_error(i);
     }
 #endif
-    return m_Value[MAP::RelativeIndex(TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList, i)];
+    return m_Value[MAP::relativeIndex(TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList, i)];
   }
   virtual void operator=(const TSDimVar<TValue, TIndex, DIM, MAP> &other);
   virtual void print();

@@ -130,7 +130,7 @@ public:
   VarContainer(bool init_list = true);
   VarContainer(List* a_master);
   virtual ~VarContainer();
-  void Init(List* a_master);
+  void init(List* a_master);
 
   /** 
      Add a variable entry. (2.index) to the container. 
