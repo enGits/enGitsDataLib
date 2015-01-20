@@ -103,9 +103,13 @@ private: // methods
     } else {
       if (x < m_Stencil.m_X[0]) {
         search_down = true;
-        m_Idx = m_XList->prevIdx(m_Idx);
+        if (m_Idx > 0) {
+          --m_Idx;
+        }
       } else {
-        m_Idx = m_XList->nextIdx(m_Idx);
+        if (m_Idx < m_XList->lastIdx()) {
+          ++m_Idx;
+        }
       }
     }
     bool found = false;
@@ -115,7 +119,11 @@ private: // methods
           found = true;
           break;
         }
-        --m_Idx;
+        if (m_Idx > 0) {
+          --m_Idx;
+        } else {
+          break;
+        }
       }
     } else {
       while (m_Idx < m_XList->lastIdx()) {
