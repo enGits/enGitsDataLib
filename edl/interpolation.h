@@ -107,7 +107,7 @@ private: // methods
           --m_Idx;
         }
       } else {
-        if (m_Idx < m_XList->lastIdx()) {
+        if (m_Idx < m_XList->lastIdx() - 1) {
           ++m_Idx;
         }
       }
@@ -132,7 +132,11 @@ private: // methods
           found = true;
           break;
         }
-        m_Idx = idx;
+        if (idx < m_XList->lastIdx() - 1) {
+          m_Idx = idx;
+        } else {
+          break;
+        }
       }
     }
     if (!found && !m_AllowExtrapolation) {
