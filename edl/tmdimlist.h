@@ -55,9 +55,9 @@ protected:
   void          **m_VarPointer;
   TValue          m_DefaultValue;
 
-  void AllocNewBlocks();
-  virtual void Extend(size_t delta);
-  virtual void InitEntry (size_t i);
+  void allocNewBlocks();
+  virtual void extend(size_t delta);
+  virtual void initEntry (size_t i);
   TList<TMappedVar<TValue, TIndex, DIM, MAP>*> *m_MappedVars;
 
 
@@ -67,17 +67,17 @@ public:
   TMDimList(List *a_master, TValue a_default_value, TIndex an_empty_index_value);
   virtual ~TMDimList();
 
-  int LengthOfPointerField() const;
-  void SetPointerField();
-  void CreateTotalIndex(int level, TMDimIndex<TIndex> &I);
-  void AddIndex(int i, TIndex new_index);
-  TList<TMDimIndex<TIndex> >* GetSubIndices(TMDimIndex<TIndex> I) const;
-  virtual void CopyEntry(size_t src, size_t dst);
-  TValue* Resolve(TMDimIndex<TIndex> I);
+  int lengthOfPointerField() const;
+  void setPointerField();
+  void createTotalIndex(int level, TMDimIndex<TIndex> &I);
+  void addIndex(int i, TIndex new_index);
+  TList<TMDimIndex<TIndex> >* getSubIndices(TMDimIndex<TIndex> I) const;
+  virtual void copyEntry(size_t src, size_t dst);
+  TValue* resolve(TMDimIndex<TIndex> I);
   size_t numBlocks() const { return m_TotalIndex->numEntries(); }
   size_t numSubIndices(int level) const { return m_SubIndex[level]->numEntries(); }
   TIndex subIndex(int level, int i) { size_t si = i; return m_SubIndex[level]->at(si); }
-  bool IndexExists(size_t level, TIndex an_index);
+  bool indexExists(size_t level, TIndex an_index);
 };
 
 //
@@ -138,7 +138,7 @@ TMDimList<TValue, TIndex, DIM, MAP>::~TMDimList()
 //.. LengthOfPointerField
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-int TMDimList<TValue, TIndex, DIM, MAP>::LengthOfPointerField() const
+int TMDimList<TValue, TIndex, DIM, MAP>::lengthOfPointerField() const
 {
   int i, L, prod;
   L = m_SubIndex[0]->NumEntries();
@@ -154,7 +154,7 @@ int TMDimList<TValue, TIndex, DIM, MAP>::LengthOfPointerField() const
 //.. SetPointerField
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-void TMDimList<TValue, TIndex, DIM, MAP>::SetPointerField()
+void TMDimList<TValue, TIndex, DIM, MAP>::setPointerField()
 {
   void **p = m_VarPointer;
   int prod = 1;
@@ -172,25 +172,25 @@ void TMDimList<TValue, TIndex, DIM, MAP>::SetPointerField()
 //.. AddIndex
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-void TMDimList<TValue, TIndex, DIM, MAP>::AddIndex(int i, TIndex new_index)
+void TMDimList<TValue, TIndex, DIM, MAP>::addIndex(int i, TIndex new_index)
 {
   TMDimIndex<TIndex> I(DIM);
   m_SubIndex[i]->newEntry() = new_index;
-  CreateTotalIndex(0, I);
-  AllocNewBlocks();
+  createTotalIndex(0, I);
+  allocNewBlocks();
 }
 
 //
 //.. CreateTotalIndex
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-void TMDimList<TValue, TIndex, DIM, MAP>::CreateTotalIndex(int level, TMDimIndex<TIndex> &I)
+void TMDimList<TValue, TIndex, DIM, MAP>::createTotalIndex(int level, TMDimIndex<TIndex> &I)
 {
   if (level < DIM) {
     for (size_t i = m_SubIndex[level]->beginIdx(); i < m_SubIndex[level]->endIdx(); i = m_SubIndex[level]->nextIdx(i)) {
       TMDimIndex<TIndex> next_I = I;
       next_I[level] = m_SubIndex[level]->at(i);
-      CreateTotalIndex(level + 1, next_I);
+      createTotalIndex(level + 1, next_I);
     }
   } else {
     try {
@@ -207,7 +207,7 @@ void TMDimList<TValue, TIndex, DIM, MAP>::CreateTotalIndex(int level, TMDimIndex
 //.. AllocNewBlocks
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-void TMDimList<TValue, TIndex, DIM, MAP>::AllocNewBlocks()
+void TMDimList<TValue, TIndex, DIM, MAP>::allocNewBlocks()
 {
   int num_new_blocks = 0;
   TValue *new_m_RootPointer = new TValue[numBlocks() * maxNumEntries()];
@@ -253,7 +253,7 @@ void TMDimList<TValue, TIndex, DIM, MAP>::AllocNewBlocks()
 //.. Extend
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-void TMDimList<TValue, TIndex, DIM, MAP>::Extend(size_t delta)
+void TMDimList<TValue, TIndex, DIM, MAP>::extend(size_t delta)
 {
   TValue* new_m_RootPointer = new TValue[numBlocks() * (maxNumEntries() + delta)];
 
@@ -303,7 +303,7 @@ void TMDimList<TValue, TIndex, DIM, MAP>::Extend(size_t delta)
 //.. CopyEntry
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-void TMDimList<TValue, TIndex, DIM, MAP>::CopyEntry(size_t src, size_t dst)
+void TMDimList<TValue, TIndex, DIM, MAP>::copyEntry(size_t src, size_t dst)
 {
   List::copyEntry(src, dst);
   FORALL(i, m_TotalIndex->) {
@@ -315,7 +315,7 @@ void TMDimList<TValue, TIndex, DIM, MAP>::CopyEntry(size_t src, size_t dst)
 //.. InitEntry
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-void TMDimList<TValue, TIndex, DIM, MAP>::InitEntry(size_t i)
+void TMDimList<TValue, TIndex, DIM, MAP>::initEntry(size_t i)
 {
   FORALL(j, m_TotalIndex->) {
     m_TotalIndex->viAt(j)[MAP::relativeIndex(this, i)] = m_DefaultValue;
@@ -327,7 +327,7 @@ void TMDimList<TValue, TIndex, DIM, MAP>::InitEntry(size_t i)
 //
 template<class TValue, class TIndex, int DIM, class MAP>
 TList<TMDimIndex<TIndex> >* 
-TMDimList<TValue, TIndex, DIM, MAP>::GetSubIndices(TMDimIndex<TIndex> I) const
+TMDimList<TValue, TIndex, DIM, MAP>::getSubIndices(TMDimIndex<TIndex> I) const
 {
   TList<TMDimIndex<TIndex> > *ind;
   if (I.Dim() == DIM) {
@@ -339,7 +339,7 @@ TMDimList<TValue, TIndex, DIM, MAP>::GetSubIndices(TMDimIndex<TIndex> I) const
     ind = new TList<TMDimIndex<TIndex> >(5, 5);
     TList<TMDimIndex<TIndex> > *sub_ind;    
     FORALL(i, m_SubIndex[level]->) {
-      sub_ind = GetSubIndices(I + m_SubIndex[level]->At(i));
+      sub_ind = getSubIndices(I + m_SubIndex[level]->At(i));
       FORALL(j, sub_ind->) ind->NewEntry() = sub_ind->At(j);
       delete sub_ind;
     }
@@ -351,7 +351,7 @@ TMDimList<TValue, TIndex, DIM, MAP>::GetSubIndices(TMDimIndex<TIndex> I) const
 //.. Resolve
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-TValue* TMDimList<TValue, TIndex, DIM, MAP>::Resolve(TMDimIndex<TIndex> I)
+TValue* TMDimList<TValue, TIndex, DIM, MAP>::resolve(TMDimIndex<TIndex> I)
 {
   if (I.Dim() != DIM) {
     cerr << "list and index dimension must be identical" <<  endl;
@@ -365,7 +365,7 @@ TValue* TMDimList<TValue, TIndex, DIM, MAP>::Resolve(TMDimIndex<TIndex> I)
 //.. IndexExists
 //
 template<class TValue, class TIndex, int DIM, class MAP>
-bool TMDimList<TValue, TIndex, DIM, MAP>::IndexExists(size_t level, TIndex an_index)
+bool TMDimList<TValue, TIndex, DIM, MAP>::indexExists(size_t level, TIndex an_index)
 {
   bool found = false;
   FORALL(i, m_SubIndex[level]->) {

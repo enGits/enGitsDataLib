@@ -55,7 +55,7 @@ void List::initList(size_t a_max_num_entries, size_t a_delta_entries)
       m_Active[i_entry] = false;
     }
     m_BlockSize = new size_t[m_MaxNumEntries];
-    UpdateBlockSize();
+    updateBlockSize();
     m_AfterLastEntry = 0;
     m_FirstBlock = 0;
 
@@ -157,7 +157,7 @@ void List::operator=(const List &other)
   } else if (initialized) {
     m_AfterLastEntry = other.m_AfterLastEntry;
     for (size_t i = 0; i < m_MaxNumEntries; ++i) m_Active[i] = other.m_Active[i];
-    UpdateBlockSize();
+    updateBlockSize();
   }
 }
 
@@ -281,7 +281,7 @@ void List::extendList (size_t delta)
   }
   delete [] m_BlockSize;
   m_BlockSize = new size_t[m_MaxNumEntries];
-  UpdateBlockSize();
+  updateBlockSize();
 }
 
 void List::delEntry (size_t i_entry)
@@ -358,7 +358,7 @@ void List::cleanUp () {
         m_Active[i_entry] = false;
       }
     }
-    UpdateBlockSize();
+    updateBlockSize();
     try {
       //after_last_entry = prev_idx(max_num_entries) + 1;
       size_t i = m_MaxNumEntries;
@@ -392,7 +392,7 @@ void List::setDelta(size_t new_delta)
   m_DeltaEntries = new_delta;
 }
 
-void List::UpdateBlockSize()
+void List::updateBlockSize()
 {
   if (m_MaxNumEntries != 0) {
     m_BlockSize[m_MaxNumEntries - 1] = 1;
@@ -427,7 +427,7 @@ size_t List::tryAlloc(size_t n)
         extendList(m_DeltaEntries);
         m_BlockSizeUpdated = false;
       } else {
-        UpdateBlockSize();
+        updateBlockSize();
       }
       return tryAlloc(n);
     }

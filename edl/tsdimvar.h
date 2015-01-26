@@ -103,7 +103,7 @@ TSDimVar<TValue, TIndex, DIM, MAP>::TSDimVar
 template<class TValue, class TIndex, int DIM, class MAP>
 void TSDimVar<TValue, TIndex, DIM, MAP>::update()
 {
-  m_Value = TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList->Resolve(TMappedVar<TValue, TIndex, DIM, MAP>::m_Index);
+  m_Value = TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList->resolve(TMappedVar<TValue, TIndex, DIM, MAP>::m_Index);
   TMappedVar<TValue, TIndex, DIM, MAP>::m_Initialised = true;
 }
 

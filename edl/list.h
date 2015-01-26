@@ -114,7 +114,7 @@ private:
   size_t *m_BlockSize;
 
   /// update the block_size field to represent current state.
-  void UpdateBlockSize();
+  void updateBlockSize();
 
   /// switch to determine if the block_size field is updated.
   bool m_BlockSizeUpdated;

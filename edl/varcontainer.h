@@ -138,7 +138,7 @@ public:
   */
   void addVar(string var_name)
   {
-    if (!m_VarList->IndexExists(1, var_name)) m_VarList->AddIndex(1, var_name);
+    if (!m_VarList->indexExists(1, var_name)) m_VarList->addIndex(1, var_name);
   }
 
   /**
@@ -147,7 +147,7 @@ public:
   */
   void addField(string field_name)
   {
-    if (!m_VarList->IndexExists(0, field_name)) m_VarList->AddIndex(0, field_name);
+    if (!m_VarList->indexExists(0, field_name)) m_VarList->addIndex(0, field_name);
   }
 
   /** 
