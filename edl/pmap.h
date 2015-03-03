@@ -43,26 +43,21 @@ class PMap
 {
 public:
 
-  /** */
-  static long int relativeIndex(TMDimList<TValue, TIndex, DIM, PMap> *list,
-                                long int i)
+  ensure_forceinline static long int relativeIndex(TMDimList<TValue, TIndex, DIM, PMap> *list, long int i)
   {
     return list->NumBlocks() * i;
   }
 
-  /** */
-  static long int totalIndex(TMDimList<TValue, TIndex, DIM, PMap> *list,
-                             int block, long int i)
+  ensure_forceinline static long int totalIndex(TMDimList<TValue, TIndex, DIM, PMap> *list, int block, long int i)
   {
     return block + list->NumBlocks() * i;
   }
 
-  /** */
-  static long int totalIndex(long int max_num_entries, int num_blocks,
-                             int block, long int i)
+  ensure_forceinline static long int totalIndex(long int max_num_entries, int num_blocks, int block, long int i)
   {
     return block + num_blocks * i;
   }
+
 };
 
 } // namespace

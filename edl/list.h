@@ -217,13 +217,13 @@ public:
    * check if this is a master List.
    * @return true if it is a master List
    */
-  bool isMaster() { return this == m_Master; }
+  ensure_forceinline bool isMaster() { return this == m_Master; }
 
   /**
    * get the maximal number of entries.
    * @ return the maximal number of entries
    */
-  size_t maxNumEntries() const { return m_MaxNumEntries; }
+  ensure_forceinline size_t maxNumEntries() const { return m_MaxNumEntries; }
 
   /**
    * get the current number of entries.
@@ -456,25 +456,25 @@ public:
 
 
 
-inline size_t List::endIdx() const
+ensure_forceinline inline size_t List::endIdx() const
 { 
   return m_Master->m_AfterLastEntry;
 }
 
-inline size_t List::beginIdx() const
+ensure_forceinline inline size_t List::beginIdx() const
 {
   size_t i = 0;
   while ((i < endIdx()) && !isActive(i)) ++i;
   return i;
 }
 
-inline size_t List::nextIdx(size_t i) const
+ensure_forceinline inline size_t List::nextIdx(size_t i) const
 {
   do { i++; } while ((i < endIdx()) && !isActive(i));
   return i;
 }
 
-inline size_t List::prevIdx(size_t i) const
+ensure_forceinline inline size_t List::prevIdx(size_t i) const
 {
   if (i == 0) throw NotFound_error("List::prev");
   do { i--; } while ((i > 0) && !isActive(i));
@@ -484,7 +484,7 @@ inline size_t List::prevIdx(size_t i) const
   return i;
 }
 
-inline size_t List::lastIdx() const
+ensure_forceinline inline size_t List::lastIdx() const
 { 
   if (endIdx() == 0) {
     throw NotFound_error("List::last");
@@ -492,7 +492,7 @@ inline size_t List::lastIdx() const
   return endIdx() - 1;
 }
 
-inline size_t List::numEntries() const
+ensure_forceinline inline size_t List::numEntries() const
 {
   return endIdx();
 }

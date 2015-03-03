@@ -57,7 +57,8 @@ public:
   TSDimVar(const TSDimVar<TValue, TIndex, DIM, MAP> &other);
   virtual ~TSDimVar() {}
   virtual void update();
-  TValue& operator[](size_t i) const { 
+
+  ensure_forceinline TValue& operator[](size_t i) const {
 #ifdef EDL_DEBUG
     if (!TMappedVar<TValue, TIndex, DIM, MAP>::initialized) {
       cerr << "trying to use [] on an uninitialized variable" << endl;

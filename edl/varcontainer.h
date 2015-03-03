@@ -154,7 +154,7 @@ public:
      Get the number of variables 
      @return the number of variables 
   */
-  size_t numVars() { return m_VarList->numSubIndices(1); }
+  ensure_forceinline size_t numVars() { return m_VarList->numSubIndices(1); }
 
   /**
      get the name of a variable 
@@ -174,7 +174,7 @@ public:
      Get the number of fields
      @return the number of fields
   */
-  size_t numFields() { return m_VarList->numSubIndices(0); }
+  ensure_forceinline size_t numFields() { return m_VarList->numSubIndices(0); }
 
   /**
    * get the name of a field.

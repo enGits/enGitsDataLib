@@ -53,8 +53,8 @@ public:
   TMDimVar();
   virtual ~TMDimVar() { delete [] m_Value; }
   virtual void update();
-  const MAPVALUE& operator[](size_t i) const { 
 #ifdef EDL_DEBUG
+  const MAPVALUE& operator[](size_t i) const {
     if (!TMappedVar<TValue, TIndex, DIM, MAP>::initialized) {
       cerr << "trying to use [] on an uninitialized variable" << endl;
       throw InvalidIndex_error(i);
@@ -64,9 +64,13 @@ public:
       cerr << "index " << i << "out of bounds" << endl;
       throw InvalidIndex_error(i);
     }
-#endif
     return m_Value[i];
   }
+#else
+  ensure_forceinline const MAPVALUE& operator[](size_t i) const {
+    return m_Value[i];
+  }
+#endif
   virtual void operator=(const TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE> &other);
   virtual void print();
 };

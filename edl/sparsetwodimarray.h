@@ -262,8 +262,7 @@ protected:
 
 };
 
-
-inline size_t SparseTwoDimArray::count(size_t i) const
+ensure_forceinline inline size_t SparseTwoDimArray::count(size_t i) const
 {
   if (isActive(i)) {
     return m_MasterArray->m_Count->at(i);
@@ -272,20 +271,20 @@ inline size_t SparseTwoDimArray::count(size_t i) const
   }
 }
 
-inline size_t SparseTwoDimArray::totalCount(size_t i) const
+ensure_forceinline inline size_t SparseTwoDimArray::totalCount(size_t i) const
 { 
   return count(i);
 }
 
 template <class TT>
-void SparseTwoDimArray::createDataList(TList<TT>* &list, TT a_default_value)
+ensure_forceinline inline void SparseTwoDimArray::createDataList(TList<TT>* &list, TT a_default_value)
 { 
   list = new TList<TT>(m_DummyData, a_default_value);
 }
 
-inline size_t SparseTwoDimArray::dataIndex(size_t i, size_t k) const
+ensure_forceinline inline size_t SparseTwoDimArray::dataIndex(size_t i, size_t k) const
 { 
-#ifdef MDEBUG
+#ifdef EDL_DEBUG
   if (Count(i) <= k) {
     cerr << "index " << k << "out of bounds" << endl;
     throw InvalidIndex_error(k);
