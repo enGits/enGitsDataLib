@@ -5,9 +5,6 @@
 
 #include <cfloat>
 
-#define forceinline __inline__ __attribute__((always_inline))
-#define ensure_forceinline __attribute__((always_inline)) // inline or die
-
 namespace EDL_NAMESPACE
 {
 #ifdef REAL_FLOAT

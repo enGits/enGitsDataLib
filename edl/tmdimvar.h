@@ -67,7 +67,7 @@ public:
     return m_Value[i];
   }
 #else
-  ensure_forceinline const MAPVALUE& operator[](size_t i) const {
+  const MAPVALUE& operator[](size_t i) const {
     return m_Value[i];
   }
 #endif

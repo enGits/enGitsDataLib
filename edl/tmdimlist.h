@@ -75,9 +75,9 @@ public:
   virtual void copyEntry(size_t src, size_t dst);
   TValue* resolve(TMDimIndex<TIndex> I);
 
-  ensure_forceinline size_t numBlocks() const              { return m_TotalIndex->numEntries(); }
-  ensure_forceinline size_t numSubIndices(int level) const { return m_SubIndex[level]->numEntries(); }
-  ensure_forceinline TIndex subIndex(int level, int i)     { size_t si = i; return m_SubIndex[level]->at(si); }
+  size_t numBlocks() const              { return m_TotalIndex->numEntries(); }
+  size_t numSubIndices(int level) const { return m_SubIndex[level]->numEntries(); }
+  TIndex subIndex(int level, int i)     { size_t si = i; return m_SubIndex[level]->at(si); }
 
   bool indexExists(size_t level, TIndex an_index);
 };

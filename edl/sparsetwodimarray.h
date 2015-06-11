@@ -262,7 +262,7 @@ protected:
 
 };
 
-ensure_forceinline inline size_t SparseTwoDimArray::count(size_t i) const
+inline size_t SparseTwoDimArray::count(size_t i) const
 {
   if (isActive(i)) {
     return m_MasterArray->m_Count->at(i);
@@ -271,18 +271,18 @@ ensure_forceinline inline size_t SparseTwoDimArray::count(size_t i) const
   }
 }
 
-ensure_forceinline inline size_t SparseTwoDimArray::totalCount(size_t i) const
+inline size_t SparseTwoDimArray::totalCount(size_t i) const
 { 
   return count(i);
 }
 
 template <class TT>
-ensure_forceinline inline void SparseTwoDimArray::createDataList(TList<TT>* &list, TT a_default_value)
+inline void SparseTwoDimArray::createDataList(TList<TT>* &list, TT a_default_value)
 { 
   list = new TList<TT>(m_DummyData, a_default_value);
 }
 
-ensure_forceinline inline size_t SparseTwoDimArray::dataIndex(size_t i, size_t k) const
+inline size_t SparseTwoDimArray::dataIndex(size_t i, size_t k) const
 { 
 #ifdef EDL_DEBUG
   if (Count(i) <= k) {
