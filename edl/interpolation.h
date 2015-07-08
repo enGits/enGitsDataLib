@@ -153,7 +153,7 @@ private: // methods
           found = true;
           break;
         }
-        if (idx < m_XList->lastIdx() - 1) {
+        if (idx < m_XList->lastIdx()) {
           m_Idx = idx;
         } else {
           break;
