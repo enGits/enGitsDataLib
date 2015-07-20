@@ -58,6 +58,15 @@ namespace EDL_NAMESPACE
     return x*x;
   }
 
+  inline real ipow(real x, int e)
+  {
+    real v = 1;
+    for (int i = 0; i < e; ++i) {
+      v *= x;
+    }
+    return v;
+  }
+
 }
 
 #endif
