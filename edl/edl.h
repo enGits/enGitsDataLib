@@ -67,6 +67,12 @@ namespace EDL_NAMESPACE
     return v;
   }
 
+  inline real realmod(real a, real b)
+  {
+    int c = int(a/b);
+    return a - c*b;
+  }
+
 }
 
 #endif
