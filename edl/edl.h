@@ -25,6 +25,7 @@
 #define EDL_NAMESPACE edl
 
 #include <cfloat>
+#include <cmath>
 
 namespace EDL_NAMESPACE
 {
@@ -71,6 +72,41 @@ namespace EDL_NAMESPACE
   {
     int c = int(a/b);
     return a - c*b;
+  }
+
+  inline real snap(real v, real v0, real Dv)
+  {
+    if (fabs(v - v0) <= Dv) {
+      return v0;
+    }
+    return v;
+  }
+
+  inline real lowLimit(real v, real v0)
+  {
+    if (v < v0) {
+      return v0;
+    }
+    return v;
+  }
+
+  inline real highLimit(real v, real v0)
+  {
+    if (v > v0) {
+      return v0;
+    }
+    return v;
+  }
+
+  inline real bandLimit(real v, real v1, real v2)
+  {
+    if (v < v1) {
+      return v1;
+    }
+    if (v > v2) {
+      return v2;
+    }
+    return v;
   }
 
 }
