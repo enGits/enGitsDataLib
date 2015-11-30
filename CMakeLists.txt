@@ -62,6 +62,10 @@ set(ENGITSDATALIB_VERSION ${ENGITSDATALIB_MAJOR_VERSION}.${ENGITSDATALIB_MINOR_V
 # set include directory, add src directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+# Qt4
+FIND_PACKAGE(Qt4 COMPONENTS QtCore REQUIRED)
+INCLUDE(${QT_USE_FILE})
+
 SET(engitsdatalib_HEADERS
 edl/bmap.h
 edl/edlerror.h

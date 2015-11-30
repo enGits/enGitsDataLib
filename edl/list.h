@@ -35,6 +35,7 @@ class InvalidIndex_error;
 #include <cstddef>
 #include <cstdlib>
 #include <typeinfo>
+#include <QMutex>
 #include <pthread.h>
 
 namespace EDL_NAMESPACE
@@ -120,10 +121,11 @@ private:
   state_t m_StateCounter;
 
   /**
-   * a mutex used if any maintenence function is called.
+   * a mutex used if any maintenance function is called.
    * This will only happen in the master List.
    */
-  pthread_mutex_t m_Mutex;
+  //pthread_mutex_t m_Mutex;
+  QMutex m_Mutex;
 
 protected:
 
@@ -188,10 +190,12 @@ protected:
   void notifyChange() { ++m_StateCounter; }
 
   /// lock the mutex
-  void lockMutex() { pthread_mutex_lock(&(m_Master->m_Mutex)); }
+  //void lockMutex() { pthread_mutex_lock(&(m_Master->m_Mutex)); }
+  void lockMutex() { m_Master->m_Mutex.lock(); }
 
   /// release the mutex
-  void unlockMutex() { pthread_mutex_unlock(&(m_Master->m_Mutex)); }
+  //void unlockMutex() { pthread_mutex_unlock(&(m_Master->m_Mutex)); }
+  void unlockMutex() { m_Master->m_Mutex.unlock(); }
 
   virtual void customReset(real mne, real delta) {}
 
