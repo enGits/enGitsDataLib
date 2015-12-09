@@ -57,8 +57,7 @@ void List::initList(size_t a_max_num_entries, size_t a_delta_entries)
     m_FirstBlock = 0;
 
     // create pthread-mutex
-    pthread_mutex_init(&m_Mutex, NULL);
-
+    //pthread_mutex_init(&m_Mutex, NULL);
   } else {
     m_Active = NULL;
     m_BlockSize = NULL;
@@ -273,7 +272,7 @@ List::~List ()
     };
 
     // delete the mutex
-    pthread_mutex_destroy(&m_Mutex);
+    //pthread_mutex_destroy(&m_Mutex);
 
     delete [] m_BlockSize;
   }
