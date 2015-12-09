@@ -26,6 +26,7 @@
 
 #include <cfloat>
 #include <cmath>
+#include <QMetaType>
 
 namespace EDL_NAMESPACE
 {
@@ -110,5 +111,6 @@ namespace EDL_NAMESPACE
   }
 
 }
+Q_DECLARE_METATYPE(EDL_NAMESPACE::real)
 
 #endif

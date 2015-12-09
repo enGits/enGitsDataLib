@@ -65,6 +65,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # Qt4
 FIND_PACKAGE(Qt4 COMPONENTS QtCore REQUIRED)
 INCLUDE(${QT_USE_FILE})
+include_directories(${QT_QTCORE_INCLUDE_DIR})
 
 SET(engitsdatalib_HEADERS
 edl/bmap.h
@@ -93,8 +94,11 @@ edl/tsparsetwodimarray.h
 edl/varcontainer.h
 )
 
+QT4_WRAP_CPP(engitsdatalib_HEADERS_MOC ${engitsdatalib_HEADERS})
+
 SET(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
+${engitsdatalib_HEADERS_MOC}
 edl/edlerror.cpp
 edl/list.cpp
 edl/sparsetwodimarray.cpp
@@ -107,5 +111,12 @@ SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES MACOSX_RPATH 1)
 SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES VERSION ${ENGITSDATALIB_VERSION})
 SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES COMPILE_FLAGS "-Wno-deprecated")
 
-install(TARGETS engitsdatalib LIBRARY DESTINATION lib)
+target_link_libraries(engitsdatalib ${QT_LIBRARIES})
+target_link_libraries(engitsdatalib Qt4::QtCore)
+
+install(
+  TARGETS engitsdatalib
+  LIBRARY DESTINATION lib${LIB_SUFFIX}
+  ARCHIVE DESTINATION lib${LIB_SUFFIX}
+)
 install(FILES ${engitsdatalib_HEADERS} DESTINATION include/edl)
