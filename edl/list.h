@@ -125,6 +125,12 @@ private:
    */
   pthread_mutex_t m_Mutex;
 
+  /// name of this list (for linked lists only)
+  string m_LinkName;
+
+  /// flag to determine if link names are required
+  bool m_LinkNamesRequired;
+
 protected:
 
   /** 
@@ -408,7 +414,7 @@ public:
    * abort with an error message.
    * @param linked_list the List to link to
    */
-  void link (List *linked_list);
+  void link (List *linked_list, string link_name = "__none");
 
   /**
    * copy an entry. 
@@ -447,6 +453,29 @@ public:
    * @return the state counter
    */
   state_t state() { return m_Master->m_StateCounter; }
+
+  /**
+   * @brief Get the link name of this list.
+   * @return the link name of this list.
+   */
+  string linkName() { return m_LinkName; }
+
+  /**
+   * @brief Enforce the use of link names for this list.
+   * This method can only be called for master lists.
+   * @param check_for_existing If set to true an error will be created if the list already has clients.
+   */
+  void linkNamesOn(bool check_for_existing = true);
+
+  /**
+   * @brief Do not enforce the use of link names for this list.
+   * This method can only be called for master lists.
+   */
+  void linkNamesOff();
+
+  virtual void   getFromBuffer(size_t, char*) {}
+  virtual size_t dataLength() { return 0; }
+  virtual void   sendToBuffer(size_t, char*) {}
 
   void operator=(const List &other);
 };

@@ -48,9 +48,9 @@ SparseTwoDimArray::SparseTwoDimArray(SparseTwoDimArray *a_master_array)
   m_DummyData = new List(m_MasterArray->m_DummyData);
 }
 
-void SparseTwoDimArray::linkSparseTwoDimArray(SparseTwoDimArray *a_master_array)
+void SparseTwoDimArray::linkSparseTwoDimArray(SparseTwoDimArray *a_master_array, string link_name)
 {
-  link(a_master_array);
+  link(a_master_array, link_name);
   m_MasterArray = a_master_array;
   m_Count = NULL;
   m_First = NULL;

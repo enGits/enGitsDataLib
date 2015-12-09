@@ -196,7 +196,7 @@ public:
   /** Link to an existing master SparseTwoDimArray and initialise it.
    *  @param a_master_array the master SparseTwoDimArray to link the SparseTwoDimArray to
    */
-  void linkSparseTwoDimArray(SparseTwoDimArray *a_master_array);
+  void linkSparseTwoDimArray(SparseTwoDimArray *a_master_array, string link_name);
 
   /** Get the number of entries in the second dimension.
    *  @param i the index in the first dimension
@@ -287,7 +287,7 @@ inline void SparseTwoDimArray::createDataList(TList<TT>* &list, TT a_default_val
 inline size_t SparseTwoDimArray::dataIndex(size_t i, size_t k) const
 { 
 #ifdef EDL_DEBUG
-  if (Count(i) <= k) {
+  if (count(i) <= k) {
     cerr << "index " << k << "out of bounds" << endl;
     throw InvalidIndex_error(k);
   };
