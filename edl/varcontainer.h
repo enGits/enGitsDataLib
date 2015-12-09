@@ -125,9 +125,9 @@ protected:
 public:
 
   VarContainer(bool init_list = true);
-  VarContainer(List* a_master);
+  VarContainer(List* a_master, string link_name = "__none");
   virtual ~VarContainer();
-  void init(List* a_master);
+  void init(List* a_master, string link_name = "__none");
 
   /** 
      Add a variable entry. (2.index) to the container. 

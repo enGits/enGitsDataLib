@@ -96,6 +96,7 @@ List::List()
   m_Active = NULL;
   m_BlockSize = NULL;
   m_AfterLastEntry = 0;
+  m_LinkNamesRequired = false;
 }
 
 List::List(size_t a_max_num_entries, size_t a_delta_entries)
@@ -105,6 +106,7 @@ List::List(size_t a_max_num_entries, size_t a_delta_entries)
   m_Master = this;
   initList (a_max_num_entries, a_delta_entries);
   m_NumClients = 0;
+  m_LinkNamesRequired = false;
 }
 
 List::List(List *linked_list) 
@@ -115,6 +117,7 @@ List::List(List *linked_list)
   initList (m_Master->maxNumEntries(), m_Master->deltaEntries());
   m_Master->addClient(this);
   m_NumClients = 0;
+  m_LinkNamesRequired = false;
 }
 
 List::List(const List &other)
@@ -129,6 +132,7 @@ List::List(const List &other)
   m_BlockSize = NULL;
   m_AfterLastEntry = 0;
   operator=(other);
+  m_LinkNamesRequired = false;
 }
 
 void List::operator=(const List &other)
@@ -157,7 +161,29 @@ void List::operator=(const List &other)
   }
 }
 
-void List::link (List *linked_list)
+void List::linkNamesOn(bool check_for_existing)
+{
+  if (this != m_Master) {
+    cout << "'linkNammesOn() cannot be called for a 'List' which is already linked to another 'List'!" << endl;
+    exit(EXIT_FAILURE);
+  }
+  if (m_NumClients > 0 && check_for_existing) {
+    cout << "'This 'List' already has some link clients!" << endl;
+    exit(EXIT_FAILURE);
+  }
+  m_LinkNamesRequired = true;
+}
+
+void List::linkNamesOff()
+{
+  if (this != m_Master) {
+    cout << "'linkNammesOff() cannot be called for a 'List' which is already linked to another 'List'!" << endl;
+    exit(EXIT_FAILURE);
+  }
+  m_LinkNamesRequired = false;
+}
+
+void List::link (List *linked_list, string link_name)
 {
   if (this != m_Master) {
     cout << "This 'List' is already linked to another 'List'!" << endl;
@@ -169,6 +195,19 @@ void List::link (List *linked_list)
   }
   m_Client = NULL;
   m_Master = linked_list->m_Master;
+  if (master()->m_LinkNamesRequired) {
+    if (link_name == "__none") {
+      cout << "This 'List' requires link names!" << endl;
+      exit(EXIT_FAILURE);
+    }
+    for (size_t i; i < m_NumClients; ++i) {
+      if (m_Client[i]->linkName() == link_name) {
+        cout << "The name \"" << link_name.c_str() << "\" exists already in the ensemble of linked lists!" << endl;
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+  linked_list->m_LinkName = link_name;
   delAll();
   initList (m_Master->maxNumEntries(), m_Master->deltaEntries());
 

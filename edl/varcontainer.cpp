@@ -36,9 +36,9 @@ VarContainer::VarContainer(bool init_list)
   }
 }
 
-VarContainer::VarContainer(List *a_master)
+VarContainer::VarContainer(List *a_master, string link_name)
 {
-  init(a_master);
+  init(a_master, link_name);
 }
 
 VarContainer::~VarContainer()
@@ -46,9 +46,9 @@ VarContainer::~VarContainer()
   delete m_VarList;
 }
 
-void VarContainer::init(List *a_master)
+void VarContainer::init(List *a_master, string link_name)
 {
-  link(a_master);
+  link(a_master, link_name);
   m_VarList = new TMDimList<real, string, 2, map_t>(a_master, 0.0, "");
 }
 
