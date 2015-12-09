@@ -49,7 +49,8 @@ VarContainer::~VarContainer()
 void VarContainer::init(List *a_master, string link_name)
 {
   link(a_master, link_name);
-  m_VarList = new TMDimList<real, string, 2, map_t>(a_master, 0.0, "");
+  string var_list_link_name = link_name + "_varlist";
+  m_VarList = new TMDimList<real, string, 2, map_t>(a_master, 0.0, "", var_list_link_name);
 }
 
 void VarContainer::reset()

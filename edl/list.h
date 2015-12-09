@@ -36,7 +36,6 @@ class InvalidIndex_error;
 #include <cstdlib>
 #include <typeinfo>
 #include <QMutex>
-#include <pthread.h>
 
 namespace EDL_NAMESPACE
 {
@@ -133,6 +132,10 @@ private:
   /// flag to determine if link names are required
   bool m_LinkNamesRequired;
 
+  /// flag to disable linking to this list
+  bool m_LinkLocked;
+
+
 protected:
 
   /** 
@@ -152,12 +155,11 @@ protected:
    * add a new client if this is a master list.
    * @param client_to_add a pointer to the new client list
    */ 
-  void addClient (List *client_to_add);
+  void addClient (List *client_to_add, string link_name = "__none");
   
   /** 
    * delete a client from this master.
-   * @param client_to_del a pointer to the client,
-   * which shall be deleted
+   * @param client_to_del a pointer to the client, which shall be deleted
    */
   void delClient (List *client_to_del);
 
@@ -205,6 +207,9 @@ protected:
 
   virtual void customReset(real mne, real delta) {}
 
+  virtual size_t dataLength() { return 0; }
+  virtual QByteArray partialBuffer(size_t) { return QByteArray(); }
+  virtual void       fromPartialBuffer(size_t, QByteArray) {}
 
 public:
   /**
@@ -270,7 +275,7 @@ public:
    * initializes it.
    * @param a_master the master List to link the new List to
    */
-  List (List* a_master);
+  List (List* a_master, string link_name = "__none");
 
   /// copy constructor.
   List(const List &other);
@@ -477,9 +482,18 @@ public:
    */
   void linkNamesOff();
 
-  virtual void   getFromBuffer(size_t, char*) {}
-  virtual size_t dataLength() { return 0; }
-  virtual void   sendToBuffer(size_t, char*) {}
+  /**
+   * @brief diable linking
+   */
+  void lockLinking();
+
+  /**
+   * @brief re-enable linking
+   */
+  void unlockLinking();
+
+  QStringList toBuffer(QByteArray& buffer);
+  void        fromBuffer(QByteArray buffer, QStringList names);
 
   void operator=(const List &other);
 };

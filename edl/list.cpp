@@ -24,6 +24,8 @@
 #include <iostream>
 #include <stdlib.h>
 
+#include <QStringList>
+
 namespace EDL_NAMESPACE
 {
 
@@ -97,6 +99,7 @@ List::List()
   m_BlockSize = NULL;
   m_AfterLastEntry = 0;
   m_LinkNamesRequired = false;
+  m_LinkLocked = false;
 }
 
 List::List(size_t a_max_num_entries, size_t a_delta_entries)
@@ -107,15 +110,16 @@ List::List(size_t a_max_num_entries, size_t a_delta_entries)
   initList (a_max_num_entries, a_delta_entries);
   m_NumClients = 0;
   m_LinkNamesRequired = false;
+  m_LinkLocked = false;
 }
 
-List::List(List *linked_list) 
+List::List(List *linked_list, string link_name)
 {
   m_Client = NULL;
   initialized = false;
   m_Master = linked_list->m_Master;
   initList (m_Master->maxNumEntries(), m_Master->deltaEntries());
-  m_Master->addClient(this);
+  m_Master->addClient(this, link_name);
   m_NumClients = 0;
   m_LinkNamesRequired = false;
 }
@@ -133,6 +137,7 @@ List::List(const List &other)
   m_AfterLastEntry = 0;
   operator=(other);
   m_LinkNamesRequired = false;
+  m_LinkLocked = false;
 }
 
 void List::operator=(const List &other)
@@ -183,10 +188,32 @@ void List::linkNamesOff()
   m_LinkNamesRequired = false;
 }
 
+void List::lockLinking()
+{
+  if (this != m_Master) {
+    master()->lockLinking();
+  } else {
+    m_LinkLocked = true;
+  }
+}
+
+void List::unlockLinking()
+{
+  if (this != m_Master) {
+    master()->unlockLinking();
+  } else {
+    m_LinkLocked = false;
+  }
+}
+
 void List::link (List *linked_list, string link_name)
 {
   if (this != m_Master) {
     cout << "This 'List' is already linked to another 'List'!" << endl;
+    exit(EXIT_FAILURE);
+  }
+  if (linked_list->m_LinkLocked) {
+    cout << "The 'List' has been locked for linking!" << endl;
     exit(EXIT_FAILURE);
   }
   if (m_NumClients != 0) {
@@ -200,14 +227,7 @@ void List::link (List *linked_list, string link_name)
       cout << "This 'List' requires link names!" << endl;
       exit(EXIT_FAILURE);
     }
-    for (size_t i; i < m_NumClients; ++i) {
-      if (m_Client[i]->linkName() == link_name) {
-        cout << "The name \"" << link_name.c_str() << "\" exists already in the ensemble of linked lists!" << endl;
-        exit(EXIT_FAILURE);
-      }
-    }
   }
-  linked_list->m_LinkName = link_name;
   delAll();
   initList (m_Master->maxNumEntries(), m_Master->deltaEntries());
 
@@ -219,15 +239,27 @@ void List::link (List *linked_list, string link_name)
   m_MaxNumEntries = mne;
 
   FORALL(i, this->) initEntry(i);
-  m_Master->addClient(this);
+  m_Master->addClient(this, link_name);
 }
 
-void List::addClient (List *client_to_add)
+void List::addClient (List *client_to_add, string link_name)
 {
   if (this != m_Master) {
     cout << "fatal error trying to link to a non master list!" << endl;
     exit(EXIT_FAILURE);
-  };
+  }
+  if (m_LinkNamesRequired && link_name == "__none") {
+    cout << "This 'List' requires link names!" << endl;
+    exit(EXIT_FAILURE);
+  }
+  if (m_LinkNamesRequired && link_name != "__tmp") {
+    for (size_t i = 0; i < m_NumClients; ++i) {
+      if (m_Master->m_Client[i]->linkName() == link_name) {
+        cout << "The name \"" << link_name.c_str() << "\" exists already in the ensemble of linked lists!" << endl;
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
   List **new_client;
   new_client = new List* [m_NumClients + 1];
   for (unsigned int i = 0; i < m_NumClients; i++) new_client[i] = m_Client[i];
@@ -235,12 +267,7 @@ void List::addClient (List *client_to_add)
   m_NumClients++;
   delete [] m_Client;
   m_Client = new_client;
-  /*
-  while (client_to_add->num_entries < num_entries) {
-    client_to_add->InitEntry(client_to_add->num_entries);
-    client_to_add->num_entries++;
-  };
-  */
+  client_to_add->m_LinkName = link_name;
 }
 
 void List::delClient (List *client_to_del) {
@@ -510,6 +537,60 @@ bool List::hasSameStructure(List *other_list)
   return true;
 }
 
+QStringList List::toBuffer(QByteArray& buffer)
+{
+  QStringList exclude_names;
+  exclude_names << "__tmp";
+  exclude_names << "__none";
+  buffer.clear();
+  QStringList names;
+  if (isMaster()) {
+    names << "__MASTER";
+    for (size_t i = 0; i < endIdx(); ++i) {
+      buffer += partialBuffer(i);
+    }
+    for (size_t i_client = 0; i_client < m_NumClients; ++i_client) {
+      if (!exclude_names.contains(QString(m_Client[i_client]->linkName().c_str()))) {
+        names << m_Client[i_client]->linkName().c_str();
+        for (size_t i = 0; i < endIdx(); ++i) {
+          buffer += m_Client[i_client]->partialBuffer(i);
+        }
+      }
+    }
+  } else {
+    names = master()->toBuffer(buffer);
+  }
+  return names;
+}
+
+void List::fromBuffer(QByteArray buffer, QStringList names)
+{
+  if (isMaster()) {
+    size_t idx = 0;
+    foreach (QString name, names) {
+      List* list = NULL;
+      if (name == "__MASTER") {
+        list = this;
+      } else {
+        for (size_t i_client = 0; i_client < m_NumClients; ++i_client) {
+          if (m_Client[i_client]->linkName() == qPrintable(name)) {
+            list = m_Client[i_client];
+            break;
+          }
+        }
+      }
+      if (list) {
+        for (size_t i = 0; i < endIdx(); ++i) {
+          QByteArray partial_buffer = buffer.mid(idx, list->dataLength());
+          list->fromPartialBuffer(i, partial_buffer);
+          idx += list->dataLength();
+        }
+      }
+    }
+  } else {
+    master()->fromBuffer(buffer, names);
+  }
+}
 
 } // namespace
 

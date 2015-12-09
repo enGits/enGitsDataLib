@@ -78,6 +78,10 @@ protected:
   /// the default value for new entries
   T m_DefaultValue;
 
+  virtual size_t dataLength() { return sizeof(T); }
+  virtual QByteArray partialBuffer(size_t);
+  virtual void       fromPartialBuffer(size_t, QByteArray);
+
 
 public:
     
@@ -98,7 +102,7 @@ public:
    * @param a_master a master for this List.
    * @param a_default_value the initial value for new entries 
    */
-  TList(List *a_master, T a_default_value = T());
+  TList(List *a_master, T a_default_value = T(), string link_name = "__none");
 
   TList(const TList<T> &other, const T a_default_value = T());
   
@@ -371,7 +375,7 @@ TList<T>::TList (size_t a_max_num_entries, size_t a_delta_entries, T a_default_v
 }
 
 template <class T>
-TList<T>::TList (List *a_master, T a_default_value) : List (a_master)
+TList<T>::TList (List *a_master, T a_default_value, string link_name) : List (a_master, link_name)
 {
   size_t mne = maxNumEntries();
   m_Value = new T [mne];
@@ -508,6 +512,22 @@ void TList<T>::sortDown()
     }
     i_start = nextIdx(i_start);
   }
+}
+
+template <class T>
+QByteArray TList<T>::partialBuffer(size_t i)
+{
+  return QByteArray((char*) (m_Value + i), sizeof(T));
+}
+
+template <class T>
+void TList<T>::fromPartialBuffer(size_t i, QByteArray buffer)
+{
+  if (buffer.length() != sizeof(T)) {
+    cerr << "data corrupted in buffer" << endl;
+    exit(EXIT_FAILURE);
+  }
+  m_Value[i] = *((T*) buffer.data());
 }
 
 } //namespace

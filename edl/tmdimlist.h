@@ -61,7 +61,7 @@ protected:
 public:
 
   TMDimList(size_t a_max_num_entries, size_t a_delta_entries, TValue a_default_value, TIndex an_empty_index_value);
-  TMDimList(List *a_master, TValue a_default_value, TIndex an_empty_index_value);
+  TMDimList(List *a_master, TValue a_default_value, TIndex an_empty_index_value, string link_name = "__none");
   virtual ~TMDimList();
 
   int lengthOfPointerField() const;
@@ -105,8 +105,9 @@ TMDimList<TValue, TIndex, DIM, MAP>::TMDimList(size_t a_max_num_entries,
 template<class TValue, class TIndex, int DIM, class MAP>
 TMDimList<TValue, TIndex, DIM, MAP>::TMDimList(List *a_master,
                                                TValue a_default_value,
-                                               TIndex an_empty_index_value)
-  : List(a_master)
+                                               TIndex an_empty_index_value,
+                                               string link_name)
+  : List(a_master, link_name)
 {
   int i;
   m_DefaultValue = a_default_value;
