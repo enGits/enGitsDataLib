@@ -109,7 +109,9 @@ ADD_LIBRARY(engitsdatalib SHARED ${engitsdatalib_SOURCES})
 
 SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES MACOSX_RPATH 1)
 SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES VERSION ${ENGITSDATALIB_VERSION})
-SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES COMPILE_FLAGS "-Wno-deprecated")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES COMPILE_FLAGS "-Wno-deprecated")
+endif()
 
 target_link_libraries(engitsdatalib ${QT_LIBRARIES})
 target_link_libraries(engitsdatalib Qt4::QtCore)
@@ -118,5 +120,6 @@ install(
   TARGETS engitsdatalib
   LIBRARY DESTINATION lib${LIB_SUFFIX}
   ARCHIVE DESTINATION lib${LIB_SUFFIX}
+  RUNTIME DESTINATION bin
 )
 install(FILES ${engitsdatalib_HEADERS} DESTINATION include/edl)
