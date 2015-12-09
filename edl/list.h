@@ -36,7 +36,6 @@ class InvalidIndex_error;
 #include <cstdlib>
 #include <typeinfo>
 #include <QMutex>
-#include <pthread.h>
 
 namespace EDL_NAMESPACE
 {
@@ -510,15 +509,3 @@ inline size_t List::numEntries() const
 #define FORALL(I,L) for (size_t I = L beginIdx(); I < L endIdx(); I = L nextIdx(I))
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
