@@ -59,6 +59,15 @@ set(ENGITSDATALIB_MINOR_VERSION 1)
 set(ENGITSDATALIB_PATCH_VERSION 0)
 set(ENGITSDATALIB_VERSION ${ENGITSDATALIB_MAJOR_VERSION}.${ENGITSDATALIB_MINOR_VERSION}.${ENGITSDATALIB_PATCH_VERSION})
 
+# If windows, use cmath constants and export all symbols
+if(WIN32)
+  add_definitions(-D_USE_MATH_DEFINES)
+  if(MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    set(BUILD_SHARED_LIBS ON)
+  endif(MSVC)
+endif(WIN32)
+
 # set include directory, add src directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -106,6 +115,11 @@ edl/varcontainer.cpp
 )
 
 ADD_LIBRARY(engitsdatalib SHARED ${engitsdatalib_SOURCES})
+
+if(WIN32 AND MSVC)
+  include(GenerateExportHeader)
+  generate_export_header(engitsdatalib)
+endif(WIN32 AND MSVC)
 
 SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES MACOSX_RPATH 1)
 SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES VERSION ${ENGITSDATALIB_VERSION})
