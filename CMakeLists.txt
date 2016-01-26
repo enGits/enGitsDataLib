@@ -15,7 +15,7 @@
 # +         is obtained from enGits GmbH.                                   +
 # +                                                                         +
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 
 # limit configuration types (must be done before project() statement)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited config" FORCE)
@@ -59,12 +59,14 @@ set(ENGITSDATALIB_MINOR_VERSION 1)
 set(ENGITSDATALIB_PATCH_VERSION 0)
 set(ENGITSDATALIB_VERSION ${ENGITSDATALIB_MAJOR_VERSION}.${ENGITSDATALIB_MINOR_VERSION}.${ENGITSDATALIB_PATCH_VERSION})
 
-# If windows, use cmath constants and export all symbols
+# If windows, use cmath
+# If Visual Studio, export all symbols for dlls and compile in parallel
 if(WIN32)
   add_definitions(-D_USE_MATH_DEFINES)
   if(MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     set(BUILD_SHARED_LIBS ON)
+    add_compile_options(/MP)
   endif(MSVC)
 endif(WIN32)
 
@@ -116,6 +118,7 @@ edl/varcontainer.cpp
 
 ADD_LIBRARY(engitsdatalib SHARED ${engitsdatalib_SOURCES})
 
+# If Visual Studio, generate export header to allow sharing of dll data..
 if(WIN32 AND MSVC)
   include(GenerateExportHeader)
   generate_export_header(engitsdatalib)
@@ -137,3 +140,6 @@ install(
   RUNTIME DESTINATION bin
 )
 install(FILES ${engitsdatalib_HEADERS} DESTINATION include/edl)
+if(WIN32 AND MSVC)
+  install(FILES ${PROJECT_BINARY_DIR}/engitsdatalib_export.h DESTINATION include/edl)
+endif(WIN32 AND MSVC)
