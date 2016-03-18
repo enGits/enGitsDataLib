@@ -69,8 +69,10 @@ include_directories(${QT_QTCORE_INCLUDE_DIR})
 
 SET(engitsdatalib_HEADERS
 edl/bmap.h
+edl/containertricks.h
 edl/edlerror.h
 edl/edl.h
+edl/geometrytools.h
 edl/interpolation.h
 edl/linsolve.h
 edl/list.h
@@ -100,6 +102,7 @@ SET(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
 ${engitsdatalib_HEADERS_MOC}
 edl/edlerror.cpp
+edl/geometrytools.cpp
 edl/list.cpp
 edl/sparsetwodimarray.cpp
 edl/varcontainer.cpp

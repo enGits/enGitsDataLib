@@ -81,6 +81,16 @@ public:
 
 };
 
+#define EDL_BUG \
+{ \
+  QString line; \
+  line.setNum(__LINE__); \
+  QString msg = "A problem occurred within enGitsDataLib"; \
+  msg += QString("\n\nfile: ") + __FILE__ + "\nline:" + line + "\n\n"; \
+  cerr << qPrintable(msg) << endl; \
+  throw EdlError(qPrintable(msg)); \
+};
+
 } // namespace
 
 
