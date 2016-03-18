@@ -111,6 +111,18 @@ namespace EDL_NAMESPACE
   }
 
 }
+
+#if defined(_MSC_VER) && (_MSC_VER < 1700) // less than Visual Studio 2012
+  inline int isnan(edl::real x)
+  {
+    return _isnan(x);
+  };
+  inline int isinf(edl::real x)
+  {
+    return !_finite(x);
+  };
+#endif
+
 Q_DECLARE_METATYPE(EDL_NAMESPACE::real)
 
 #endif
