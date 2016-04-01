@@ -270,7 +270,8 @@ void List::addClient (List *client_to_add, string link_name)
   client_to_add->m_LinkName = link_name;
 }
 
-void List::delClient (List *client_to_del) {
+void List::delClient (List *client_to_del)
+{
   if (this != m_Master) {
     cout << "fatal error trying to delete a client from a non master list!" << endl;
     exit(EXIT_FAILURE);
@@ -278,11 +279,17 @@ void List::delClient (List *client_to_del) {
   List **new_client;
   int off = 0;
   for (unsigned int i = 0; i < m_NumClients - off; i++) {
-    if (m_Client[i] == client_to_del) off += 1;
-    m_Client[i] = m_Client[i + off];
+    if (m_Client[i] == client_to_del) {
+      off += 1;
+    }
+    if (i < m_NumClients - off) {
+      m_Client[i] = m_Client[i + off];
+    }
   }
   new_client = new List* [m_NumClients - off];
-  for (unsigned int i = 0; i < m_NumClients- off; i++) new_client[i] = m_Client[i];
+  for (unsigned int i = 0; i < m_NumClients - off; i++) {
+    new_client[i] = m_Client[i];
+  }
   m_NumClients -= off;
   delete [] m_Client;
   m_Client = new_client;
