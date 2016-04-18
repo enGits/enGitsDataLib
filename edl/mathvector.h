@@ -32,6 +32,7 @@ template <class V> struct MathVector;
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <typeinfo>
 
 namespace EDL_NAMESPACE
 {
