@@ -61,7 +61,7 @@ protected:
 public:
 
   TMDimList(size_t a_max_num_entries, size_t a_delta_entries, TValue a_default_value, TIndex an_empty_index_value);
-  TMDimList(List *a_master, TValue a_default_value, TIndex an_empty_index_value, string link_name = "__none");
+  TMDimList(List *a_master, TValue a_default_value, TIndex an_empty_index_value, std::string link_name = "__none");
   virtual ~TMDimList();
 
   int lengthOfPointerField() const;
@@ -106,7 +106,7 @@ template<class TValue, class TIndex, int DIM, class MAP>
 TMDimList<TValue, TIndex, DIM, MAP>::TMDimList(List *a_master,
                                                TValue a_default_value,
                                                TIndex an_empty_index_value,
-                                               string link_name)
+                                               std::string link_name)
   : List(a_master, link_name)
 {
   int i;
@@ -354,7 +354,7 @@ template<class TValue, class TIndex, int DIM, class MAP>
 TValue* TMDimList<TValue, TIndex, DIM, MAP>::resolve(TMDimIndex<TIndex> I)
 {
   if (I.Dim() != DIM) {
-    cerr << "list and index dimension must be identical" <<  endl;
+    std::cerr << "list and index dimension must be identical" <<  std::endl;
     exit(EXIT_FAILURE);
   } else {
     return m_TotalIndex->at(I);

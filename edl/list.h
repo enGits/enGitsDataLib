@@ -47,8 +47,8 @@ namespace EDL_NAMESPACE
 struct NotFound_error : public EdlError
 {
   int code;
-  NotFound_error(string msg) : EdlError(msg) { code = 0; }
-  NotFound_error(string msg, int a_code)  : EdlError(msg) { code = a_code; }
+  NotFound_error(std::string msg) : EdlError(msg) { code = 0; }
+  NotFound_error(std::string msg, int a_code)  : EdlError(msg) { code = a_code; }
 };
 
 /// This exception will be thrown if 'mdebug' is enabled and an index is invalid.
@@ -127,7 +127,7 @@ private:
   QMutex m_Mutex;
 
   /// name of this list (for linked lists only)
-  string m_LinkName;
+  std::string m_LinkName;
 
   /// flag to determine if link names are required
   bool m_LinkNamesRequired;
@@ -155,7 +155,7 @@ protected:
    * add a new client if this is a master list.
    * @param client_to_add a pointer to the new client list
    */ 
-  void addClient (List *client_to_add, string link_name = "__none");
+  void addClient (List *client_to_add, std::string link_name = "__none");
   
   /** 
    * delete a client from this master.
@@ -275,7 +275,7 @@ public:
    * initializes it.
    * @param a_master the master List to link the new List to
    */
-  List (List* a_master, string link_name = "__none");
+  List (List* a_master, std::string link_name = "__none");
 
   /// copy constructor.
   List(const List &other);
@@ -423,7 +423,7 @@ public:
    * abort with an error message.
    * @param linked_list the List to link to
    */
-  void link (List *linked_list, string link_name = "__none");
+  void link (List *linked_list, std::string link_name = "__none");
 
   /**
    * copy an entry. 
@@ -442,7 +442,7 @@ public:
   void checkIndex(size_t i)
   {
     if (!isActive(i)) {
-      cerr << "index " << i << " is invalid" << endl;
+      std::cerr << "index " << i << " is invalid" << std::endl;
       throw InvalidIndex_error(i); 
     }
   }
@@ -467,7 +467,7 @@ public:
    * @brief Get the link name of this list.
    * @return the link name of this list.
    */
-  string linkName() { return m_LinkName; }
+  std::string linkName() { return m_LinkName; }
 
   /**
    * @brief Enforce the use of link names for this list.

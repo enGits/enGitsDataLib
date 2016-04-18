@@ -48,7 +48,7 @@ inline void MathVector<V>::operator= (const ParseNode<L,O,R> &expr)
 // MathVector<V> = vector<V::value_type>
 // -------------------------------------
 template <class V>
-inline void MathVector<V>::operator= (const vector<typename V::value_type> &v)
+inline void MathVector<V>::operator= (const std::vector<typename V::value_type> &v)
 {
   for (uint_t i = 0; i < this->size(); ++i) {
     (*this)[i] = v[i];
@@ -260,7 +260,7 @@ operator* (const ParseNode<L1,O1,R1> &a,
 // ostream << MathVector<V>
 // ------------------------
 template <class V>
-ostream& operator<<(ostream &s, const MathVector<V> &vec)
+std::ostream& operator<<(std::ostream &s, const MathVector<V> &vec)
 {
   //s << '(' << &vec << ',' << vec.size() << ')' << endl;
   s << '[';
@@ -275,7 +275,7 @@ ostream& operator<<(ostream &s, const MathVector<V> &vec)
 // ostream << ParseNode<L,O,R>
 // ---------------------------
 template <class L, class O, class R>
-ostream& operator<<(ostream &s, const ParseNode<L,O,R> &expr)
+std::ostream& operator<<(std::ostream &s, const ParseNode<L,O,R> &expr)
 {
   s << '[';
   for (uint_t i = 0; i < expr.size(); ++i) {

@@ -72,14 +72,14 @@ public:
    *         (only these two key-words allowed)
    *  @param col_vects an stl-type vector of double vectors
    */
-  SmallSquareMatrix<T,N>(string row_col_type, vector<svec_t*> col_vects);
+  SmallSquareMatrix<T,N>(std::string row_col_type, std::vector<svec_t*> col_vects);
 
   /** Constructor upon an open set of vectors containing doubles [T = double]
    *  @param row_col_type string indicating "row" or "column" type setting
    *         (only these two key-words allowed)
    *  @param col_vects an stl-type vector of double vectors
    */
-  SmallSquareMatrix<T,N>(string row_col_type, vector<rvec_t*> col_vects);
+  SmallSquareMatrix<T,N>(std::string row_col_type, std::vector<rvec_t*> col_vects);
 
   /** Set a row vector
    *  @param row the row number to be set
@@ -144,7 +144,7 @@ public:
     compare_det = pow(qdet, expo);
     //.... Compare the det^(1/N) with ele_max
     if(compare_det < safeLimit() * ele_max) {
-      cerr << "matrix appears to be singular within given precision" << endl;
+      std::cerr << "matrix appears to be singular within given precision" << std::endl;
       exit(EXIT_FAILURE);
     }
   }
@@ -257,7 +257,7 @@ inline T SmallSquareMatrix<T,N>::det()
   int n;
   n=N;
   int k,i,j;
-  vector<int> p(n);
+  std::vector<int> p(n);
   T q,s,max,h,det;
 
   det=1;
@@ -319,7 +319,7 @@ public:
     int n;
     n=N;
     int k,i,j,l;
-    vector<int> p(n);
+    std::vector<int> p(n);
     T q,s,max,h,det;
     T ele_max = 0;
       
@@ -506,19 +506,19 @@ typedef SmallSquareMatrix<double,4> mat4_t;
 typedef SmallSquareMatrix<double,5> mat5_t;
 
 template <class T, uint_t N>
-SmallSquareMatrix<T,N>::SmallSquareMatrix(string row_col_type,
-					  vector<svec_t*> col_vects)
+SmallSquareMatrix<T,N>::SmallSquareMatrix(std::string row_col_type,
+                                          std::vector<svec_t*> col_vects)
   : MathVector<StaticVector<double,N> >()
 {
   if(N < col_vects.size()) {
-    cout
+    std::cout
       << "SmallSquareMatrix<T,N>(string row_col_type, vector<SmallVector<T,N>*> col_vects)"
       << "\n"
-      << "too many input vectors" << endl;
+      << "too many input vectors" << std::endl;
   }
   uint_t direct_it = 0;
   if(row_col_type == "Column") {
-    for(typename vector<svec_t*>::iterator kk = col_vects.begin();
+    for(typename std::vector<svec_t*>::iterator kk = col_vects.begin();
 	kk != col_vects.end();
 	kk++)
       {
@@ -526,7 +526,7 @@ SmallSquareMatrix<T,N>::SmallSquareMatrix(string row_col_type,
 	direct_it++;
       }
   } else if(row_col_type == "Row") {
-    for(typename vector<svec_t*>::iterator kk = col_vects.begin();
+    for(typename std::vector<svec_t*>::iterator kk = col_vects.begin();
 	kk != col_vects.end();
 	kk++)
       {
@@ -534,29 +534,29 @@ SmallSquareMatrix<T,N>::SmallSquareMatrix(string row_col_type,
 	direct_it++;
       }
   } else {
-    cout
+    std::cout
       << "SmallSquareMatrix<T,N>(string row_col_type, uint_t num_smvects, ...)"
       << "\n"
-      << "Only Row or Column allowed as first argument" << endl;
+      << "Only Row or Column allowed as first argument" << std::endl;
     exit(EXIT_FAILURE);
   }
   prec_safe = false;
 }
 
 template <class T, uint_t N>
-SmallSquareMatrix<T,N>::SmallSquareMatrix(string row_col_type,
-					  vector<rvec_t*> col_vects)
+SmallSquareMatrix<T,N>::SmallSquareMatrix(std::string row_col_type,
+                                          std::vector<rvec_t*> col_vects)
   : MathVector<StaticVector<MathVector<StaticVector<double,N> >,N> >()
 {
   if(N < col_vects.size()) {
-    cout
+    std::cout
       << "SmallSquareMatrix<real,N>(string row_col_type, vector<rvec_t*> col_vects)"
       << "\n"
-      << "too many input vectors" << endl;
+      << "too many input vectors" << std::endl;
   }
   uint_t direct_it = 0;
   if(row_col_type == "Column") {
-    for(typename vector<rvec_t*>::iterator kk = col_vects.begin();
+    for(typename std::vector<rvec_t*>::iterator kk = col_vects.begin();
 	kk != col_vects.end();
 	kk++)
       {
@@ -564,7 +564,7 @@ SmallSquareMatrix<T,N>::SmallSquareMatrix(string row_col_type,
 	direct_it++;
       }
   } else if(row_col_type == "Row") {
-    for(typename vector<rvec_t*>::iterator kk = col_vects.begin();
+    for(typename std::vector<rvec_t*>::iterator kk = col_vects.begin();
 	kk != col_vects.end();
 	kk++)
       {
@@ -572,10 +572,10 @@ SmallSquareMatrix<T,N>::SmallSquareMatrix(string row_col_type,
 	direct_it++;
       }
   } else {
-    cout
+    std::cout
       <<  "SmallSquareMatrix<real,N>(string row_col_type, vector<rvec_t*> col_vects)"
       << "\n"
-      << "Only Row or Column allowed as first argument" << endl;
+      << "Only Row or Column allowed as first argument" << std::endl;
     exit(EXIT_FAILURE);
   }
   prec_safe = false;

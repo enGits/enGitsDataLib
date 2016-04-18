@@ -33,8 +33,6 @@ template <class V> struct MathVector;
 #include <vector>
 #include <cmath>
 
-using namespace std;
-
 namespace EDL_NAMESPACE
 {
 
@@ -74,7 +72,7 @@ struct MathVector : public V
   // ---------
   void operator=  (const MathVector<V> &vec);
   //void operator=  (MathVector<V> &vec);
-  void operator=  (const vector<typename V::value_type> &vec);
+  void operator=  (const std::vector<typename V::value_type> &vec);
   void operator-= (const MathVector<V> &vec); 
   void operator+= (const MathVector<V> &vec);
   void operator*= (const scalar_t s);
@@ -105,7 +103,7 @@ struct MathVector : public V
     uint_t i;
 
   public:
-    typedef random_access_iterator_tag iterator_category;
+    typedef std::random_access_iterator_tag iterator_category;
     typedef typename V::value_type value_type;
     typedef uint_t difference_type;
     typedef value_type* pointer;
@@ -133,34 +131,34 @@ struct MathVector : public V
     uint_t i;
 
   public:
-    typedef random_access_iterator_tag iterator_category;
+    typedef std::random_access_iterator_tag iterator_category;
     typedef typename V::value_type value_type;
     typedef uint_t difference_type;
     typedef value_type* pointer;
     typedef value_type& reference;
 
-    const_iterator(MathVector<V> *a_vec = NULL, uint_t an_i = 0) : vec(a_vec), i(an_i) {};
-    const_iterator(const iterator &iter) : vec(iter.vec), i(iter.i) {};
-    void operator=(const iterator &iter) { vec = iter.vec; i = iter.i; };
-    bool operator==(const const_iterator &iter) const { return (iter.vec == vec) && (iter.i == i); };
+    const_iterator(MathVector<V> *a_vec = NULL, uint_t an_i = 0) : vec(a_vec), i(an_i) {}
+    const_iterator(const iterator &iter) : vec(iter.vec), i(iter.i) {}
+    void operator=(const iterator &iter) { vec = iter.vec; i = iter.i; }
+    bool operator==(const const_iterator &iter) const { return (iter.vec == vec) && (iter.i == i); }
     bool operator==(const iterator &iter) const;
-    bool operator!=(const iterator &iter) const { return !operator==(iter); };
-    const_iterator operator++() { ++i; return iterator(vec,i); };
-    const_iterator operator++(int) { uint_t j = i; ++i; return iterator(vec,j); };
-    const_iterator operator--() { --i; return iterator(vec,i); };
-    const_iterator operator--(int) { uint_t j = i; --i; return iterator(vec,j); };
-    void operator+=(uint_t n) { i += n; };
-    void operator-=(uint_t n) { i -= n; };
-    scalar_t operator*() const { return (*vec)[i]; };
-    scalar_t operator[](uint_t n) const { return (*vec)[i+n]; };
-    bool operator<(const iterator &iter) const { return i < iter.i; };
-    uint_t operator-(const iterator &iter) const { return i - iter.i; };
+    bool operator!=(const iterator &iter) const { return !operator==(iter); }
+    const_iterator operator++() { ++i; return iterator(vec,i); }
+    const_iterator operator++(int) { uint_t j = i; ++i; return iterator(vec,j); }
+    const_iterator operator--() { --i; return iterator(vec,i); }
+    const_iterator operator--(int) { uint_t j = i; --i; return iterator(vec,j); }
+    void operator+=(uint_t n) { i += n; }
+    void operator-=(uint_t n) { i -= n; }
+    scalar_t operator*() const { return (*vec)[i]; }
+    scalar_t operator[](uint_t n) const { return (*vec)[i+n]; }
+    bool operator<(const iterator &iter) const { return i < iter.i; }
+    uint_t operator-(const iterator &iter) const { return i - iter.i; }
   };
 
-  iterator       begin()       { return iterator(this); };
-  iterator       end()         { return iterator(this,this->size()); };
-  const_iterator begin() const { return iterator(this); };
-  const_iterator end()   const { return iterator(this,this->size()); };
+  iterator       begin()       { return iterator(this); }
+  iterator       end()         { return iterator(this,this->size()); }
+  const_iterator begin() const { return iterator(this); }
+  const_iterator end()   const { return iterator(this,this->size()); }
 };
 
 
@@ -181,11 +179,11 @@ protected:
   T VALUE[DIM];
 
 public:
-  StaticVector() { };
-  T& operator[](const uint_t &i) { return VALUE[i]; };
-  T operator[](const uint_t &i) const { return VALUE[i]; };
-  uint_t size() const { return DIM; };
-  T* data() { return VALUE; };
+  StaticVector() {}
+  T& operator[](const uint_t &i) { return VALUE[i]; }
+  T operator[](const uint_t &i) const { return VALUE[i]; }
+  uint_t size() const { return DIM; }
+  T* data() { return VALUE; }
 };
 
 

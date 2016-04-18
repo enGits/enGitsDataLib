@@ -53,7 +53,7 @@ class VarContainer : public List
 {
 public:
 
-  typedef BMap<real, string, 2> map_t;
+  typedef BMap<real, std::string, 2> map_t;
 
   /**
    * This is an automatically updated one dimensional variable, where the index
@@ -70,7 +70,7 @@ public:
    * pointer would be used. The programmer does not have to take care about
    * updating it if the underlaying list expands or shrinks. 
    */
-  typedef TSDimVar<real, string, 2, map_t> var1_t;
+  typedef TSDimVar<real, std::string, 2, map_t> var1_t;
 
   /**
    * This is similiar to var1_t, but in this case representing
@@ -99,7 +99,7 @@ public:
    * </pre>
    * (see also var1_t) 
    */
-  typedef TMDimVar<real, string, 2, map_t, var1_t> var2_t;
+  typedef TMDimVar<real, std::string, 2, map_t, var1_t> var2_t;
 
 #ifdef WITH_VAR3
   /** 
@@ -113,27 +113,27 @@ public:
    * reference to all fields and variables of the VarContainer *VC.<br>
    * (see also var1_t and var2_t) 
    */
-  typedef TMDimVar<real, string, 2, map_t, var2_t> var3_t;
+  typedef TMDimVar<real, std::string, 2, map_t, var2_t> var3_t;
 #endif
   
 
 protected:
 
-  TMDimList<real, string, 2, map_t> *m_VarList;
+  TMDimList<real, std::string, 2, map_t> *m_VarList;
   
 
 public:
 
   VarContainer(bool init_list = true);
-  VarContainer(List* a_master, string link_name = "__none");
+  VarContainer(List* a_master, std::string link_name = "__none");
   virtual ~VarContainer();
-  void init(List* a_master, string link_name = "__none");
+  void init(List* a_master, std::string link_name = "__none");
 
   /** 
      Add a variable entry. (2.index) to the container. 
      @param var_name the name of the new variable
   */
-  void addVar(string var_name)
+  void addVar(std::string var_name)
   {
     if (!m_VarList->indexExists(1, var_name)) m_VarList->addIndex(1, var_name);
   }
@@ -142,7 +142,7 @@ public:
      Add a field entry. (1.index) to the container. 
      @param field_name the name of the new field
   */
-  void addField(string field_name)
+  void addField(std::string field_name)
   {
     if (!m_VarList->indexExists(0, field_name)) m_VarList->addIndex(0, field_name);
   }
@@ -158,14 +158,14 @@ public:
      @param i the number of the variable
      @return the name of the variable
   */ 
-  string varName(int i) { return m_VarList->subIndex(1, i); }
+  std::string varName(int i) { return m_VarList->subIndex(1, i); }
 
   /**
    * get the index of a variable.
    * @param name the name of the variable
    * @return the index of the variable
    */
-  size_t varIndex(string var_name);
+  size_t varIndex(std::string var_name);
 
   /** 
      Get the number of fields
@@ -178,14 +178,14 @@ public:
    * @param i the number of the field
    * @return the name of the field
    */
-  string fieldName(size_t i) { return m_VarList->subIndex(0, i); }
+  std::string fieldName(size_t i) { return m_VarList->subIndex(0, i); }
 
   /**
      Find out if a field is defined or not.
      @param field_name the name of the field to check
      @return true if this field exists
    */ 
-  bool fieldDefined(string field_name);
+  bool fieldDefined(std::string field_name);
 
   /**
      add new empty entries.
@@ -206,13 +206,13 @@ public:
        @param i the field name of the variable
        @param j the variable name
        @return the one dimensional variable */ 
-  var1_t get1DVar(string i, string j);
+  var1_t get1DVar(std::string i, std::string j);
 
   /**  Get a two dimensional variable.\\
        (see also the documentation for var2_t)
        @param i the field name of the variable
        @return the two dimensional variable */ 
-  var2_t get2DVar(string i);
+  var2_t get2DVar(std::string i);
 
 #ifdef WITH_VAR3
   /**  Get a three dimensional variable.\\

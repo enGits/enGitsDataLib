@@ -122,7 +122,7 @@ void TSDimVar<TValue, TIndex, DIM, MAP>::operator=
 template<class TValue, class TIndex, int DIM, class MAP>
 void TSDimVar<TValue, TIndex, DIM, MAP>::print()
 {
-  cout << TMappedVar<TValue, TIndex, DIM, MAP>::m_Index;
+  std::cout << TMappedVar<TValue, TIndex, DIM, MAP>::m_Index;
 }
   
 } // namespace

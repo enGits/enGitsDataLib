@@ -102,7 +102,7 @@ public:
    * @param a_master a master for this List.
    * @param a_default_value the initial value for new entries 
    */
-  TList(List *a_master, T a_default_value = T(), string link_name = "__none");
+  TList(List *a_master, T a_default_value = T(), std::string link_name = "__none");
 
   TList(const TList<T> &other, const T a_default_value = T());
   
@@ -220,7 +220,7 @@ public:
   /** Output operator.
    */ 
   template <class aT> 
-  friend ostream& operator<<(ostream &s, const TList<aT> &tlist);
+  friend std::ostream& operator<<(std::ostream &s, const TList<aT> &tlist);
 
 
   // =====================================
@@ -375,7 +375,7 @@ TList<T>::TList (size_t a_max_num_entries, size_t a_delta_entries, T a_default_v
 }
 
 template <class T>
-TList<T>::TList (List *a_master, T a_default_value, string link_name) : List (a_master, link_name)
+TList<T>::TList (List *a_master, T a_default_value, std::string link_name) : List (a_master, link_name)
 {
   size_t mne = maxNumEntries();
   m_Value = new T [mne];
@@ -448,7 +448,7 @@ size_t TList<T>::findItem (T item)
       return i;
     }
   }
-  string msg = "TList::FindItem\n";
+  std::string msg = "TList::FindItem\n";
   msg += typeid(*this).name();
   throw NotFound_error(msg);
 }
@@ -475,7 +475,7 @@ bool TList<T>::has(T item)
 }
 
 template <class T>
-ostream& operator<<(ostream &s, const TList<T> &tlist)
+std::ostream& operator<<(std::ostream &s, const TList<T> &tlist)
 {
   s << '[';
   FORALL(i, tlist.) {
@@ -524,7 +524,7 @@ template <class T>
 void TList<T>::fromPartialBuffer(size_t i, QByteArray buffer)
 {
   if (buffer.length() != sizeof(T)) {
-    cerr << "data corrupted in buffer" << endl;
+    std::cerr << "data corrupted in buffer" << std::endl;
     exit(EXIT_FAILURE);
   }
   m_Value[i] = *((T*) buffer.data());

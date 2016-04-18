@@ -27,7 +27,7 @@
 namespace EDL_NAMESPACE
 {
 
-EdlError::EdlError(string message)
+EdlError::EdlError(std::string message)
 {
   m_Message = message;
   setName();
@@ -37,7 +37,7 @@ EdlError::~EdlError()
 {
 }
 
-string EdlError::name()
+std::string EdlError::name()
 {
   return m_Name;
 }

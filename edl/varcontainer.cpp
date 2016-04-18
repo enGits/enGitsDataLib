@@ -30,13 +30,13 @@ VarContainer::VarContainer(bool init_list)
 {
   if (init_list) {
     initList(100, 100);
-    m_VarList = new TMDimList<real, string, 2, map_t>(this, 0.0, "");
+    m_VarList = new TMDimList<real, std::string, 2, map_t>(this, 0.0, "");
   } else {
     m_VarList = NULL;
   }
 }
 
-VarContainer::VarContainer(List *a_master, string link_name)
+VarContainer::VarContainer(List *a_master, std::string link_name)
 {
   init(a_master, link_name);
 }
@@ -46,23 +46,23 @@ VarContainer::~VarContainer()
   delete m_VarList;
 }
 
-void VarContainer::init(List *a_master, string link_name)
+void VarContainer::init(List *a_master, std::string link_name)
 {
   link(a_master, link_name);
-  string var_list_link_name = link_name + "_varlist";
-  m_VarList = new TMDimList<real, string, 2, map_t>(a_master, 0.0, "", var_list_link_name);
+  std::string var_list_link_name = link_name + "_varlist";
+  m_VarList = new TMDimList<real, std::string, 2, map_t>(a_master, 0.0, "", var_list_link_name);
 }
 
 void VarContainer::reset()
 {
   List *master = m_VarList->master();
   delete m_VarList;
-  m_VarList = new TMDimList<real, string, 2, map_t>(master, 0.0, "");
+  m_VarList = new TMDimList<real, std::string, 2, map_t>(master, 0.0, "");
 }
   
-VarContainer::var1_t VarContainer::get1DVar(string i, string j)
+VarContainer::var1_t VarContainer::get1DVar(std::string i, std::string j)
 {
-  TMDimIndex<string> I(i);
+  TMDimIndex<std::string> I(i);
   I = I + j;
   var1_t var;
   try { 
@@ -70,7 +70,7 @@ VarContainer::var1_t VarContainer::get1DVar(string i, string j)
     return var;
   }
   catch (NotFound_error) { 
-    string msg;
+    std::string msg;
     StringTools::toString(I,msg);
     msg = "unkown index '" + msg + "'";
     throw EdlError(msg);
@@ -78,16 +78,16 @@ VarContainer::var1_t VarContainer::get1DVar(string i, string j)
   return var;
 }
 
-VarContainer::var2_t VarContainer::get2DVar(string i)
+VarContainer::var2_t VarContainer::get2DVar(std::string i)
 {
-  TMDimIndex<string> I(i);
+  TMDimIndex<std::string> I(i);
   var2_t var;
   try { 
     var = var2_t(m_VarList, I);
     return var;
   }
   catch (NotFound_error) { 
-    string msg;
+    std::string msg;
     StringTools::toString(I,msg);
     msg = "unkown index '" + msg + "'";
     throw EdlError(msg);
@@ -98,14 +98,14 @@ VarContainer::var2_t VarContainer::get2DVar(string i)
 #ifdef WITH_VAR3
 VarContainer::var3_t VarContainer::get3DVar()
 {
-  TMDimIndex<string> I;
+  TMDimIndex<std::string> I;
   var3_t var;
   try { 
     var = var3_t(m_VarList, I);
     return var;
   }
   catch (NotFound_error) { 
-    string msg;
+    std::string msg;
     StringTools::toString(I,msg);
     msg = "unkown index '" + msg + "'";
     throw EdlError(msg);
@@ -114,7 +114,7 @@ VarContainer::var3_t VarContainer::get3DVar()
 }
 #endif
 
-bool VarContainer::fieldDefined(string field_name)
+bool VarContainer::fieldDefined(std::string field_name)
 {
   bool ok = false;
   for (size_t i = 0; i < m_VarList->numSubIndices(0); i++) {
@@ -123,7 +123,7 @@ bool VarContainer::fieldDefined(string field_name)
   return ok;
 }
 
-size_t VarContainer::varIndex(string var_name)
+size_t VarContainer::varIndex(std::string var_name)
 {
   for (int i = 0; i < numVars(); ++i) {
     if (varName(i) == var_name) return i;

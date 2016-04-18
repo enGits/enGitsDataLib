@@ -113,7 +113,7 @@ List::List(size_t a_max_num_entries, size_t a_delta_entries)
   m_LinkLocked = false;
 }
 
-List::List(List *linked_list, string link_name)
+List::List(List *linked_list, std::string link_name)
 {
   m_Client = NULL;
   initialized = false;
@@ -143,7 +143,7 @@ List::List(const List &other)
 void List::operator=(const List &other)
 {
   if (initialized) {
-    cerr << "fatal error: operator=() can only be udes for uninitialized Lists." << endl;
+    std::cerr << "fatal error: operator=() can only be udes for uninitialized Lists." << std::endl;
     exit(EXIT_FAILURE);
   }
   if (other.m_Master == &other) m_Master = this;
@@ -169,11 +169,11 @@ void List::operator=(const List &other)
 void List::linkNamesOn(bool check_for_existing)
 {
   if (this != m_Master) {
-    cout << "'linkNammesOn() cannot be called for a 'List' which is already linked to another 'List'!" << endl;
+    std::cout << "'linkNammesOn() cannot be called for a 'List' which is already linked to another 'List'!" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (m_NumClients > 0 && check_for_existing) {
-    cout << "'This 'List' already has some link clients!" << endl;
+    std::cout << "'This 'List' already has some link clients!" << std::endl;
     exit(EXIT_FAILURE);
   }
   m_LinkNamesRequired = true;
@@ -182,7 +182,7 @@ void List::linkNamesOn(bool check_for_existing)
 void List::linkNamesOff()
 {
   if (this != m_Master) {
-    cout << "'linkNammesOff() cannot be called for a 'List' which is already linked to another 'List'!" << endl;
+    std::cout << "'linkNammesOff() cannot be called for a 'List' which is already linked to another 'List'!" << std::endl;
     exit(EXIT_FAILURE);
   }
   m_LinkNamesRequired = false;
@@ -206,25 +206,25 @@ void List::unlockLinking()
   }
 }
 
-void List::link (List *linked_list, string link_name)
+void List::link (List *linked_list, std::string link_name)
 {
   if (this != m_Master) {
-    cout << "This 'List' is already linked to another 'List'!" << endl;
+    std::cout << "This 'List' is already linked to another 'List'!" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (linked_list->m_LinkLocked) {
-    cout << "The 'List' has been locked for linking!" << endl;
+    std::cout << "The 'List' has been locked for linking!" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (m_NumClients != 0) {
-    cout << "This 'List' is already a master for someone!" << endl;
+    std::cout << "This 'List' is already a master for someone!" << std::endl;
     exit(EXIT_FAILURE);
   }
   m_Client = NULL;
   m_Master = linked_list->m_Master;
   if (master()->m_LinkNamesRequired) {
     if (link_name == "__none") {
-      cout << "This 'List' requires link names!" << endl;
+      std::cout << "This 'List' requires link names!" << std::endl;
       exit(EXIT_FAILURE);
     }
   }
@@ -242,20 +242,20 @@ void List::link (List *linked_list, string link_name)
   m_Master->addClient(this, link_name);
 }
 
-void List::addClient (List *client_to_add, string link_name)
+void List::addClient (List *client_to_add, std::string link_name)
 {
   if (this != m_Master) {
-    cout << "fatal error trying to link to a non master list!" << endl;
+    std::cout << "fatal error trying to link to a non master list!" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (m_LinkNamesRequired && link_name == "__none") {
-    cout << "This 'List' requires link names!" << endl;
+    std::cout << "This 'List' requires link names!" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (m_LinkNamesRequired && link_name != "__tmp") {
     for (size_t i = 0; i < m_NumClients; ++i) {
       if (m_Master->m_Client[i]->linkName() == link_name) {
-        cout << "The name \"" << link_name.c_str() << "\" exists already in the ensemble of linked lists!" << endl;
+        std::cout << "The name \"" << link_name.c_str() << "\" exists already in the ensemble of linked lists!" << std::endl;
         exit(EXIT_FAILURE);
       }
     }
@@ -273,7 +273,7 @@ void List::addClient (List *client_to_add, string link_name)
 void List::delClient (List *client_to_del)
 {
   if (this != m_Master) {
-    cout << "fatal error trying to delete a client from a non master list!" << endl;
+    std::cout << "fatal error trying to delete a client from a non master list!" << std::endl;
     exit(EXIT_FAILURE);
   }
   List **new_client;
@@ -327,7 +327,7 @@ size_t List::numActiveEntries () const
 void List::extendList (size_t delta)
 {
   if (this != m_Master) {
-    cout << "fatal error in ExtendList this != master." << endl;
+    std::cout << "fatal error in ExtendList this != master." << std::endl;
     exit(EXIT_FAILURE);
   }
   //cout << "void List::ExtendList(" << delta << ")" << endl;
@@ -392,8 +392,8 @@ void List::createOffsetList () {
 
 size_t List::offset (size_t i_entry) {
   if (m_Master->m_Offset == NULL) {
-    cerr << "error: no offset information available" << endl;
-    cerr << "       at this point in the program\n" << endl;
+    std::cerr << "error: no offset information available" << std::endl;
+    std::cerr << "       at this point in the program\n" << std::endl;
     exit (EXIT_FAILURE);
   } else {
     return m_Master->m_Offset[i_entry];
@@ -455,7 +455,7 @@ void List::cleanUp () {
 void List::setDelta(size_t new_delta)
 {
   if (this != m_Master) {
-    cerr << "cannot modify the delta value for client lists" << endl;
+    std::cerr << "cannot modify the delta value for client lists" << std::endl;
     exit(EXIT_FAILURE);
   }
   m_DeltaEntries = new_delta;

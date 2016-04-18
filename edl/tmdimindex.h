@@ -34,8 +34,6 @@ template <class TIndex> class TMDimIndex;
 namespace EDL_NAMESPACE
 {
 
-using namespace std;
-
 /**
  * a multidimensional symbolic index.
  */
@@ -62,10 +60,10 @@ public:
   TIndex operator[](int i) const { return I[i]; }
   int Dim() const { return dim; }
   template<class aTIndex>
-  friend ostream& operator<< (ostream& s, const TMDimIndex<aTIndex>& I);
+  friend std::ostream& operator<< (std::ostream& s, const TMDimIndex<aTIndex>& I);
 };
 
-template<class TIndex> ostream& operator<< (ostream& s, const TMDimIndex<TIndex>& I);
+template<class TIndex> std::ostream& operator<< (std::ostream& s, const TMDimIndex<TIndex>& I);
 
 
 //
@@ -143,9 +141,9 @@ void TMDimIndex<TIndex>::operator=(TIndex item)
 //.. operator<<
 //
 template<class TIndex>
-ostream& operator<<(ostream &s, const TMDimIndex<TIndex> &I)
+std::ostream& operator<<(std::ostream &s, const TMDimIndex<TIndex> &I)
 {
-  string sep = "";
+  std::string sep = "";
   s << "(";
   for (int i = 0; i < I.Dim(); i++) {
     if (i == 1) sep = ",";

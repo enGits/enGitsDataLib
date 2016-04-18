@@ -196,7 +196,7 @@ public:
   /** Link to an existing master SparseTwoDimArray and initialise it.
    *  @param a_master_array the master SparseTwoDimArray to link the SparseTwoDimArray to
    */
-  void linkSparseTwoDimArray(SparseTwoDimArray *a_master_array, string link_name);
+  void linkSparseTwoDimArray(SparseTwoDimArray *a_master_array, std::string link_name);
 
   /** Get the number of entries in the second dimension.
    *  @param i the index in the first dimension

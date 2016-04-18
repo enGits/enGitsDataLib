@@ -84,7 +84,7 @@ TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::TMDimVar
 {
   // check if index is legal
   if (TMappedVar<TValue, TIndex, DIM, MAP>::m_Index.Dim() > DIM) {
-    cerr << "illegal index dimension for TMDimVar" << endl;
+    std::cerr << "illegal index dimension for TMDimVar" << std::endl;
     exit(EXIT_FAILURE);
   };
   m_Value = NULL;
@@ -146,12 +146,12 @@ void TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE>::print()
 {
   int level = TMappedVar<TValue, TIndex, DIM, MAP>::m_Index.Dim();
   int N = TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList->numSubIndices(level);
-  cout << "[" << TMappedVar<TValue, TIndex, DIM, MAP>::m_Index << "->";
+  std::cout << "[" << TMappedVar<TValue, TIndex, DIM, MAP>::m_Index << "->";
   for(int i = 0; i < N; i++) {
-    if (i != 0) cout << ",";
+    if (i != 0) std::cout << ",";
     m_Value[i].print();
   }
-  cout << "]";
+  std::cout << "]";
 }
 
   

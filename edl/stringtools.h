@@ -31,22 +31,20 @@
 #include <iostream>
 #include <algorithm>
 
-using namespace std;
-
 namespace EDL_NAMESPACE
 {
 
 namespace StringTools
 {
   /**
-   * convert a string into another type.
+   * convert a std::string into another type.
    * <b>Attention</b> this method only works for a type <i>T</i> for
    * which an input operator <i>operator>></i>exists.
-   * @param s the string to convert
+   * @param s the std::string to convert
    * @param t a variable which will contain the converted value
    * @return true if the operation succeeded
    */
-  template <class T> bool stringTo(string s, T &t);
+  template <class T> bool stringTo(std::string s, T &t);
 
   /**
    * convert another type into a string.
@@ -55,7 +53,7 @@ namespace StringTools
    * @param t the variable to convert
    * @param s the resulting string
    */
-  template <class T> void toString(T t, string &s);
+  template <class T> void toString(T t, std::string &s);
 
   /**
    * convert another type into a string.
@@ -64,41 +62,41 @@ namespace StringTools
    * @param t the variable to convert
    * @return the resulting string
    */
-  template <class T> string toString(T t, int fill = 0);
+  template <class T> std::string toString(T t, int fill = 0);
 
   /**
    * replace a character with a different one.
    * @param s the source string
    * @param c_orig the character to replace
    * @param c_new the new character
-   * return a string with the replaced characters
+   * return a std::string with the replaced characters
    */
-  string replace(string s, char c_orig, char c_new);
+  std::string replace(std::string s, char c_orig, char c_new);
 
   /**
-   * append a character to the left side of a string until a given length has been reached.
+   * append a character to the left side of a std::string until a given length has been reached.
    * @param s the source string
    * @param c the character to append
    * @param l the desired length
    * @return the filled string
    */
-  string leftFill(string s, char c, size_t l);
+  std::string leftFill(std::string s, char c, size_t l);
 
   /**
-   * append a character to the right side of a string until a given length has been reached.
+   * append a character to the right side of a std::string until a given length has been reached.
    * @param s the source string
    * @param c the character to append
    * @param l the desired length
    * @return the filled string
    */
-  string rightFill(string s, char c, size_t l);
+  std::string rightFill(std::string s, char c, size_t l);
 
   /**
    * read an entire line from an input stream
    * @param s the stream to read from
    * @return the line read
    */
-  string readLine(istream &s);
+  std::string readLine(std::istream &s);
 
   /**
    * extract a part of a string.
@@ -107,7 +105,7 @@ namespace StringTools
    * @param i2 index of the last character of the intended sub-string
    * @return the sub-string
    */
-  string subString(string s, size_t i1, size_t i2);
+  std::string subString(std::string s, size_t i1, size_t i2);
 
   /**
    * extract a part at the end of a string.
@@ -115,7 +113,7 @@ namespace StringTools
    * @param n number of characters of the intended sub-string
    * @return the sub-string
    */
-  string right(string s, size_t n);
+  std::string right(std::string s, size_t n);
 
   /**
    * extract a part at the beginning of a string.
@@ -123,58 +121,58 @@ namespace StringTools
    * @param n number of characters of the intended sub-string
    * @return the sub-string
    */
-  string left(string s, size_t n);
+  std::string left(std::string s, size_t n);
 
   /**
-   * split a string into several strings.
-   * @param s the string to be split
+   * split a std::string into several strings.
+   * @param s the std::string to be split
    * @param sub the list which the sub strings will be appeneded to
    * @param c the dividing character
    * @return the number of sub strings
    */
-  int split(string s, list<string> &sub, char c = ' ');
+  int split(std::string s, std::list<std::string> &sub, char c = ' ');
 
   /**
-   * split a string into several strings.
-   * @param s the string to be split
+   * split a std::string into several strings.
+   * @param s the std::string to be split
    * @param sub the vector which will contain the sub strings
    * @param c the dividing character
    * @return the number of sub strings
    */
-  int split(string s, vector<string> &sub, char c = ' ');
+  int split(std::string s, std::vector<std::string> &sub, char c = ' ');
 
   template <class T>
-  bool stringTo(string s, T &t)
+  bool stringTo(std::string s, T &t)
   {
     s += " -";
-    istringstream stream(s);
+    std::istringstream stream(s);
     stream >> t;
     return stream.good();
   }
   
   template <class T>
-  void toString(T t, string &s)
+  void toString(T t, std::string &s)
   {
-    ostringstream stream;
+    std::ostringstream stream;
     stream << t;
     s = stream.str();
   }
   
   template <class T>
-  string toString(T t, int fill)
+  std::string toString(T t, int fill)
   {
-    ostringstream stream;
+    std::ostringstream stream;
     stream << t;
-    string s = stream.str();
+    std::string s = stream.str();
     if      (fill < 0) s = leftFill(s,' ',-fill);
     else if (fill > 0) s = rightFill(s,' ',fill);
     return s;
   }
   
-  inline string replace(string s, char c_orig, char c_new)
+  inline std::string replace(std::string s, char c_orig, char c_new)
   {
-    string s_new = "";
-    string::iterator i = s.begin();
+    std::string s_new = "";
+    std::string::iterator i = s.begin();
     while (i != s.end()) {
       if (*i == c_orig) s_new += c_new;
       else s_new += *i;
@@ -183,9 +181,9 @@ namespace StringTools
     return s_new;
   }
   
-  inline string readLine(istream &s)
+  inline std::string readLine(std::istream &s)
   {
-    string line = "";
+    std::string line = "";
     bool done = false;
     do {
       char c;
@@ -200,9 +198,9 @@ namespace StringTools
     return line;
   }
   
-  inline string subString(string s, size_t i1, size_t i2)
+  inline std::string subString(std::string s, size_t i1, size_t i2)
   {
-    string sub = "";
+    std::string sub = "";
     size_t i = i1;
     while ((i <= i2) && (i < s.size())) {
       sub += s[i];
@@ -211,7 +209,7 @@ namespace StringTools
     return sub;
   }
 
-  inline string leftFill(string s, char c, size_t l)
+  inline std::string leftFill(std::string s, char c, size_t l)
   { 
     while (s.size() < l) {
       s = c + s;
@@ -219,7 +217,7 @@ namespace StringTools
     return s; 
   };
 
-  inline string rightFill(string s, char c, size_t l)
+  inline std::string rightFill(std::string s, char c, size_t l)
   {
     while (s.size() < l) {
       s = s + c;
@@ -227,19 +225,19 @@ namespace StringTools
     return s; 
   }
 
-  inline string right(string s, size_t n)
+  inline std::string right(std::string s, size_t n)
   {
     return subString(s,s.size()-n-1,s.size()-1);
   }
 
-  inline string left(string s, size_t n)
+  inline std::string left(std::string s, size_t n)
   {
     return subString(s,0,n-1);
   }
 
-  inline int split(string s, list<string> &sub, char c)
+  inline int split(std::string s, std::list<std::string> &sub, char c)
   {
-    string word = "";
+    std::string word = "";
     bool first = true;
     int N = 0;
     for (size_t i = 0; i < s.size(); ++i) {
@@ -262,9 +260,9 @@ namespace StringTools
     return N;
   }
 
-  inline int split(string s, vector<string> &sub, char c)
+  inline int split(std::string s, std::vector<std::string> &sub, char c)
   {
-    list<string> l;
+    std::list<std::string> l;
     int N = split(s,l,c);
     sub.resize(N);
     copy(l.begin(),l.end(),sub.begin());

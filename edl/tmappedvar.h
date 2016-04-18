@@ -81,7 +81,7 @@ TMappedVar<TValue, TIndex, DIM, MAP>::~TMappedVar()
       size_t i = m_MDimList->m_MappedVars->findItem(this);
       m_MDimList->m_MappedVars->delEntry(i);
     } catch (NotFound_error) {
-      cerr << "error in TMappedVar logic" << endl;
+      std::cerr << "error in TMappedVar logic" << std::endl;
       exit(EXIT_FAILURE);
     }
   }
@@ -96,7 +96,7 @@ void TMappedVar<TValue, TIndex, DIM, MAP>::operator=
       size_t i = m_MDimList->m_MappedVars->findItem(this);
       m_MDimList->m_MappedVars->delEntry(i);
     } catch (NotFound_error) {
-      cerr << "error in TMappedVar logic" << endl;
+      std::cerr << "error in TMappedVar logic" << std::endl;
       exit(EXIT_FAILURE);
     }
   }

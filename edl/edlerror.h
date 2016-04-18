@@ -38,19 +38,17 @@ class EdlError;
 namespace EDL_NAMESPACE
 {
 
-using namespace std;
-
 /** base class for exceptions.
  */
 class EdlError
 {
   /** the name of the exception. 
    */
-  string m_Name;
+  std::string m_Name;
 
   /** a message to print if the exception is not caught.
    */
-  string m_Message;
+  std::string m_Message;
 
 protected:
 
@@ -63,7 +61,7 @@ public:
 
   /** constructor.
    */
-  EdlError(string message);
+  EdlError(std::string message);
 
   /** destructor.
    */
@@ -72,12 +70,12 @@ public:
   /** get the name of this exception.
    *  @return the name of the exception
    */
-  string name();
+  std::string name();
 
   /** get the message of the exception.
    *  @return the message
    */
-  string message() { return m_Message; }
+  std::string message() { return m_Message; }
 
 };
 
@@ -87,7 +85,7 @@ public:
   line.setNum(__LINE__); \
   QString msg = "A problem occurred within enGitsDataLib"; \
   msg += QString("\n\nfile: ") + __FILE__ + "\nline:" + line + "\n\n"; \
-  cerr << qPrintable(msg) << endl; \
+  std::cerr << qPrintable(msg) << std::endl; \
   throw EdlError(qPrintable(msg)); \
 };
 
