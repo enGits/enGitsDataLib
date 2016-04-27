@@ -53,12 +53,12 @@ public:
 #ifdef EDL_DEBUG
   const MAPVALUE& operator[](size_t i) const {
     if (!TMappedVar<TValue, TIndex, DIM, MAP>::initialized) {
-      cerr << "trying to use [] on an uninitialized variable" << endl;
+      std::cerr << "trying to use [] on an uninitialized variable" << std::endl;
       throw InvalidIndex_error(i);
     }
     //    if ((i < 0) || (i >= TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumSubIndices(TMappedVar<TValue, TIndex, DIM, MAP>::index.Dim()))) {
     if (i >= TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumSubIndices(TMappedVar<TValue, TIndex, DIM, MAP>::index.Dim())) {
-      cerr << "index " << i << "out of bounds" << endl;
+      std::cerr << "index " << i << "out of bounds" << std::endl;
       throw InvalidIndex_error(i);
     }
     return m_Value[i];

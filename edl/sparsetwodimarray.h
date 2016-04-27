@@ -288,7 +288,7 @@ inline size_t SparseTwoDimArray::dataIndex(size_t i, size_t k) const
 { 
 #ifdef EDL_DEBUG
   if (count(i) <= k) {
-    cerr << "index " << k << "out of bounds" << endl;
+    std::cerr << "index " << k << "out of bounds" << std::endl;
     throw InvalidIndex_error(k);
   };
 #endif

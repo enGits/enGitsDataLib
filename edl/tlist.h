@@ -137,13 +137,13 @@ public:
    */
   T& at (size_t i)
   {
-#ifdef MDEBUG
-    if ((i < 0) || (i >= end())) {
-      cerr << "index " << i << "out of bounds" << endl;
+#ifdef EDL_DEBUG
+    if ((i < 0) || (i >= endIdx())) {
+      std::cerr << "index " << i << "out of bounds" << std::endl;
       throw InvalidIndex_error(i);
     }
-    if (!IsActive(i)) {
-      cerr << "the entry number " << i << "is inactive" << endl;
+    if (!isActive(i)) {
+      std::cerr << "the entry number " << i << "is inactive" << std::endl;
       throw InvalidIndex_error(i);
     }
 #endif
@@ -155,13 +155,13 @@ public:
     @return the value of this entry */
   T const& at (size_t i) const
   {
-#ifdef MDEBUG
-    if ((i < 0) || (i >= end())) {
-      cerr << "index " << i << "out of bounds" << endl;
+#ifdef EDL_DEBUG
+    if ((i < 0) || (i >= endIdx())) {
+      std::cerr << "index " << i << "out of bounds" << std::endl;
       throw InvalidIndex_error(i);
     };
-    if (!IsActive(i)) {
-      cerr << "the entry number " << i << "is inactive" << endl;
+    if (!isActive(i)) {
+      std::cerr << "the entry number " << i << "is inactive" << std::endl;
       throw InvalidIndex_error(i);
     };
 #endif

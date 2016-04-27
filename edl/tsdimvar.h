@@ -58,15 +58,15 @@ public:
   TValue& operator[](size_t i) const {
 #ifdef EDL_DEBUG
     if (!TMappedVar<TValue, TIndex, DIM, MAP>::initialized) {
-      cerr << "trying to use [] on an uninitialized variable" << endl;
+      std::cerr << "trying to use [] on an uninitialized variable" << std::endl;
       exit(EXIT_FAILURE);
     }
     if ((i < 0) || (i >= TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumEntries())) {
-      cerr << "index " << i << "out of bounds" << endl;
+      std::cerr << "index " << i << "out of bounds" << std::endl;
       throw InvalidIndex_error(i);
     }
     if (!m_MDimList->IsActive(i)) {
-      cerr << "the entry number " << i << "is inactive" << endl;
+      std::cerr << "the entry number " << i << "is inactive" << std::endl;
       throw InvalidIndex_error(i);
     }
 #endif
