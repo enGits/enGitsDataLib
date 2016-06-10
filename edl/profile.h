@@ -21,7 +21,9 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #include "edl.h"
+#ifdef WITH_CXX11
 #include <chrono>
+#endif
 
 namespace EDL_NAMESPACE
 {
@@ -29,6 +31,7 @@ namespace EDL_NAMESPACE
 class Profile
 {
 
+#ifdef WITH_CXX11
 private:
 
   typedef std::chrono::steady_clock clock_t;
@@ -43,6 +46,7 @@ public:
   static double time(int i)  { return std::chrono::duration_cast<std::chrono::duration<double> >(m_Duration[i]).count(); }
   static void   start(int i) { m_Time[i] = clock_t::now(); }
   static void   stop(int i)  { m_Duration[i] += (clock_t::now() - m_Time[i]); }
+#endif
 
 };
 
