@@ -92,6 +92,7 @@ edl/mathvector_methods.h
 edl/mathvector_operators.h
 edl/mathvector_structs.h
 edl/pmap.h
+edl/profile.h
 edl/smallsquarematrix.h
 edl/sparsetwodimarray.h
 edl/stringtools.h
@@ -115,6 +116,7 @@ ${engitsdatalib_HEADERS_MOC}
 edl/edlerror.cpp
 edl/geometrytools.cpp
 edl/list.cpp
+edl/profile.cpp
 edl/sparsetwodimarray.cpp
 edl/varcontainer.cpp
 )
