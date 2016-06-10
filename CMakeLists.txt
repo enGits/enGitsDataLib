@@ -15,7 +15,7 @@
 # +         is obtained from enGits GmbH.                                   +
 # +                                                                         +
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 2.8.11)
 
 # limit configuration types (must be done before project() statement)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited config" FORCE)
