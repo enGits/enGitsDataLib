@@ -74,7 +74,7 @@ public:
   /** constructor.
     @param a_dim the 2nd dimension
     @param a_master a master for this List */
-  TList2D(int a_dim, List *a_master);
+  TList2D(int a_dim, List *a_master, std::__1::string link_name = "__none");
 
   /** constructor.
     @param a_dim the 2nd dimension
@@ -106,8 +106,8 @@ TList2D<T>::TList2D (long int a_max_num_entries, long int a_delta_entries, int a
   int i;
   m_Dim = a_dim;
   m_Value = new T* [m_Dim];
-  m_Value[0] = new T [max_num_entries * m_Dim];
-  for (i = 1; i < m_Dim; i++) m_Value[i] = m_Value[i-1] + max_num_entries;
+  m_Value[0] = new T [maxNumEntries() * m_Dim];
+  for (i = 1; i < m_Dim; i++) m_Value[i] = m_Value[i-1] + maxNumEntries();
 }
 
 template <class T>
@@ -118,19 +118,19 @@ TList2D<T>::TList2D (long int a_max_num_entries, long int a_delta_entries,
   int i;
   m_Dim = a_dim;
   m_Value = new T* [m_Dim];
-  m_Value[0] = new T [max_num_entries * m_Dim];
-  for (i = 1; i < m_Dim; i++) m_Value[i] = m_Value[i-1] + max_num_entries;
+  m_Value[0] = new T [maxNumEntries() * m_Dim];
+  for (i = 1; i < m_Dim; i++) m_Value[i] = m_Value[i-1] + maxNumEntries();
   m_DefaultValue = a_default_value;
 }
 
 template <class T>
-TList2D<T>::TList2D (int a_dim, List *a_master) : List (a_master)
+TList2D<T>::TList2D (int a_dim, List *a_master, std::string link_name) : List (a_master, link_name)
 {
   int i;
   m_Dim = a_dim;
   m_Value = new T* [m_Dim];
-  m_Value[0] = new T [max_num_entries * m_Dim];
-  for (i = 1; i < m_Dim; i++) m_Value[i] = m_Value[i-1] + max_num_entries;
+  m_Value[0] = new T [maxNumEntries() * m_Dim];
+  for (i = 1; i < m_Dim; i++) m_Value[i] = m_Value[i-1] + maxNumEntries();
 }
 
 template <class T>
@@ -139,8 +139,8 @@ TList2D<T>::TList2D (int a_dim, List *a_master, T a_default_value) : List (a_mas
   int i;
   m_Dim = a_dim;
   m_Value = new T* [m_Dim];
-  m_Value[0] = new T [max_num_entries * m_Dim];
-  for (i = 1; i < m_Dim; i++) m_Value[i] = m_Value[i-1] + max_num_entries;
+  m_Value[0] = new T [maxNumEntries() * m_Dim];
+  for (i = 1; i < m_Dim; i++) m_Value[i] = m_Value[i-1] + maxNumEntries();
   m_DefaultValue = a_default_value;
 }
 
@@ -164,10 +164,10 @@ void TList2D<T>::extend(long int delta)
   long int i_entry;
   T **new_value;
   new_value = new T* [m_Dim];
-  new_value[0] = new T [(max_num_entries + delta) * m_Dim];
-  for (i = 1; i < m_Dim; i++) new_value[i] = new_value[i-1] + max_num_entries + delta;
+  new_value[0] = new T [(maxNumEntries() + delta) * m_Dim];
+  for (i = 1; i < m_Dim; i++) new_value[i] = new_value[i-1] + maxNumEntries() + delta;
   for (i = 0; i < m_Dim; i++) {
-    for (i_entry = 0; i_entry < num_entries; i_entry++) {
+    for (i_entry = 0; i_entry < maxNumEntries(); i_entry++) {
       new_value[i][i_entry] = m_Value[i][i_entry];
     }
   }
