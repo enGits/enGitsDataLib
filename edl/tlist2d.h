@@ -38,7 +38,7 @@ namespace EDL_NAMESPACE
    a twodimensional TList.
 */
 template <class T>
-class TList2D : public List 
+class TList2D : public List
 {
 
 protected:
@@ -59,22 +59,22 @@ public:
 
   /** constructor.
     @param a_max_num_entries the initial maximal number of entries
-    @param a_delta_entries the initial increment 
+    @param a_delta_entries the initial increment
     @param a_dim the 2nd dimension */
   TList2D(long int a_max_num_entries, long int a_delta_entries, int a_dim);
 
   /** constructor.
     @param a_max_num_entries the initial maximal number of entries
-    @param a_delta_entries the initial increment 
+    @param a_delta_entries the initial increment
     @param a_dim the 2nd dimension
     @param a_default_value the initial value for new entries */
   TList2D(long int a_max_num_entries, long int a_delta_entries,
-	   int a_dim, T a_default_value);
+     int a_dim, T a_default_value);
 
   /** constructor.
     @param a_dim the 2nd dimension
     @param a_master a master for this List */
-  TList2D(int a_dim, List *a_master, std::__1::string link_name = "__none");
+  TList2D(int a_dim, List *a_master, std::string link_name = "__none");
 
   /** constructor.
     @param a_dim the 2nd dimension
@@ -100,7 +100,7 @@ public:
 //.. constructor
 //
 template <class T>
-TList2D<T>::TList2D (long int a_max_num_entries, long int a_delta_entries, int a_dim) 
+TList2D<T>::TList2D (long int a_max_num_entries, long int a_delta_entries, int a_dim)
   : List (a_max_num_entries, a_delta_entries)
 {
   int i;
@@ -111,8 +111,8 @@ TList2D<T>::TList2D (long int a_max_num_entries, long int a_delta_entries, int a
 }
 
 template <class T>
-TList2D<T>::TList2D (long int a_max_num_entries, long int a_delta_entries, 
-                     int a_dim, T a_default_value) 
+TList2D<T>::TList2D (long int a_max_num_entries, long int a_delta_entries,
+                     int a_dim, T a_default_value)
   : List (a_max_num_entries, a_delta_entries)
 {
   int i;
