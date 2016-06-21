@@ -24,6 +24,7 @@
 
 namespace EDL_NAMESPACE
 {
+#ifdef WITH_CXX11
   Profile::clock_t::time_point edl::Profile::m_Time[10];
   Profile::clock_t::duration edl::Profile::m_Duration[10] = {
     Profile::clock_t::duration(),
@@ -37,4 +38,5 @@ namespace EDL_NAMESPACE
     Profile::clock_t::duration(),
     Profile::clock_t::duration()
   };
+#endif
 }
