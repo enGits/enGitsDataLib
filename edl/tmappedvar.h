@@ -47,6 +47,8 @@ public:
 
   TMappedVar(TMDimList<TValue, TIndex, DIM, MAP> *a_mdim_list, TMDimIndex<TIndex> an_index);
   TMappedVar();
+  void disable() { m_MDimList = NULL; }
+
   virtual ~TMappedVar();
   virtual void update() = 0;
   virtual void operator=(const TMappedVar<TValue, TIndex, DIM, MAP> &other);

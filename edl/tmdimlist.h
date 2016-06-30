@@ -129,6 +129,9 @@ TMDimList<TValue, TIndex, DIM, MAP>::~TMDimList()
   for (size_t i = 0; i < DIM; i++) {
     delete m_SubIndex[i];
   }
+  FORALL (i, m_MappedVars->) {
+    m_MappedVars->at(i)->disable();
+  }
   delete [] m_SubIndex;
   delete m_MappedVars;
   delete [] m_RootPointer;
