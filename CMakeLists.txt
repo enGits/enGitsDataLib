@@ -92,6 +92,7 @@ edl/edlerror.h
 edl/edl.h
 edl/geometrytools.h
 edl/interpolation.h
+edl/interpolationcurve.h
 edl/linsolve.h
 edl/list.h
 edl/mathvector.h
@@ -122,6 +123,7 @@ ${engitsdatalib_HEADERS}
 ${engitsdatalib_HEADERS_MOC}
 edl/edlerror.cpp
 edl/geometrytools.cpp
+edl/interpolationcurve.cpp
 edl/list.cpp
 edl/profile.cpp
 edl/sparsetwodimarray.cpp

@@ -24,6 +24,7 @@
 
 #include "edl/edl.h"
 #include "edl/edlerror.h"
+#include "edl/tlist.h"
 
 namespace EDL_NAMESPACE
 {
