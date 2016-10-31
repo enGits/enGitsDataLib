@@ -55,6 +55,8 @@ public: // methods
   void addPoint(real x, real y);
   void update();
   real interpolate(real x);
+  real minX() { return m_InterX.firstEntry(); }
+  real maxX() { return m_InterX.lastEntry(); }
   void clear();
 
 };
