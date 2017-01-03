@@ -383,7 +383,11 @@ void computeCircumscribedCircle(vec3_t a, vec3_t b, vec3_t c, vec3_t &x, real &r
 
 vec3_t getBarycentricCoordinates(real x, real y)
 {
+#if __cplusplus < 201103L
   if(isnan(x) || isinf(x) || isnan(y) || isinf(y)) {
+#else
+  if(std::isnan(x) || std::isinf(x) || std::isnan(y) || std::isinf(y)) {
+#endif
     std::cout << "x="<<x;
     std::cout << "y="<<y;
     EDL_BUG;
