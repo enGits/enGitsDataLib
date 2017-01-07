@@ -113,6 +113,7 @@ edl/tmdimlist.h
 edl/tmdimvar.h
 edl/tsdimvar.h
 edl/tsparsetwodimarray.h
+edl/unit.h
 edl/varcontainer.h
 )
 
@@ -127,6 +128,7 @@ edl/interpolationcurve.cpp
 edl/list.cpp
 edl/profile.cpp
 edl/sparsetwodimarray.cpp
+edl/unit.cpp
 edl/varcontainer.cpp
 )
 
