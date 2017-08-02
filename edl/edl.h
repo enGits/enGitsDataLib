@@ -110,6 +110,13 @@ namespace EDL_NAMESPACE
     return v;
   }
 
+  inline real linearSwitch(real x, real x1, real x2, real y1=-1.0, real y2=1.0)
+  {
+    real a = (y2 - y1)/(x2 - x1);
+    real b = y1 - a*x1;
+    return std::max(y1, std::min(y2, a*x + b));
+  }
+
 }
 
 #if defined(_MSC_VER) && (_MSC_VER < 1700) // less than Visual Studio 2012
