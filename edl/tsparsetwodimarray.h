@@ -141,7 +141,7 @@ public:
   T& newSubEntry(size_t i);
 
   /// Print matrix to a stream in skyline format.
-  void printSkyline(ostream &s, uint_t width = 0);
+  void printSkyline(std::ostream &s, unsigned int width = 0);
 
   /**
    * Get the default value of this array.
@@ -213,7 +213,7 @@ TSparseTwoDimArray<T>::~TSparseTwoDimArray()
 }
 
 template <class T>
-void TSparseTwoDimArray<T>::printSkyline(ostream &s, uint_t width)
+void TSparseTwoDimArray<T>::printSkyline(std::ostream &s, unsigned int width)
 {
   FORALL(i, this->) {
     if (width) s.width(4);
@@ -223,7 +223,7 @@ void TSparseTwoDimArray<T>::printSkyline(ostream &s, uint_t width)
       if (width) s.width(width);
       s << (*m_Data)[first(i) + j] << ' ';
     }
-    s << endl;
+    s << std::endl;
   }
 }
 
@@ -243,7 +243,7 @@ size_t TSparseTwoDimArray<T>::findSubItem(size_t i, T a_T)
     k++;
   }
   if (at(i, k) == a_T) return k;
-  string msg = "TSparseTwoDimArray::FindSubItem\n";
+  std::string msg = "TSparseTwoDimArray::FindSubItem\n";
   msg += typeid(*this).name();
   throw NotFound_error(msg);
 }

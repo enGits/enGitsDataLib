@@ -115,6 +115,7 @@ edl/tsdimvar.h
 edl/tsparsetwodimarray.h
 edl/unit.h
 edl/varcontainer.h
+edl/tgraph.h
 )
 
 QT4_WRAP_CPP(engitsdatalib_HEADERS_MOC ${engitsdatalib_HEADERS})
@@ -159,3 +160,5 @@ install(FILES ${engitsdatalib_HEADERS} DESTINATION include/edl)
 if(WIN32 AND MSVC)
   install(FILES ${PROJECT_BINARY_DIR}/engitsdatalib_export.h DESTINATION include/edl)
 endif(WIN32 AND MSVC)
+
+add_subdirectory(tests)
