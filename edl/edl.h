@@ -117,6 +117,16 @@ namespace EDL_NAMESPACE
     return std::max(y1, std::min(y2, a*x + b));
   }
 
+  inline real when(bool condition, real true_value, real false_value)
+  {
+    if (condition) {
+      return true_value;
+    }
+    return false_value;
+  }
+
+  inline void breakPoint() {}
+
 }
 
 #if defined(_MSC_VER) && (_MSC_VER < 1700) // less than Visual Studio 2012
