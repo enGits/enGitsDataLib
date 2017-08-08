@@ -58,6 +58,12 @@ public: // methods
   real minX() { return m_InterX.firstEntry(); }
   real maxX() { return m_InterX.lastEntry(); }
   void clear();
+  size_t numOriginalPoints() { return m_OriginalX.numEntries(); }
+  size_t numInterpolatedPoints() { return m_InterX.numEntries(); }
+  real getInterpolatedX(size_t i) { return m_InterX[i]; }
+  real getInterpolatedY(size_t i) { return m_InterY[i]; }
+  real getOriginalX(size_t i) { return m_OriginalX[i]; }
+  real getOriginalY(size_t i) { return m_OriginalY[i]; }
 
 };
 
