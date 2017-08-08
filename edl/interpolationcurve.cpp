@@ -147,7 +147,7 @@ void InterpolationCurve::update()
   delete m_Interp;
   m_Interp = new Interpolation<LinInterpFunc<real> >(&m_InterX, &m_InterY, true);
 
-  m_OriginalX.delAll();
+  // m_OriginalX.delAll();
 }
 
 real InterpolationCurve::interpolate(real x)
