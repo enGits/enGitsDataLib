@@ -143,7 +143,7 @@ List::List(const List &other)
 void List::operator=(const List &other)
 {
   if (initialized) {
-    std::cerr << "fatal error: operator=() can only be udes for uninitialized Lists." << std::endl;
+    std::cerr << "fatal error: operator=() can only be used for uninitialized Lists." << std::endl;
     exit(EXIT_FAILURE);
   }
   if (other.m_Master == &other) m_Master = this;
