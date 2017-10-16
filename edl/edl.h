@@ -114,7 +114,15 @@ namespace EDL_NAMESPACE
   {
     real a = (y2 - y1)/(x2 - x1);
     real b = y1 - a*x1;
-    return std::max(y1, std::min(y2, a*x + b));
+    real y_min, y_max;
+    if (y1 > y2) {
+      y_max = y1;
+      y_min = y2;
+    } else {
+      y_min = y1;
+      y_max = y2;
+    }
+    return std::max(y_min, std::min(y_max, a*x + b));
   }
 
   inline real when(bool condition, real true_value, real false_value)
