@@ -65,7 +65,7 @@ void rotate(vec3_t g1, vec3_t g2,vec3_t g3, vec3_t &b, real theta)
 vec3_t rotate(vec3_t v, vec3_t axis, real theta)
 {
   axis.normalise();
-  
+
   // transposed base of rotate system
   mat3_t g_t;
 
@@ -74,10 +74,10 @@ vec3_t rotate(vec3_t v, vec3_t axis, real theta)
 
   // compute first orthogonal vector (first base vector)
   g_t[0] = v-v_axis;
-  
+
   //In case of points on the rotation axis, do nothing
   if(g_t[0].abs()==0) return v;
-  
+
   g_t[0].normalise();
 
   // second base vector is the normalised axis
@@ -336,7 +336,7 @@ bool intersectEdgeAndTriangle(const vec3_t& a, const vec3_t& b, const vec3_t& c,
   G.column(0, g1);
   G.column(1, g2);
   G.column(2, g3);
-  
+
   mat3_t GI = G.inverse();
   ri = xi - a;
   ri = GI*ri;
@@ -354,7 +354,7 @@ bool intersectEdgeAndTriangle(const vec3_t& a, const vec3_t& b, const vec3_t& c,
   if (k > 1 + tol) {
     return false;
   }
-  
+
   // intersection outside of triangle?
   if (!isInsideTriangle(vec2_t(ri[0],ri[1]),tol)) {
     return false;
@@ -383,27 +383,27 @@ void computeCircumscribedCircle(vec3_t a, vec3_t b, vec3_t c, vec3_t &x, real &r
 
 vec3_t getBarycentricCoordinates(real x, real y)
 {
-#if __cplusplus < 201103L
-  if(isnan(x) || isinf(x) || isnan(y) || isinf(y)) {
-#else
+#if __cplusplus >= 201103L
   if(std::isnan(x) || std::isinf(x) || std::isnan(y) || std::isinf(y)) {
+#else
+  if(isnan(x) || isinf(x) || isnan(y) || isinf(y)) {
 #endif
     std::cout << "x="<<x;
     std::cout << "y="<<y;
     EDL_BUG;
   }
-  
+
   real x_1=0;
   real y_1=0;
   real x_2=1;
   real y_2=0;
   real x_3=0;
   real y_3=1;
-  
+
   mat2_t T;
   T[0][0]=x_1-x_3; T[0][1]=x_2-x_3;
   T[1][0]=y_1-y_3; T[1][1]=y_2-y_3;
-  
+
   if(T.det()==0) {
     std::cout << "T.det()="<<T.det();
     std::cout << T[0][0]<<T[0][1];
@@ -411,14 +411,14 @@ vec3_t getBarycentricCoordinates(real x, real y)
     std::cout << "T[0][0]*T[1][1]-T[1][0]*T[0][1]="<<T[0][0]*T[1][1]-T[1][0]*T[0][1];
     EDL_BUG;
   }
-  
+
   real lambda_1 = ((y_2-y_3)*(x-x_3)-(x_2-x_3)*(y-y_3))/(T.det());
   real lambda_2 = (-(y_1-y_3)*(x-x_3)+(x_1-x_3)*(y-y_3))/(T.det());
   real lambda_3 = 1-lambda_1-lambda_2;
-  
+
   vec3_t bary_coords(lambda_1,lambda_2,lambda_3);
   return bary_coords;
-  
+
 }
 
 vec3_t intersectionOnPlane(vec3_t v, vec3_t A, vec3_t nA, vec3_t B, vec3_t nB)
@@ -426,15 +426,15 @@ vec3_t intersectionOnPlane(vec3_t v, vec3_t A, vec3_t nA, vec3_t B, vec3_t nB)
   vec3_t u = B-A;
   v.normalise();
   v = u.abs()*v;
-  
+
   vec2_t p_A(0,0);
   vec2_t p_B(1,0);
   vec2_t p_nA = projectVectorOnPlane(nA,u,v);
   vec2_t p_nB = projectVectorOnPlane(nB,u,v);
-  
+
   vec2_t p_tA = turnRight(p_nA);
   vec2_t p_tB = turnRight(p_nB);
-  
+
   real k1, k2;
   vec2_t p_K;
   if (!intersection(k1, k2, p_A, p_tA, p_B, p_tB)) {
@@ -442,7 +442,7 @@ vec3_t intersectionOnPlane(vec3_t v, vec3_t A, vec3_t nA, vec3_t B, vec3_t nB)
   } else {
     p_K = p_A + k1*p_tA;
   }
-  
+
   if (p_K[0] <0 ) {
     p_K[0] = 0;
   }
