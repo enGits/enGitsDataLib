@@ -262,7 +262,8 @@ void TMDimList<TValue, TIndex, DIM, MAP>::extend(size_t delta)
 
   // find out how many entries need to be copied
   size_t num_copy_entries = maxNumEntries();
-  if (delta < 0) num_copy_entries -= delta;
+  /// @todo: What to do with this? A size_t cannot be negative..
+  //if (delta < 0) num_copy_entries -= delta;
 
   // copy existing data to the new field
   for(size_t block = m_TotalIndex->beginIdx();
