@@ -1,2 +1,79 @@
+# editor and misc backup files - anywhere
+*~
+.*~
+*.orig
+*.bak
+\#*\#
+*.new
+*.old
+temp
+*.output
+
+# objects and archives - anywhere
+*.[oa]
+*.la
+*.so
+*.so.*
+*.jar
 build/*
+build-debug/*
+build-*/*
+
+# Qt generated files
+moc_*
+ui_*
+qrc_*
+
+# ignore derived files
+lex.yy.c
+
+# Corefiles and debugging files
+core
+callgrind*
+
+# generated Makefiles
+Makefile
+Makefile.Debug
+Makefile.Release
+CMakeLists.txt.user.*
+
+.bzr
+.hg
 *.user
+qtc-gdbmacros
+*.sp
+*.out
+*.vtu
+*.tag
+*.output
+
+# LaTeX generated files - anywhere
+*.aux
+*.log
+*.pdf
+*.toc
+*.backup
+
+# source packages - anywhere
+*.tar.bz2
+*.tar.gz
+*.tgz
+
+# ignore the persistent .build tag in the main directory
+/.build
+/.build-*
+
+*.exe
+*.Debug
+*.Release
+
+*.vtk
+*.kdevses
+
+# Doxygen out directory
+doc/doxygen/output
+
+# Build directory
+ipl-build-desktop
+
+
