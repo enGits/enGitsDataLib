@@ -27,9 +27,9 @@
 
 namespace EDL_NAMESPACE
 {
-class List;
-class NotFound_error;
-class InvalidIndex_error;
+class  List;
+struct NotFound_error;
+struct InvalidIndex_error;
 }
 
 #include <cstddef>
