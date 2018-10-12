@@ -20,6 +20,7 @@
 # +                                                                    +
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-ADD_EXECUTABLE(tgraph_test tgraph_test.cpp)
-
-
+add_executable(tgraph_test tgraph_test.cpp)
+if(USE_QT5)
+  target_link_libraries(tgraph_test Qt5::Core)
+endif(USE_QT5)

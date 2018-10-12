@@ -42,6 +42,8 @@ if (${A_ENABLE_VAR3})
   add_definitions(-DWITH_VAR3)
 endif()
 
+option(USE_QT5 "Compile using the Qt5 library." OFF)
+
 set(CMAKE_CXX_STANDARD 11)
 
 if (NOT INITIAL_CONFIG)
@@ -73,12 +75,21 @@ if(WIN32)
 endif(WIN32)
 
 # set include directory, add src directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})  # This, according to the new CMake, shouldn't be needed...
 
-# Qt4
-FIND_PACKAGE(Qt4 COMPONENTS QtCore REQUIRED)
-INCLUDE(${QT_USE_FILE})
-include_directories(${QT_QTCORE_INCLUDE_DIR})
+# Qt4/Qt5
+if(USE_QT5)
+  add_definitions(-DWITH_QT5)
+  set(CMAKE_AUTOMOC ON)
+  set(CMAKE_AUTOUIC ON)
+  set(CMAKE_AUTORCC ON)
+  find_package(Qt5 COMPONENTS Core REQUIRED)
+else()
+  FIND_PACKAGE(Qt4 COMPONENTS QtCore REQUIRED)
+  INCLUDE(${QT_USE_FILE})
+  include_directories(${QT_QTCORE_INCLUDE_DIR})
+endif(USE_QT5)
 
 SET(engitsdatalib_HEADERS
 edl/bmap.h
@@ -113,7 +124,11 @@ edl/varcontainer.h
 edl/tgraph.h
 )
 
-QT4_WRAP_CPP(engitsdatalib_HEADERS_MOC ${engitsdatalib_HEADERS})
+if(USE_QT5)
+  set(engitsdatalib_HEADERS_MOC "")
+else()
+  QT4_WRAP_CPP(engitsdatalib_HEADERS_MOC ${engitsdatalib_HEADERS})
+endif(USE_QT5)
 
 SET(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
@@ -142,8 +157,12 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES COMPILE_FLAGS "-Wno-deprecated")
 endif()
 
-target_link_libraries(engitsdatalib ${QT_LIBRARIES})
-target_link_libraries(engitsdatalib Qt4::QtCore)
+if(USE_QT5)
+  target_link_libraries(engitsdatalib Qt5::Core)
+else()
+  target_link_libraries(engitsdatalib ${QT_LIBRARIES})
+  target_link_libraries(engitsdatalib Qt4::QtCore)
+endif(USE_QT5)
 
 install(
   TARGETS engitsdatalib
