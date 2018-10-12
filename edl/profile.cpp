@@ -24,7 +24,7 @@
 
 namespace EDL_NAMESPACE
 {
-#ifdef WITH_CXX11
+#if __cplusplus >= 201103L
   Profile::clock_t::time_point edl::Profile::m_Time[10];
   Profile::clock_t::duration edl::Profile::m_Duration[10] = {
     Profile::clock_t::duration(),

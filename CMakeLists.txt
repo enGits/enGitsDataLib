@@ -42,12 +42,7 @@ if (${A_ENABLE_VAR3})
   add_definitions(-DWITH_VAR3)
 endif()
 
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-if(COMPILER_SUPPORTS_CXX11)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  add_definitions(-DWITH_CXX11)
-endif()
+set(CMAKE_CXX_STANDARD 11)
 
 if (NOT INITIAL_CONFIG)
   set(INITIAL_CONFIG "..." CACHE INTERNAL "hidden flag...")
