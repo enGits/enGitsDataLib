@@ -296,7 +296,7 @@ void List::delClient (List *client_to_del)
   notifyChange();
 }
 
-List::~List () 
+List::~List ()
 {
   if (this != m_Master) {
     m_Master->delClient(this);

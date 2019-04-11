@@ -61,19 +61,19 @@ struct InvalidIndex_error : public EdlError
 /**
  * This is a dynamic list. It provides only the necessary handling
  * routines and control data, but no payload. Other Lists can be linked to ensure
- * a consistent length of different Lists. They will expand and shrink simultaneously. 
+ * a consistent length of different Lists. They will expand and shrink simultaneously.
  * Please note that List and its
  * derived classes are not thread-safe in all cases.
  * It is, however, planned to make them thread-save.
  */
-class List 
+class List
 {
 public:
 
   typedef long unsigned int state_t;
 
 private:
-  
+
   /// the first block where new entries might be.
   size_t m_FirstBlock;
 
@@ -98,7 +98,7 @@ private:
   /// number of client lists if this is a master.
   unsigned int m_NumClients;
 
-  /// the master List, which is managing the dynamics. 
+  /// the master List, which is managing the dynamics.
   List *m_Master;
 
   /// a field to store pointers to the clients.
@@ -138,7 +138,7 @@ private:
 
 protected:
 
-  /** 
+  /**
    * initialize the List.
    * @param mne the initial maximum number of entries
    * @param delta a delta entries to extend or shrink the list
@@ -148,45 +148,45 @@ protected:
   /**
    * extend or shrink the list.
    * @param delta the number of new entries, negative values will shrink the list
-   */ 
+   */
   void extendList(size_t delta);
 
   /**
    * add a new client if this is a master list.
    * @param client_to_add a pointer to the new client list
-   */ 
+   */
   void addClient (List *client_to_add, std::string link_name = "__none");
-  
-  /** 
+
+  /**
    * delete a client from this master.
    * @param client_to_del a pointer to the client, which shall be deleted
    */
   void delClient (List *client_to_del);
 
-  /// flag to determine if the list has been initialized. 
+  /// flag to determine if the list has been initialized.
   bool initialized;
 
   /**
    * initialization of an entry.
    * This method does nothing for the base-class and can be overwritten in child-classes.
-   * @param i the index of the entry 
+   * @param i the index of the entry
    */
   virtual void initEntry (size_t i) {}
 
   /**
    * extend the list.
-   * This method has to be overwritten in child-classes to ensure a proper 
+   * This method has to be overwritten in child-classes to ensure a proper
    * working of the cleaning mechanism.
-   * @param delta the increment 
+   * @param delta the increment
    */
   virtual void extend (size_t delta) {}
 
   /**
-   * copy an entry. 
-   * This method has to be overwritten in child-classes to ensure a proper 
+   * copy an entry.
+   * This method has to be overwritten in child-classes to ensure a proper
    * working of the cleaning mechanism.
    * @param src the index of the source entry
-   * @param dest the index of the destination entry 
+   * @param dest the index of the destination entry
    */
   virtual void copyEntry (size_t src, size_t dest) {}
 
@@ -218,7 +218,7 @@ public:
    */
   List* master() { return m_Master; }
 
-  /** 
+  /**
    * reset the List.
    * @param mne the initial maximum number of entries
    * @param delta a delta entries to extend or shrink the list
@@ -258,19 +258,19 @@ public:
   /**
    * constructor.
    * Creates an uninitialized List.
-   */ 
+   */
   List ();
 
   /**
-   * constructor. 
+   * constructor.
    * Creates a new List as master and initializes it.
    * @param mne initial maximum number of entries
-   * @param delta initial increment of entries 
+   * @param delta initial increment of entries
    */
   List (size_t mne, size_t delta);
 
   /**
-   * constructor. 
+   * constructor.
    * Creates a new list which is linked to an existing master and
    * initializes it.
    * @param a_master the master List to link the new List to
@@ -293,14 +293,14 @@ public:
   }
 
   /**
-   * get the number of active entries. 
+   * get the number of active entries.
    * @return the number of active entries
    */
   size_t numActiveEntries () const;
 
   /**
    * add an entry at the end of the list.
-   * @return the index of the new entry 
+   * @return the index of the new entry
    */
   size_t addEntry () { return alloc(1); }
 
@@ -311,7 +311,7 @@ public:
    */
   size_t alloc(size_t n);
 
-  /** 
+  /**
    * find out which would be the first entry
    * if a block would be allocated.
    * @param n the number of new entries
@@ -321,7 +321,7 @@ public:
 
   /**
    * delete an entry
-   * @param i the index of the entry to be deleted 
+   * @param i the index of the entry to be deleted
    */
   void delEntry (size_t i);
 
@@ -342,42 +342,42 @@ public:
    * delete the data of an entry.
    * This method has to be overwritten if a derived class
    * allocates memory for new entries.
-   * @param i the index of the entry to be deleted 
+   * @param i the index of the entry to be deleted
    */
   virtual void deleteData(size_t i) { m_Master->m_BlockSize[i] += 0; } // avoid compiler warning :-(
-    
+
   /// delete all entries.
   void delAll ();
 
-  /** 
-   * find the next active entry. 
+  /**
+   * find the next active entry.
    * This method is a bit slow right now, but that
    * will be improved in the future. So please stick to this and do not try
    * to write a fast workaround.
    * @param i the index of the entry whose following entry has to be found
-   * @return the index of the following entry 
+   * @return the index of the following entry
    */
   size_t nextIdx(size_t i) const;
 
   /**
-   * find the previous active entry. 
+   * find the previous active entry.
    * This method is a bit slow right now, but that
    * will be improved in the future. So please stick to this and do not try
    * to write a fast workaround.
    * @param i the index of the entry whose following entry has to be found
-   * @return the index of the following entry 
+   * @return the index of the following entry
    */
   size_t prevIdx(size_t i) const;
 
-  /** 
+  /**
    * find the first active entry.
-   * @return the index of the first active entry 
+   * @return the index of the first active entry
    */
   size_t beginIdx() const;
 
   /**
    * find the last active enty.
-   * @return the index of the last active entry 
+   * @return the index of the last active entry
    */
   size_t lastIdx() const;
 
@@ -390,8 +390,8 @@ public:
   /// create the offset-list for the cleaning process.
   void createOffsetList ();
 
-  /// delete the offset list. 
-  void DeleteOffsetList () { 
+  /// delete the offset list.
+  void DeleteOffsetList () {
     delete [] m_Offset;
     m_Offset = NULL;
   }
@@ -399,20 +399,20 @@ public:
   /**
    * get the offset of an entry.
    * @param i the index of the entry
-   * @return the offset of the entry 
+   * @return the offset of the entry
    */
   size_t offset (size_t i);
 
   /**
    * find out if the list has deleted entries or if it is clean.
    * @return true if it is clean
-   */ 
+   */
   bool isClean() const { return m_Master->m_IsClean; }
 
   /**
    * clean the list.
    * This method eliminates all holes from the list and resets num_entries.
-   * After CleanUp num_entries will be identical with the number of active entries. 
+   * After CleanUp num_entries will be identical with the number of active entries.
    */
   virtual void cleanUp ();
 
@@ -426,9 +426,9 @@ public:
   void link (List *linked_list, std::string link_name = "__none");
 
   /**
-   * copy an entry. 
+   * copy an entry.
    * @param src the index of the source entry
-   * @param dest the index of the destination entry 
+   * @param dest the index of the destination entry
    */
   virtual void copy (size_t src, size_t dest);
 
@@ -443,7 +443,7 @@ public:
   {
     if (!isActive(i)) {
       std::cerr << "index " << i << " is invalid" << std::endl;
-      throw InvalidIndex_error(i); 
+      throw InvalidIndex_error(i);
     }
   }
 
@@ -501,7 +501,7 @@ public:
 
 
 inline size_t List::endIdx() const
-{ 
+{
   return m_Master->m_AfterLastEntry;
 }
 
@@ -529,7 +529,7 @@ inline size_t List::prevIdx(size_t i) const
 }
 
 inline size_t List::lastIdx() const
-{ 
+{
   if (endIdx() == 0) {
     throw NotFound_error("List::last");
   }

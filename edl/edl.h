@@ -26,6 +26,7 @@
 
 #include <cfloat>
 #include <cmath>
+#include <limits>
 #include <QMetaType>
 
 namespace EDL_NAMESPACE
@@ -134,6 +135,31 @@ namespace EDL_NAMESPACE
   }
 
   inline void breakPoint() {}
+
+  template<typename T>
+  bool almostEqual(T x, T y, int ulp=1000)
+  {
+    // Example code shamelessly stolen from:
+    // https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
+    //
+    // The machine epsilon has to be scaled to the magnitude of the values used
+    // and multiplied by the desired precision in ULPs (units in the last place)
+    return std::abs(x-y) <= std::numeric_limits<T>::epsilon() * std::abs(x+y) * ulp
+      // unless the result is subnormal
+      || std::abs(x-y) < std::numeric_limits<T>::min();
+  }
+
+  template<> inline
+  bool almostEqual(bool x, bool y, int)
+  {
+    return x == y;
+  }
+
+  template<> inline
+  bool almostEqual(int x, int y, int)
+  {
+    return x == y;
+  }
 
 }
 
