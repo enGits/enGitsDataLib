@@ -113,10 +113,12 @@ edl/stringtools.h
 edl/tkeylist.h
 edl/tlist2d.h
 edl/tlist.h
+edl/timewindow.h
 edl/tmappedvar.h
 edl/tmdimindex.h
 edl/tmdimlist.h
 edl/tmdimvar.h
+edl/tqueue.h
 edl/tsdimvar.h
 edl/tsparsetwodimarray.h
 edl/unit.h
@@ -139,6 +141,7 @@ edl/interpolationcurve.cpp
 edl/list.cpp
 edl/profile.cpp
 edl/sparsetwodimarray.cpp
+edl/timewindow.cpp
 edl/unit.cpp
 edl/varcontainer.cpp
 )

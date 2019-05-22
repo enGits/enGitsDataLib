@@ -490,11 +490,12 @@ size_t List::tryAlloc(size_t n)
       }
     } while ((new_entry < m_MaxNumEntries) && !found);
     if (found) {
+      m_BlockSizeUpdated = false;
       return new_entry;
     } else {
       if (m_BlockSizeUpdated) {
         extendList(m_DeltaEntries);
-        m_BlockSizeUpdated = false;
+        //m_BlockSizeUpdated = false;
       } else {
         updateBlockSize();
       }
