@@ -161,6 +161,35 @@ namespace EDL_NAMESPACE
     return x == y;
   }
 
+  template <typename T>
+  inline T absmin(T x, T x_min)
+  {
+    if (x > 0) return std::min(x,  x_min);
+    else       return std::max(x, -x_min);
+  }
+
+  template <typename T>
+  inline T absmax(T x, T x_max)
+  {
+    if (x > 0) return std::max(x,  x_max);
+    else       return std::min(x, -x_max);
+  }
+
+  template <typename T>
+  bool inInterval(T x, T x1, T x2, int ulp=1000)
+  {
+    if (x >= x1 && x <= x2) {
+      return true;
+    }
+    if (almostEqual(x, x1)) {
+      return true;
+    }
+    if (almostEqual(x, x2)) {
+      return true;
+    }
+    return false;
+  }
+
 }
 
 #if defined(_MSC_VER) && (_MSC_VER < 1700) // less than Visual Studio 2012

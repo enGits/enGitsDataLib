@@ -106,6 +106,7 @@ edl/mathvector_methods.h
 edl/mathvector_operators.h
 edl/mathvector_structs.h
 edl/pmap.h
+edl/pointcloudsurface.h
 edl/profile.h
 edl/smallsquarematrix.h
 edl/sparsetwodimarray.h
@@ -124,6 +125,7 @@ edl/tsparsetwodimarray.h
 edl/unit.h
 edl/varcontainer.h
 edl/tgraph.h
+edl/tools.h
 )
 
 if(USE_QT5)

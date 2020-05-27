@@ -20,7 +20,12 @@
 # +                                                                    +
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+add_executable(pointcloud_test pointcloud_test.cpp)
+target_link_libraries(pointcloud_test engitsdatalib)
+
 add_executable(tgraph_test tgraph_test.cpp)
+
+
 if(USE_QT5)
   target_link_libraries(tgraph_test Qt5::Core)
 endif(USE_QT5)

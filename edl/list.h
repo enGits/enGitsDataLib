@@ -242,6 +242,7 @@ public:
    * @return the current number of entries
    */
   size_t numEntries() const;
+  size_t size() const { return numEntries(); }
 
   /**
    * get the dynamical increment.

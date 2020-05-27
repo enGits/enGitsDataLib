@@ -22,6 +22,11 @@
 #ifndef linsolve_H
 #define linsolve_H
 
+#include "edl.h"
+
+namespace EDL_NAMESPACE
+{
+
 struct LinSolveError
 {
   double det;
@@ -109,5 +114,53 @@ void linsolve(const M &Ain, const V &rsv, V &b)
     throw LinSolveError(det);
   }
 }
+
+template <class M, class V>
+void iterLinsolve(const M &A, const V &b, V &x, typename V::value_type tol=1e-4)
+{
+  typedef typename V::value_type real;
+  M B, C, _A = A;
+  typename V::value_type diag_max = 0;
+  for (int i = 0; i < A.size(); ++i) {
+    diag_max = std::max(diag_max, std::abs(A[i][i]));
+  }
+  for (int i = 0; i < A.size(); ++i) {
+    for (int j = 0; j < A.size(); ++j) {
+      if (i == j) {
+        B[i][j] = absmax(real(0.1)*diag_max, A[i][j]);
+        C[i][j] = A[i][j] - B[i][j];
+      } else {
+        B[i][j] = 0;
+        C[i][j] = A[i][j];
+      }
+    }
+  }
+  B = B.inverse();
+  C = B*C;
+  typename V::value_type r = 0;
+  x.normalise();
+  int count = 0;
+
+//  std::cout << _A << std::endl;
+//  std::cout << B << std::endl;
+//  std::cout << C << std::endl;
+
+  do {
+    V x_new = B*b - C*x;
+    x_new.normalise();
+    x_new = 0.5*x_new + 0.5*x;
+    r = 0;
+    for (int j = 0; j < 3; ++j) {
+      r = std::max(r, std::abs(x_new[j] - x[j]));
+    }
+    x = x_new;
+    ++count;
+    if (count > 100000) {
+      throw LinSolveError(_A.det());
+    }
+  } while (r > tol);
+}
+
+} // namespace
 
 #endif

@@ -42,8 +42,16 @@ inline MathVector<V>::MathVector(const ParseNode<L,O,R> &expr) : V()
 template <class V>
 inline MathVector<V>::MathVector(const value_type *v) : V()
 {
-  for (uint_t i = 0; i < this->size(); ++i) (*this)[i] = v[i]; 
+  for (uint_t i = 0; i < this->size(); ++i) (*this)[i] = v[i];
 };
+
+// MathVector<V>(const value_type v)
+// ----------------------------------
+template <class V>
+inline MathVector<V>::MathVector(const value_type v) : V()
+{
+  for (uint_t i = 0; i < this->size(); ++i) (*this)[i] = v;
+}
 
 // MathVector<V>(const value_type v1, const value_type v2, const value_type v3, const value_type v4)
 // ----------------------------------------------------------------------------
@@ -159,6 +167,16 @@ inline MathVector<V> MathVector<V>::normalise()
   return(*this);
 };
 
+// norm the vector to a length of 1 (according to ||v||_2)
+// -------------------------------------------------------
+template <class V>
+inline MathVector<V> MathVector<V>::normalised()
+{
+  MathVector<V> n0 = *this;
+  n0.normalise();
+  return n0;
+}
+
 // create a C-style array
 // ----------------------
 template <class V>
@@ -168,4 +186,28 @@ typename MathVector<V>::scalar_t* MathVector<V>::c_array() const
   for (uint_t i = 0; i < this->size(); ++i) t[i] = (*this)[i];
   return t;
 };
+
+// maximise per coordinate
+// -----------------------
+template <class V>
+inline void MathVector<V>::maximisePerCoord(const MathVector<V>& vec)
+{
+  for (unsigned int i = 0; i < this->size(); ++i) {
+    if( (*this)[i] < vec[i] ) {
+      (*this)[i] = vec[i];
+    }
+  }
+}
+
+// minimise per coordinate
+// -----------------------
+template <class V>
+inline void MathVector<V>::minimisePerCoord(const MathVector<V>& vec)
+{
+  for (unsigned int i = 0; i < this->size(); ++i) {
+    if( (*this)[i] > vec[i] ) {
+      (*this)[i] = vec[i];
+    }
+  }
+}
 
