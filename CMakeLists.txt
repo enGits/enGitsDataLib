@@ -44,6 +44,8 @@ endif()
 
 option(USE_QT5 "Compile using the Qt5 library." OFF)
 
+option(CREATE_STATIC_LIBRARY "Create a static version of engitsdatalib." OFF)
+
 set(CMAKE_CXX_STANDARD 11)
 
 if (NOT INITIAL_CONFIG)
@@ -82,7 +84,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})  # This, according to the new C
 if(USE_QT5)
   add_definitions(-DWITH_QT5)
   set(CMAKE_AUTOMOC ON)
-  set(CMAKE_AUTOUIC ON)
+  if(NOT WIN32)
+    set(CMAKE_AUTOUIC ON)
+  endif()
   set(CMAKE_AUTORCC ON)
   find_package(Qt5 COMPONENTS Core REQUIRED)
 else()
@@ -148,7 +152,11 @@ edl/unit.cpp
 edl/varcontainer.cpp
 )
 
-ADD_LIBRARY(engitsdatalib SHARED ${engitsdatalib_SOURCES})
+if(CREATE_STATIC_LIBRARY)
+  ADD_LIBRARY(engitsdatalib STATIC ${engitsdatalib_SOURCES})
+else(CREATE_STATIC_LIBRARY)
+  ADD_LIBRARY(engitsdatalib SHARED ${engitsdatalib_SOURCES})
+endif(CREATE_STATIC_LIBRARY)
 
 # If Visual Studio, generate export header to allow sharing of dll data..
 if(WIN32 AND MSVC)

@@ -34,6 +34,7 @@ class EdlError;
 class EdlError;
 
 #include <string>
+#include <QString>
 
 namespace EDL_NAMESPACE
 {
