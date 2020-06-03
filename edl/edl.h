@@ -161,6 +161,11 @@ namespace EDL_NAMESPACE
     return x == y;
   }
 
+  template<typename T> inline
+  bool inInterval(T pt1, T pt, T pt2)
+  {
+    return almostEqual(pt1, pt) || (pt1 < pt && pt < pt2) || almostEqual(pt2, pt);
+  }
 }
 
 #if defined(_MSC_VER) && (_MSC_VER < 1700) // less than Visual Studio 2012
