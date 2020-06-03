@@ -38,10 +38,10 @@ namespace EDL_NAMESPACE
 {
 
 template <class T, uint_t N>
-class SmallSquareMatrix : public MathVector<StaticVector<MathVector<StaticVector<double,N> >,N> >
+class SmallSquareMatrix : public MathVector<StaticVector<MathVector<StaticVector<T,N> >,N> >
 {
   typedef StaticVector<T,N> svec_t;
-  typedef MathVector<StaticVector<double,N> > rvec_t;
+  typedef MathVector<StaticVector<T,N> > rvec_t;
 
 protected:
 
@@ -61,11 +61,11 @@ public:
 
   /** Empty Constructor I */
   SmallSquareMatrix<T,N>(T a_limit = 1e-20)
-    : MathVector<StaticVector<MathVector<StaticVector<double,N> >,N> >() { prec_safe = false; a_limit = a_limit; }
+    : MathVector<StaticVector<MathVector<StaticVector<T,N> >,N> >() { prec_safe = false; a_limit = a_limit; }
 
   /** Copy Constructor */
   SmallSquareMatrix<T,N>(const SmallSquareMatrix<T,N> &M)
-    : MathVector<StaticVector<MathVector<StaticVector<double,N> >,N> >(M) {prec_safe = false;}
+    : MathVector<StaticVector<MathVector<StaticVector<T,N> >,N> >(M) {prec_safe = false;}
 
   /** Constructor upon an open set of vectors
    *  @param row_col_type string indicating "row" or "column" type setting
@@ -86,7 +86,7 @@ public:
    *  @param row_vec a double vector to set
    */
   template<class Tvec>
-  void row(uint_t row, Tvec row_vec)
+  void setRow(uint_t row, Tvec row_vec)
   {
     (*this)[row] = row_vec;
   }
@@ -96,7 +96,7 @@ public:
    *  @param col_vec a double vector to set
    */
   template<class Tvec>
-  void column(uint_t column, Tvec col_vec)
+  void setColumn(uint_t column, Tvec col_vec)
   {
     for(uint_t k_row = 0; k_row<N; k_row++) {
       (*this)[k_row][column] = col_vec[k_row];
@@ -159,9 +159,9 @@ public:
     ele_max = (*this)[0][0] * (*this)[0][0];
     for(i=0;i<N;i++) {
       for(j=0;j<N;j++) {
-	qq = (*this)[i][j] * (*this)[i][j];
-	if(qq > ele_max) {
-	  ele_max = qq;
+        qq = (*this)[i][j] * (*this)[i][j];
+        if(qq > ele_max) {
+          ele_max = qq;
         }
       }
     }

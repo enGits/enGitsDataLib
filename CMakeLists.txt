@@ -84,7 +84,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})  # This, according to the new C
 if(USE_QT5)
   add_definitions(-DWITH_QT5)
   set(CMAKE_AUTOMOC ON)
-  set(CMAKE_AUTOUIC ON)
+  if(NOT WIN32)
+    set(CMAKE_AUTOUIC ON)
+  endif()
   set(CMAKE_AUTORCC ON)
   find_package(Qt5 COMPONENTS Core REQUIRED)
 else()
@@ -108,6 +110,7 @@ edl/mathvector_methods.h
 edl/mathvector_operators.h
 edl/mathvector_structs.h
 edl/pmap.h
+edl/pointcloudsurface.h
 edl/profile.h
 edl/smallsquarematrix.h
 edl/sparsetwodimarray.h
@@ -126,6 +129,7 @@ edl/tsparsetwodimarray.h
 edl/unit.h
 edl/varcontainer.h
 edl/tgraph.h
+edl/tools.h
 )
 
 if(USE_QT5)

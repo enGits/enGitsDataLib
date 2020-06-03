@@ -61,6 +61,7 @@ struct MathVector : public V
   MathVector() : V() {}
   MathVector(const MathVector<V>& vec);
   MathVector(const value_type *v);
+  MathVector(const value_type v);
   MathVector(const value_type v1, const value_type v2, const value_type v3, const value_type v4);
   MathVector(const value_type v1, const value_type v2, const value_type v3);
   MathVector(const value_type v1, const value_type v2);
@@ -88,8 +89,12 @@ struct MathVector : public V
   scalar_t abs() const;
   scalar_t abs2() const;
   MathVector<V> normalise();
+  MathVector<V> normalised();
   scalar_t* c_array() const;
   uint_t dim() { return this->size(); }
+  void minimisePerCoord(const MathVector<V>& vec);
+  void maximisePerCoord(const MathVector<V>& vec);
+
 
 
   // STL

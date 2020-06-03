@@ -2,7 +2,7 @@
 // +                                                                    +
 // + This file is part of enGitsDataLib.                                +
 // +                                                                    +
-// + Copyright 2015 enGits GmbH                                         +
+// + Copyright 2015-2020 enGits GmbH                                    +
 // +                                                                    +
 // + enGitsDataLib is free software: you can redistribute it and/or     +
 // + modify it under the terms of the GNU Lesser General Public License +
@@ -20,29 +20,35 @@
 // +                                                                    +
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#include "geometrytools.h"
-#include "linsolve.h"
-#include "containertricks.h"
+#ifndef TOOLS_H
+#define TOOLS_H
 
-#include <cmath>
+#include "edl.h"
 
 namespace EDL_NAMESPACE
 {
 
+template <typename T>
+T interpolate1(T x, T x1, T x2, T y1, T y2)
+{
+  T w = (x - x1)/(x2 - x1);
+  return (T(1) - w)*y1 + w*y2;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+template <typename T>
+T interpolate3(T x, T x1, T x2, T x3, T x4, T y1, T y2, T y3, T y4)
+{
+  T y_x0 = (x3-x2)*(y3 - y1)/(x3 - x1);
+  T y_x1 = (x3-x2)*(y4 - y2)/(x4 - x2);
+  //
+  T a =                y_x0;
+  T b =  3*(y3-y2) - 2*y_x0 - y_x1;
+  T c = -2*(y3-y2) +   y_x0 + y_x1;
+  //
+  T w = (x - x2)/(x3 - x2);
+  return a*w + b*w*w + c*w*w*w + y2;
+}
 
 } // namespace
+
+#endif // TOOLS_H
