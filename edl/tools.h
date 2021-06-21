@@ -24,6 +24,8 @@
 #define TOOLS_H
 
 #include "edl.h"
+#include <string>
+#include <vector>
 
 namespace EDL_NAMESPACE
 {
@@ -48,6 +50,52 @@ T interpolate3(T x, T x1, T x2, T x3, T x4, T y1, T y2, T y3, T y4)
   T w = (x - x2)/(x3 - x2);
   return a*w + b*w*w + c*w*w*w + y2;
 }
+
+inline std::string trim(std::string s)
+{
+  std::string result = "";
+  for (auto c : s) {
+    if (!isspace(c) || result.size()) {
+      result += c;
+    }
+  }
+  while (result.size()) {
+    if (isspace(result.back())) {
+      result.pop_back();
+    } else {
+      break;
+    }
+  }
+  return result;
+}
+
+inline std::vector<std::string> split(std::string s, std::string delimiter, bool trim_result=true)
+{
+  size_t pos_start = 0;
+  size_t pos_end;
+  size_t delim_len = delimiter.length();
+  //
+  std::string              token;
+  std::vector<std::string> result;
+  //
+  while ((pos_end = s.find (delimiter, pos_start)) != std::string::npos) {
+    token = s.substr (pos_start, pos_end - pos_start);
+    pos_start = pos_end + delim_len;
+    if (trim_result) {
+      result.push_back(trim(token));
+    } else {
+      result.push_back(token);
+    }
+  }
+  //
+  if (trim_result) {
+    result.push_back(trim(s.substr(pos_start)));
+  } else {
+    result.push_back(s.substr(pos_start));
+  }
+  return result;
+}
+
 
 } // namespace
 

@@ -98,6 +98,7 @@ endif(USE_QT5)
 SET(engitsdatalib_HEADERS
 edl/bmap.h
 edl/containertricks.h
+edl/csvreader.h
 edl/edlerror.h
 edl/edl.h
 edl/geometrytools.h
@@ -141,6 +142,7 @@ endif(USE_QT5)
 SET(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
 ${engitsdatalib_HEADERS_MOC}
+edl/csvreader.cpp
 edl/edlerror.cpp
 edl/geometrytools.cpp
 edl/interpolationcurve.cpp
