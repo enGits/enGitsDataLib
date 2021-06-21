@@ -292,7 +292,7 @@ template <class I>
 void PointCloudSurface<T>::computeWeights()
 {
   m_Weights.resetData(m_InterpolationPoints.size(), m_InterpolationPoints.size());
-  int num_cores = std::min(m_InterpolationPoints.size(), std::max(size_t(1), size_t(std::thread::hardware_concurrency())));
+  int num_cores = 1; //std::min(m_InterpolationPoints.size(), std::max(size_t(1), size_t(std::thread::hardware_concurrency())));
   std::vector<WeightThread<I>*> threads(num_cores);
   for (int ith = 0; ith < num_cores; ++ith) {
     size_t i1 = ith*m_InterpolationPoints.size()/num_cores;
@@ -517,7 +517,11 @@ void PointCloudSurface<T>::DistanceWeightedLeastSquares::compute(TList<vec_t>& p
   //
   T min_dist = std::numeric_limits<T>::max();
   FORALL(i, weights.) {
-    weights[i] = (points[i] - x).abs();
+    vec_t dx = points[i] - x;
+    T dxn = dx*g1;
+    dx -= dxn*g1;
+    //weights[i] = (points[i] - x).abs();
+    weights[i] = dx.abs();
     min_dist = std::min(min_dist, weights[i]);
   }
   //
@@ -530,7 +534,7 @@ void PointCloudSurface<T>::DistanceWeightedLeastSquares::compute(TList<vec_t>& p
     xi2 = GI*xi2;
     xi2[0] = 1;
     weights[i] = 1.0/std::max(min_dist, weights[i]);
-    A[0] += weights[i]*weights[i] *       xi2;
+    A[0] += weights[i]*weights[i] *        xi2;
     A[1] += weights[i]*weights[i] * xi2[1]*xi2;
     A[2] += weights[i]*weights[i] * xi2[2]*xi2;
   }
