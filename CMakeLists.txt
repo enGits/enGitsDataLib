@@ -90,12 +90,12 @@ if(USE_QT5)
   set(CMAKE_AUTORCC ON)
   find_package(Qt5 COMPONENTS Core REQUIRED)
 else()
-  FIND_PACKAGE(Qt4 COMPONENTS QtCore REQUIRED)
-  INCLUDE(${QT_USE_FILE})
+  find_package(Qt4 COMPONENTS QtCore REQUIRED)
+  include(${QT_USE_FILE})
   include_directories(${QT_QTCORE_INCLUDE_DIR})
 endif(USE_QT5)
 
-SET(engitsdatalib_HEADERS
+set(engitsdatalib_HEADERS
 edl/bmap.h
 edl/containertricks.h
 edl/csvreader.h
@@ -139,7 +139,7 @@ else()
   QT4_WRAP_CPP(engitsdatalib_HEADERS_MOC ${engitsdatalib_HEADERS})
 endif(USE_QT5)
 
-SET(engitsdatalib_SOURCES
+set(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
 ${engitsdatalib_HEADERS_MOC}
 edl/csvreader.cpp
@@ -155,9 +155,9 @@ edl/varcontainer.cpp
 )
 
 if(CREATE_STATIC_LIBRARY)
-  ADD_LIBRARY(engitsdatalib STATIC ${engitsdatalib_SOURCES})
+  add_library(engitsdatalib STATIC ${engitsdatalib_SOURCES})
 else(CREATE_STATIC_LIBRARY)
-  ADD_LIBRARY(engitsdatalib SHARED ${engitsdatalib_SOURCES})
+  add_library(engitsdatalib SHARED ${engitsdatalib_SOURCES})
 endif(CREATE_STATIC_LIBRARY)
 
 # If Visual Studio, generate export header to allow sharing of dll data..
@@ -166,11 +166,12 @@ if(WIN32 AND MSVC)
   generate_export_header(engitsdatalib)
 endif(WIN32 AND MSVC)
 
-SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES MACOSX_RPATH 1)
-SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES VERSION ${ENGITSDATALIB_VERSION})
+set_target_properties(engitsdatalib PROPERTIES MACOSX_RPATH 1)
+set_target_properties(engitsdatalib PROPERTIES VERSION ${ENGITSDATALIB_VERSION})
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  SET_TARGET_PROPERTIES(engitsdatalib PROPERTIES COMPILE_FLAGS "-Wno-deprecated")
+  set_target_properties(engitsdatalib PROPERTIES COMPILE_FLAGS "-Wno-deprecated")
 endif()
+set_target_properties(enGitsDataLib PROPERTIES LINKER_LANGUAGE CXX)
 
 if(USE_QT5)
   target_link_libraries(engitsdatalib Qt5::Core)
