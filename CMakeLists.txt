@@ -42,7 +42,7 @@ if (${A_ENABLE_VAR3})
   add_definitions(-DWITH_VAR3)
 endif()
 
-option(USE_QT5 "Compile using the Qt5 library." OFF)
+option(USE_QT5 "Compile using the Qt5 library." ON)
 
 option(CREATE_STATIC_LIBRARY "Create a static version of engitsdatalib." OFF)
 
