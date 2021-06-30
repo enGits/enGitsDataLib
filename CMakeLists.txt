@@ -48,10 +48,9 @@ option(CREATE_STATIC_LIBRARY "Create a static version of engitsdatalib." OFF)
 
 set(CMAKE_CXX_STANDARD 11)
 
-if (NOT INITIAL_CONFIG)
-  set(INITIAL_CONFIG "..." CACHE INTERNAL "hidden flag...")
-  set(CMAKE_INSTALL_PREFIX $ENV{HOME}/local CACHE STRING "Install path prefix, prepended onto install directories." FORCE)
-endif()
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX $ENV{HOME}/local CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
+ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 set(A_VERBOSE_BUILD OFF CACHE BOOL "Verbose build?")
 if (${A_VERBOSE_BUILD})
