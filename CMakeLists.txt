@@ -83,10 +83,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})  # This, according to the new C
 # Qt4/Qt5
 if(USE_QT5)
   add_definitions(-DWITH_QT5)
-  set(CMAKE_AUTOMOC ON)
-  if(NOT WIN32)
-    set(CMAKE_AUTOUIC ON)
-  endif()
   set(CMAKE_AUTORCC ON)
   find_package(Qt5 COMPONENTS Core REQUIRED)
 else()
@@ -133,15 +129,8 @@ edl/tgraph.h
 edl/tools.h
 )
 
-if(USE_QT5)
-  set(engitsdatalib_HEADERS_MOC "")
-else()
-  QT4_WRAP_CPP(engitsdatalib_HEADERS_MOC ${engitsdatalib_HEADERS})
-endif(USE_QT5)
-
 set(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
-${engitsdatalib_HEADERS_MOC}
 edl/csvreader.cpp
 edl/edlerror.cpp
 edl/geometrytools.cpp
