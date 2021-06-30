@@ -171,7 +171,6 @@ set_target_properties(engitsdatalib PROPERTIES VERSION ${ENGITSDATALIB_VERSION})
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set_target_properties(engitsdatalib PROPERTIES COMPILE_FLAGS "-Wno-deprecated")
 endif()
-set_target_properties(enGitsDataLib PROPERTIES LINKER_LANGUAGE CXX)
 
 if(USE_QT5)
   target_link_libraries(engitsdatalib Qt5::Core)
