@@ -25,14 +25,17 @@
 #include <random>
 
 #include "edl/tools.h"
+#include "edl/stringtools.h"
 #include "edl/geometrytools.h"
 
 int main()
 {
   std::string txt = "This is, a , comma separated, string.";
-  auto parts = edl::split(txt, ",");
+  auto parts = edl::StringTools::split(txt, ",");
   for (auto part : parts) {
     std::cout << "\"" << part << "\"" << std::endl;
   }
-  return(0); 
+  std::cout << edl::StringTools::toLower(txt) << std::endl;
+  std::cout << edl::StringTools::toUpper(txt) << std::endl;
+  return(0);
 }

@@ -21,7 +21,7 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #include "csvreader.h"
-#include "tools.h"
+#include "stringtools.h"
 #include "edlerror.h"
 
 #include <fstream>
@@ -34,11 +34,11 @@ CsvReader::CsvReader(std::string file_name)
   std::ifstream f(file_name);
   std::string line;
   std::getline(f, line);
-  auto header_parts = edl::split(line, ",");
+  auto header_parts = StringTools::quotedSplit(line, ",");
   //
   while (!f.eof() && line != "") {
-    std::getline(f, line);
-    auto parts = edl::split(line, ",");
+    line = StringTools::readQuotedLine(f, '"');
+    auto parts = StringTools::quotedSplit(line, ",");
     for (int i = 0; i < parts.size(); ++i) {
       m_Data[header_parts[i]].push_front(parts[i]);
     }
@@ -54,6 +54,12 @@ CsvReader::CsvReader(std::string file_name)
       N = n;
     } else {
       if (N != n) {
+        /*
+        std::vector<std::string> column_reversed(n);
+        std::vector<std::string> column(n);
+        std::copy(i.second.begin(), i.second.end(), column_reversed.begin());
+        std::reverse_copy(column_reversed.begin(), column_reversed.end(), column.begin());
+        */
         throw EdlError("Error while reading CSV file.");
       }
     }

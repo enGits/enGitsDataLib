@@ -180,7 +180,18 @@ namespace StringTools
     };
     return s_new;
   }
-  
+
+  inline std::string remove(std::string s, char c)
+  {
+    std::string s_new = "";
+    std::string::iterator i = s.begin();
+    while (i != s.end()) {
+      if (*i != c) s_new += *i;
+      i++;
+    };
+    return s_new;
+  }
+
   inline std::string readLine(std::istream &s)
   {
     std::string line = "";
@@ -227,7 +238,7 @@ namespace StringTools
 
   inline std::string right(std::string s, size_t n)
   {
-    return subString(s,s.size()-n-1,s.size()-1);
+    return subString(s,s.size()-n,s.size()-1);
   }
 
   inline std::string left(std::string s, size_t n)
@@ -235,38 +246,123 @@ namespace StringTools
     return subString(s,0,n-1);
   }
 
-  inline int split(std::string s, std::list<std::string> &sub, char c)
+  inline std::string trim(std::string s)
   {
-    std::string word = "";
-    bool first = true;
-    int N = 0;
-    for (size_t i = 0; i < s.size(); ++i) {
-      if (s[i] != c) {
-        first = false;
-        word += s[i];
+    std::string result = "";
+    for (auto c : s) {
+      if (!isspace(c) || result.size()) {
+        result += c;
+      }
+    }
+    while (result.size()) {
+      if (isspace(result.back())) {
+        result.pop_back();
       } else {
-        if (!first) {
-          sub.push_back(word);
-          ++N;
-          word = "";
-          first = true;
+        break;
+      }
+    }
+    return result;
+  }
+
+  inline std::vector<std::string> split(std::string s, std::string delimiter, bool trim_result=true)
+  {
+    size_t pos_start = 0;
+    size_t pos_end;
+    size_t delim_len = delimiter.length();
+    //
+    std::string              token;
+    std::vector<std::string> result;
+    //
+    while ((pos_end = s.find (delimiter, pos_start)) != std::string::npos) {
+      token = s.substr (pos_start, pos_end - pos_start);
+      pos_start = pos_end + delim_len;
+      if (trim_result) {
+        result.push_back(trim(token));
+      } else {
+        result.push_back(token);
+      }
+    }
+    //
+    if (trim_result) {
+      result.push_back(trim(s.substr(pos_start)));
+    } else {
+      result.push_back(s.substr(pos_start));
+    }
+    return result;
+  }
+
+  inline int countChar(std::string s, char count_char)
+  {
+    int count = 0;
+    for (char c : s) {
+      if (c == count_char) {
+        ++count;
+      }
+    }
+    return count;
+  }
+
+  inline std::vector<std::string> quotedSplit(std::string s, std::string delimiter, char quote_char='"', bool trim_result=true)
+  {
+    auto quote_str = std::string("") + quote_char;
+    auto parts = split(s, delimiter, trim_result);
+    std::vector<std::string> clean_parts;
+    clean_parts.reserve(parts.size());
+    int i = 0;
+    while (i < parts.size()) {
+      if (parts[i].empty()) {
+        clean_parts.push_back(parts[i]);
+        ++i;
+      } else if (countChar(parts[i], quote_char) % 2 == 0) {
+        clean_parts.push_back(parts[i]);
+        ++i;
+      } else {
+        clean_parts.push_back(StringTools::remove(parts[i], '"'));
+        while (i < parts.size() - 1) {
+          ++i;
+          clean_parts.back() += "," + StringTools::remove(parts[i], '"');
+          if (StringTools::right(parts[i],1) == quote_str) {
+            ++i;
+            break;
+          }
         }
       }
     }
-    if (word.size() > 0) {
-      sub.push_back(word);
-      ++N;
-    }
-    return N;
+    return clean_parts;
   }
 
-  inline int split(std::string s, std::vector<std::string> &sub, char c)
+  inline std::string toLower(std::string s)
   {
-    std::list<std::string> l;
-    int N = split(s,l,c);
-    sub.resize(N);
-    copy(l.begin(),l.end(),sub.begin());
-    return N;
+    for (auto& c :s) {
+      c = std::tolower(c);
+    }
+    return s;
+  }
+
+  inline std::string toUpper(std::string s)
+  {
+    for (auto& c :s) {
+      c = std::toupper(c);
+    }
+    return s;
+  }
+
+  inline std::string readQuotedLine(std::istream& s, char quote_char='"')
+  {
+    bool in_quotes = false;
+    std::string line = "";
+    while (!s.eof()) {
+      char c = s.get();
+      if (c == quote_char) {
+        in_quotes = !in_quotes;
+      }
+      if (c == '\n' && !in_quotes) {
+        return line;
+      } else {
+        line += c;
+      }
+    }
+    return line;
   }
 
 } // namespace StringTools
