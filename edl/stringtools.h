@@ -142,14 +142,21 @@ namespace StringTools
   int split(std::string s, std::vector<std::string> &sub, char c = ' ');
 
   template <class T>
-  bool stringTo(std::string s, T &t)
+  inline bool stringTo(std::string s, T &t)
   {
     s += " -";
     std::istringstream stream(s);
     stream >> t;
     return stream.good();
   }
-  
+
+  template <>
+  inline bool stringTo(std::string s, std::string &t)
+  {
+    t = s;
+    return true;
+  }
+
   template <class T>
   void toString(T t, std::string &s)
   {
@@ -353,6 +360,9 @@ namespace StringTools
     std::string line = "";
     while (!s.eof()) {
       char c = s.get();
+      if (c == -1) {
+        break;
+      }
       if (c == quote_char) {
         in_quotes = !in_quotes;
       }

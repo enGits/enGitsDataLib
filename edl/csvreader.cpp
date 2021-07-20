@@ -40,7 +40,7 @@ CsvReader::CsvReader(std::string file_name)
     line = StringTools::readQuotedLine(f, '"');
     auto parts = StringTools::quotedSplit(line, ",");
     for (int i = 0; i < parts.size(); ++i) {
-      m_Data[header_parts[i]].push_front(parts[i]);
+      m_Data[header_parts[i]].push_front(StringTools::trim(parts[i]));
     }
   }
   //
