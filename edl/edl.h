@@ -24,6 +24,11 @@
 
 #define EDL_NAMESPACE edl
 
+#ifdef _WIN32
+#undef min
+#undef max
+#endif
+
 #include <cfloat>
 #include <cmath>
 #include <limits>

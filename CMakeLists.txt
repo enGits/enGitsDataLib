@@ -67,7 +67,7 @@ set(ENGITSDATALIB_VERSION ${ENGITSDATALIB_MAJOR_VERSION}.${ENGITSDATALIB_MINOR_V
 # If windows, use cmath
 # If Visual Studio, export all symbols for dlls and compile in parallel
 if(WIN32)
-  add_definitions(-D_USE_MATH_DEFINES)
+  add_compile_definitions(_USE_MATH_DEFINES)
   if(MSVC)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     set(BUILD_SHARED_LIBS ON)

@@ -32,6 +32,10 @@ namespace EDL_NAMESPACE
 CsvReader::CsvReader(std::string file_name)
 {
   std::ifstream f(file_name);
+  if (!f.is_open()) {
+    std::string error_message = "File \"" + file_name + "\" not found.";
+    throw EdlError(error_message);
+  }
   std::string line;
   //std::getline(f, line);
   line = StringTools::readQuotedLine(f, '"');
