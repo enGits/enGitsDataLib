@@ -375,6 +375,27 @@ namespace StringTools
     return line;
   }
 
+  inline bool stringStartsWith(std::string text1, std::string text2)
+  {
+    if (left(text1, text2.size()) == text2) {
+      return true;
+    }
+    return false;
+  }
+
+  inline bool stringEndsWith(std::string text1, std::string text2)
+  {
+    if (right(text1, text2.size()) == text2) {
+      return true;
+    }
+    return false;
+  }
+
+  inline bool stringContains(std::string text1, std::string text2)
+  {
+    return text1.find(text2) != std::string::npos;
+  }
+
 } // namespace StringTools
 
 } // namespace edl
