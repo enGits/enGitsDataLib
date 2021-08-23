@@ -33,14 +33,22 @@ CsvReader::CsvReader(std::string file_name)
 {
   std::ifstream f(file_name);
   std::string line;
-  std::getline(f, line);
+  //std::getline(f, line);
+  line = StringTools::readQuotedLine(f, '"');
   auto header_parts = StringTools::quotedSplit(line, ",");
   //
+  std::vector<bool> active_column(header_parts.size(), false);
   while (!f.eof() && line != "") {
     line = StringTools::readQuotedLine(f, '"');
-    auto parts = StringTools::quotedSplit(line, ",");
-    for (int i = 0; i < parts.size(); ++i) {
-      m_Data[header_parts[i]].push_front(StringTools::trim(parts[i]));
+    if (!edl::StringTools::trim(line).empty()) {
+      auto parts = StringTools::quotedSplit(line, ",");
+      for (int i = 0; i < parts.size(); ++i) {
+        auto header = header_parts[i];
+        if (!header.empty()) {
+          active_column[i] = true;
+          m_Data[header].push_front(StringTools::trim(parts[i]));
+        }
+      }
     }
   }
   //
@@ -54,12 +62,6 @@ CsvReader::CsvReader(std::string file_name)
       N = n;
     } else {
       if (N != n) {
-        /*
-        std::vector<std::string> column_reversed(n);
-        std::vector<std::string> column(n);
-        std::copy(i.second.begin(), i.second.end(), column_reversed.begin());
-        std::reverse_copy(column_reversed.begin(), column_reversed.end(), column.begin());
-        */
         throw EdlError("Error while reading CSV file.");
       }
     }
@@ -67,6 +69,15 @@ CsvReader::CsvReader(std::string file_name)
   if (N < 0) {
     throw EdlError("Error while reading CSV file.");
   }
+}
+
+std::vector<std::string> CsvReader::getColumnNames()
+{
+  std::vector<std::string> column_names;
+  for(auto i : m_Data) {
+    column_names.push_back(i.first);
+  }
+  return column_names;
 }
 
 }

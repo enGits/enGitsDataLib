@@ -70,6 +70,8 @@ public: // methods
     return result;
   }
 
+  std::vector<std::string> getColumnNames();
+
 
 };
 
