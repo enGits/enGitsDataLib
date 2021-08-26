@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <locale>
 #include <sstream>
 #include <iostream>
 #include <algorithm>
@@ -257,12 +258,12 @@ namespace StringTools
   {
     std::string result = "";
     for (auto c : s) {
-      if (!isspace(c) || result.size()) {
+      if (!std::isspace<char>(c, std::locale::classic()) || result.size()) {
         result += c;
       }
     }
     while (result.size()) {
-      if (isspace(result.back())) {
+      if (std::isspace<char>(result.back(), std::locale::classic())) {
         result.pop_back();
       } else {
         break;
