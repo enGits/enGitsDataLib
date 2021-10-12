@@ -101,6 +101,7 @@ edl/interpolation.h
 edl/interpolationcurve.h
 edl/linsolve.h
 edl/list.h
+edl/lsqinterpolation.h
 edl/mathvector.h
 edl/mathvector_methods.h
 edl/mathvector_operators.h
