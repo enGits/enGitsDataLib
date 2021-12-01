@@ -123,6 +123,7 @@ public: // methods
   {
     node_t node;
     node.weight = w;
+    node.value  = 0;
     for (int i = 0; i < DIM; ++i) {
       node.x[i] = x[i];
     }
@@ -138,7 +139,7 @@ public: // methods
   }
 
   template <typename T>
-  void interpolate(const T& x)
+  value_t interpolate(const T& x)
   {
     if (!m_VectorPrepared) {
       prepareVector();
@@ -181,6 +182,52 @@ public: // methods
     }
   }
 
+  void getFlatMatrix(value_t* flat_matrix)
+  {
+    if (!m_MatrixPrepared) {
+      prepareMatrix();
+    }
+    int idx = 0;
+    for (int i = 0; i <= DIM; ++i) {
+      for (int j = 0; j <= DIM; ++j) {
+        flat_matrix[idx] = m_InvMatrix[i][j];
+        ++idx;
+      }
+    }
+  }
+
+  template<typename T>
+  std::vector<value_t> getMetrics(const T& x)
+  {
+    if (!m_MatrixPrepared) {
+      prepareMatrix();
+    }
+    //
+    std::vector<value_t> C(m_Nodes.size());
+    //a_00 + a_01*x[i] + a_02*y[i] + a_03*z[i] + a_10*x + a_11*x*x[i] + a_12*x*y[i] + a_13*x*z[i] + a_20*y + a_21*x[i]*y + a_22*y*y[i] + a_23*y*z[i] + a_30*z + a_31*x[i]*z + a_32*y[i]*z + a_33*z*z[i]
+
+    for (int i = 0; i < m_Nodes.size(); ++i) {
+      node_t node = m_Nodes[i];
+      C[i]  = m_InvMatrix[0][0];
+      C[i] += m_InvMatrix[0][1]*node.x[0];
+      C[i] += m_InvMatrix[0][2]*node.x[1];
+      C[i] += m_InvMatrix[0][3]*node.x[2];
+      C[i] += m_InvMatrix[1][0]*x[0];
+      C[i] += m_InvMatrix[1][1]*x[0]*node.x[0];
+      C[i] += m_InvMatrix[1][2]*x[0]*node.x[1];
+      C[i] += m_InvMatrix[1][3]*x[0]*node.x[2];
+      C[i] += m_InvMatrix[2][0]*x[1];
+      C[i] += m_InvMatrix[2][1]*x[1]*node.x[0];
+      C[i] += m_InvMatrix[2][2]*x[1]*node.x[1];
+      C[i] += m_InvMatrix[2][3]*x[1]*node.x[2];
+      C[i] += m_InvMatrix[3][0]*x[2];
+      C[i] += m_InvMatrix[3][1]*x[2]*node.x[0];
+      C[i] += m_InvMatrix[3][2]*x[2]*node.x[1];
+      C[i] += m_InvMatrix[3][3]*x[2]*node.x[2];
+      C[i] *= node.weight;
+    }
+    return C;
+  }
 
 };
 
