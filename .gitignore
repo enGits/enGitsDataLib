@@ -18,6 +18,7 @@ temp
 build/*
 build-debug/*
 build-*/*
+build.*/*
 
 # Qt generated files
 moc_*
