@@ -165,7 +165,7 @@ namespace StringTools
     stream << t;
     s = stream.str();
   }
-  
+
   template <class T>
   std::string toString(T t, int fill)
   {
@@ -176,7 +176,7 @@ namespace StringTools
     else if (fill > 0) s = rightFill(s,' ',fill);
     return s;
   }
-  
+
   inline std::string replace(std::string s, char c_orig, char c_new)
   {
     std::string s_new = "";
@@ -216,7 +216,7 @@ namespace StringTools
     } while (!done);
     return line;
   }
-  
+
   inline std::string subString(std::string s, size_t i1, size_t i2)
   {
     std::string sub = "";
@@ -229,11 +229,11 @@ namespace StringTools
   }
 
   inline std::string leftFill(std::string s, char c, size_t l)
-  { 
+  {
     while (s.size() < l) {
       s = c + s;
     };
-    return s; 
+    return s;
   };
 
   inline std::string rightFill(std::string s, char c, size_t l)
@@ -241,7 +241,7 @@ namespace StringTools
     while (s.size() < l) {
       s = s + c;
     };
-    return s; 
+    return s;
   }
 
   inline std::string right(std::string s, size_t n)
