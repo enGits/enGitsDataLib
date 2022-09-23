@@ -27,10 +27,12 @@
 #include <fstream>
 
 #include "edl/lsqinterpolation.h"
+#include "edl/pointcloudsurface.h"
 
 using namespace edl;
 
 typedef float test_t;
+//typedef double test_t;
 typedef MathVector<StaticVector<test_t,3>> vec_t;
 
 test_t testfunc(vec_t x)
@@ -42,7 +44,7 @@ test_t testfunc(vec_t x)
   return a0 + a1*sqr(x[0]) + a2*x[1] + a3*x[2];
 }
 
-int main()
+int test1()
 {
   test_t h = 0.025;
   LsqInterpolation<test_t,3> lsq;
@@ -90,5 +92,80 @@ int main()
   std::cout << C_value << std::endl;
 
   //
-  return(0);
+  return 0;
+}
+
+int test2()
+{
+  LsqInterpolation<test_t,3> lsq;
+  vec_t X0(0,0,0);
+  test_t L = 10;
+  std::vector<vec_t> X;
+  X.push_back(L*vec_t( 0, 0, 0.0));
+  X.push_back(L*vec_t(-1, 0, 0.0));
+  X.push_back(L*vec_t( 1, 0, 0.0));
+  //X.push_back(L*vec_t( 0, 0, 1.0));
+  X.push_back(L*vec_t(3, 0, 0.0));
+  //
+  PointCloudSurface<test_t> surf;
+  surf.setPoints(X);
+  surf.planeFit();
+  auto xc = surf.planeOrigin();
+  auto n  = surf.planeNormal();
+  auto dv = surf.planeStdDev();
+  auto md = surf.planeMeanDist();
+  //
+  if (dv/md < 0.01) {
+    auto X_orig = X;
+    for (auto x : X_orig) {
+      X.push_back(x + md*n);
+    }
+  }
+  //
+  std::vector<real> values;
+  for (auto x : X) {
+    lsq.addNode(x, 1);
+    values.push_back(0);
+  }
+  auto weights = lsq.getMetrics(X0);
+  std::cout << lsq.getMatrix() << std::endl;
+  auto A  = lsq.getMatrix();
+  auto d  = A.det();
+  auto AI = A.inverse();
+  std::cout << A << std::endl;
+  std::cout << d << std::endl;
+  std::cout << AI << std::endl;
+  //
+  return 0;
+}
+
+int test3()
+{
+  LsqInterpolation<test_t,3> lsq;
+  vec_t X0(0,0,0);
+  std::vector<vec_t> X;
+  X.push_back(vec_t(-0.00999999 , 0          , 0.00498924));
+  X.push_back(vec_t(0           ,-0.00997102 ,-0.00498924));
+  X.push_back(vec_t(0           , 0          ,-0.00498924));
+  X.push_back(vec_t(0           , 0.00997099 ,-0.00498924));
+  //
+  std::vector<real> values;
+  for (auto x : X) {
+    lsq.addNode(x, 1);
+    values.push_back(0);
+  }
+  auto weights = lsq.getMetrics(X0);
+  auto A  = lsq.getMatrix();
+  auto d  = A.det();
+  auto AI = A.inverse();
+  std::cout << A << std::endl;
+  std::cout << d << std::endl;
+  std::cout << AI << std::endl;
+  //
+  return 0;
+}
+
+int main()
+{
+  return test3();
 }
