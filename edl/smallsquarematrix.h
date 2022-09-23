@@ -28,6 +28,7 @@
 namespace EDL_NAMESPACE
 {
 template <class T, uint_t N> class SmallSquareMatrix;
+template <class T, uint_t N> class SmallSquareMatrixDeterminant;
 }
 
 #include <vector>
@@ -177,7 +178,7 @@ public:
   /** get the determinant of the matrix
    *  @return the determinant
    */
-  T det();
+  T det() { return SmallSquareMatrixDeterminant<T,N>::det(*this); }
 
   /** get the inverse of the matrix
    *  @return the inverse of the matrix
@@ -247,6 +248,7 @@ inline void SmallSquareMatrix<T,N>::initAll(double initvalue)
   }
 }
 
+/*
 template <class T, uint_t N>
 inline T SmallSquareMatrix<T,N>::det()
 {
@@ -260,47 +262,42 @@ inline T SmallSquareMatrix<T,N>::det()
   std::vector<int> p(n);
   T q,s,max,h,det;
 
-  det=1;
-  for(k=0;k<n-1;k++)
-    {
-      max=0.0;
-      p[k]=0;
-      for(i=k;i<n;i++)
-	{
-	  s=0.0;
-	  for(j=k;j<n;j++)
-	    {
-	      s=s+fabs(a[i][j]);
-	    }
-	  q=fabs(a[i][k])/s;
-	  if(q>max)
-	    {
-	      max=q;
-	      p[k]=i;
-	    }
-	}
-      if(!(p[k]==k))
-	{
-	  det=-det;
-	  for(j=0;j<n;j++)
-	    {
-	      h=a[k][j];
-	      a[k][j]=a[p[k]][j];
-	      a[p[k]][j]=h;
-	    }
-	}
-      det=det*a[k][k];
-      for(i=k+1;i<n;i++)
-	{
-	  a[i][k]=a[i][k]/a[k][k];
-	  for(j=k+1;j<n;j++)
-	    a[i][j]=a[i][j]-a[i][k]*a[k][j];
-	}
+  det = 1;
+  for (k = 0; k < n-1; k++) {
+    max=0.0;
+    p[k]=0;
+    for (i = k; i < n; i++) {
+      s = 0.0;
+      for (j = k; j< n; j++) {
+        s = s + fabs(a[i][j]);
+      }
+      q = fabs(a[i][k])/s;
+      if (q>max) {
+        max = q;
+        p[k] = i;
+      }
     }
-  det=det*a[n-1][n-1];
-    
+    if (!(p[k]==k)) {
+      det = -det;
+      for (j = 0; j < n; j++) {
+        h = a[k][j];
+        a[k][j] = a[p[k]][j];
+        a[p[k]][j] = h;
+      }
+    }
+    det = det*a[k][k];
+    for (i = k+1; i < n; i++) {
+      a[i][k] = a[i][k]/a[k][k];
+      for (j = k+1; j < n; j++) {
+        a[i][j] = a[i][j]-a[i][k]*a[k][j];
+      }
+    }
+  }
+  det = det*a[n-1][n-1];
+
   return det;
 }
+*/
 
 // Rainers inverter
 template <class T, uint_t N>
@@ -311,9 +308,9 @@ protected:
 
 public:
   /** constructor.
-   */ 
+   */
   InvSmallSquareMatrix<T,N>(SmallSquareMatrix<T,N> a,
-			    bool a_prec_safe, T a_prec_limit) {
+                            bool a_prec_safe, T a_prec_limit) {
 
     int Smalldim = N;
     int n;
@@ -322,7 +319,7 @@ public:
     std::vector<int> p(n);
     T q,s,max,h,det;
     T ele_max = 0;
-      
+
     if(a_prec_safe) {a.setSafe(a_prec_limit);}
 
     //.. Find maximum element to get a relative value
@@ -333,7 +330,7 @@ public:
     //.. Get in matrix reduction
     for(k=0;k<Smalldim;k++)
       for(j=0;j<Smalldim;j++)
-	b[j][k]=0.0;
+        b[j][k]=0.0;
     for(j=0;j<Smalldim;j++)
       b[j][j]=1.0;
     det=1;
@@ -341,26 +338,26 @@ public:
       max=0.0;
       p[k]=0;
       for(i=k;i<n;i++){
-	s=0.0;
-	for(j=k;j<n;j++) s=s+fabs(a[i][j]);
-	q=fabs(a[i][k])/s;
-	if(q>max){
-	  max=q;
-	  p[k]=i;
+        s=0.0;
+        for(j=k;j<n;j++) s=s+fabs(a[i][j]);
+        q=fabs(a[i][k])/s;
+        if(q>max){
+          max=q;
+          p[k]=i;
         }
       }
       if(!(p[k]==k)){
-	det=-det;
-	for(j=0;j<n;j++){
-	  h=a[k][j];
-	  a[k][j]=a[p[k]][j];
-	  a[p[k]][j]=h;
+        det=-det;
+        for(j=0;j<n;j++){
+          h=a[k][j];
+          a[k][j]=a[p[k]][j];
+          a[p[k]][j]=h;
         }
       }
       det=det*a[k][k];
       for(i=k+1;i<n;i++){
-	a[i][k]=a[i][k]/a[k][k];
-	for(j=k+1;j<n;j++) a[i][j]=a[i][j]-a[i][k]*a[k][j];
+        a[i][k]=a[i][k]/a[k][k];
+        for(j=k+1;j<n;j++) a[i][j]=a[i][j]-a[i][k]*a[k][j];
       }
     }
     det=det*a[n-1][n-1];
@@ -368,24 +365,24 @@ public:
     //.. Proceed with rest of system reduction
     for(k=0;k<n-1;k++)
       if(!(p[k]==k)){
-	for(l=0;l<n;l++){
-	  h=b[k][l];
-	  b[k][l]=b[p[k]][l];
-	  b[p[k]][l]=h;
-	}
+        for(l=0;l<n;l++){
+          h=b[k][l];
+          b[k][l]=b[p[k]][l];
+          b[p[k]][l]=h;
+        }
       }
     for(i=0;i<n;i++){
       for(j=0;j<i;j++){
-	for(l=0;l<n;l++)
-	  b[i][l]=b[i][l]-a[i][j]*b[j][l];
+        for(l=0;l<n;l++)
+          b[i][l]=b[i][l]-a[i][j]*b[j][l];
       }
     }
     for(i=n-1;i>=0;i--){
       for(l=0;l<n;l++){
-	s=b[i][l];
-	for(k=i+1;k<n;k++)
-	  s=s-a[i][k]*b[k][l];
-	b[i][l]=s/a[i][i];
+        s=b[i][l];
+        for(k=i+1;k<n;k++)
+          s=s-a[i][k]*b[k][l];
+        b[i][l]=s/a[i][i];
       }
     }
 
@@ -643,6 +640,39 @@ SmallSquareMatrix<T,N-1> SmallSquareMatrix<T,N>::subMatrix(uint_t row, uint_t co
   }
   return M;
 }
+
+
+
+template <class T, uint_t N>
+class SmallSquareMatrixDeterminant
+{
+public:
+
+  static T det(SmallSquareMatrix<T,N>& A)
+  {
+    T D = 0;
+    for (int i = 0; i < N; ++i) {
+      auto B = A.subMatrix(i,0);
+      T sigma = 1;
+      if ((i*N) % 2 > 0) {
+        sigma = -1;
+      }
+      D += sigma*A[i][0]*B.det();
+    }
+    return D;
+  }
+};
+
+template <class T>
+class SmallSquareMatrixDeterminant<T,2>
+{
+public:
+
+  static T det(SmallSquareMatrix<T,2>& A)
+  {
+    return A[0][0]*A[1][1] - A[1][0]*A[0][1];
+  }
+};
 
 
 } // namespace
