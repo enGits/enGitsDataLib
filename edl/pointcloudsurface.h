@@ -103,6 +103,8 @@ protected: // attributes
   bool                         m_WeightsReady = false;
   vec_t                        m_PlaneOrigin = vec_t(0,0,0);
   vec_t                        m_PlaneNormal = vec_t(1,0,0);
+  T                            m_PlaneStdDev   = 0;
+  T                            m_PlaneMeanDist = 0;
   size_t                       m_MaxStencilSize;
   size_t                       m_MinStencilSize;
   T                            m_AveStencilSize;
@@ -140,8 +142,10 @@ public:
   void interpolate(const C1& src, C2& dst, int vars_per_point=1);
 
   void planeFit(T tol=1e-8);
-  vec_t planeNormal() { return m_PlaneNormal; }
-  vec_t planeOrigin() { return m_PlaneOrigin; }
+  vec_t planeNormal()   { return m_PlaneNormal; }
+  vec_t planeOrigin()   { return m_PlaneOrigin; }
+  T     planeStdDev()   { return m_PlaneStdDev; }
+  T     planeMeanDist() { return m_PlaneMeanDist; }
 
   int maxInterpolationStencilSize() { return m_MaxStencilSize; }
   int minInterpolationStencilSize() { return m_MinStencilSize; }
@@ -388,7 +392,7 @@ void PointCloudSurface<T>::planeFit(T tol)
       sum_sq[j] += m_Points[i][j]*m_Points[i][j];
     }
   }
-
+  //
   vec_t x_mean, x_std, n;
   for (int i = 0; i < 3; ++i) {
     x_mean[i] = sum[i]/m_Points.size();
@@ -396,7 +400,7 @@ void PointCloudSurface<T>::planeFit(T tol)
     n[i]      = 1.0/std::max(T(0.01), x_std[i]);
   }
   n.normalise();
-
+  //
   MathVector<StaticVector<T,4>> rhs(0,0,0,0), result(0, n[0], n[1], n[2]);
   try {
     iterLinsolve(A, rhs, result, tol);
@@ -410,6 +414,20 @@ void PointCloudSurface<T>::planeFit(T tol)
   n.normalise();
   m_PlaneOrigin = result[0]*n;
   m_PlaneNormal = n;
+  //
+  m_PlaneStdDev   = 0;
+  m_PlaneMeanDist = 0;
+  int count = 0;
+  FORALL(i, m_Points.) {
+    auto dx = m_Points[i] - m_PlaneOrigin;
+    auto d  = dx*m_PlaneNormal;
+    m_PlaneStdDev   += d*d;
+    m_PlaneMeanDist += dx.abs();
+    ++count;
+  }
+  m_PlaneStdDev /= count;
+  m_PlaneStdDev = std::sqrt(m_PlaneStdDev);
+  m_PlaneMeanDist /= count;
 }
 
 template <class T>
