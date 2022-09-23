@@ -34,6 +34,8 @@ target_link_libraries(csv_test engitsdatalib)
 add_executable(lsq_test lsq_test.cpp)
 target_link_libraries(lsq_test engitsdatalib)
 
+add_executable(interp_test interp_test.cpp)
+target_link_libraries(interp_test engitsdatalib)
 
 if(USE_QT5)
   target_link_libraries(tgraph_test Qt5::Core)

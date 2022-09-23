@@ -196,6 +196,16 @@ public: // methods
     }
   }
 
+  matrix_t getMatrix()
+  {
+    return m_Matrix;
+  }
+
+  matrix_t getInvMatrix()
+  {
+    return m_InvMatrix;
+  }
+
   template<typename T>
   std::vector<value_t> getMetrics(const T& x)
   {

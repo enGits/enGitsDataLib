@@ -101,8 +101,8 @@ public: // data types
 
 private: // attributes
 
-  TList<real>     *m_XList;
-  TList<value_t>  *m_YList;
+  TList<real>     *m_XList = nullptr;
+  TList<value_t>  *m_YList = nullptr;
   INTERP_FUNC      m_Stencil;
   real             m_LowerBound;
   real             m_UpperBound;
@@ -115,6 +115,10 @@ private: // methods
 
   void findIndex(real x)
   {
+    if (!m_XList) {
+      throw EdlError("This Interpolation object has not been initialised.");
+    }
+    //
     if (!m_XList->isClean()) {
       m_XList->cleanUp();
     }
@@ -204,10 +208,33 @@ private: // methods
 
 public:
 
+  Interpolation() {}
+
   Interpolation(TList<real> *x_list, TList<value_t> *y_list, bool allow_extrapolation = false)
   {
     m_XList = x_list;
     m_YList = y_list;
+    m_FirstCall = true;
+    m_AllowExtrapolation = allow_extrapolation;
+  }
+
+  template <class C1, class C2>
+  void init(C1 x_list, C2 y_list, bool allow_extrapolation = false)
+  {
+    auto N = x_list.size();
+    if (N != y_list.size()) {
+      throw EdlError("x_list and y_list must have the same length");
+    }
+    m_XList = new TList<real>(N, N);
+    for (auto x : x_list) {
+      m_XList->newEntry() = x;
+    }
+    //
+    m_YList = new TList<value_t>(N, N);
+    for (auto y : y_list) {
+      m_YList->newEntry() = y;
+    }
+    //
     m_FirstCall = true;
     m_AllowExtrapolation = allow_extrapolation;
   }
