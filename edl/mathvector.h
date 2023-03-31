@@ -94,6 +94,7 @@ struct MathVector : public V
   uint_t dim() { return this->size(); }
   void minimisePerCoord(const MathVector<V>& vec);
   void maximisePerCoord(const MathVector<V>& vec);
+  bool equal(const MathVector<V>& vec);
 
 
 
