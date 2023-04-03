@@ -77,4 +77,5 @@ doc/doxygen/output
 # Build directory
 ipl-build-desktop
 
-
+# VSCode
+.vscode/

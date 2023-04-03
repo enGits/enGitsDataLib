@@ -166,9 +166,7 @@ PointCloudSurface<T>::PointCloudSurface()
 
 template <class T>
 PointCloudSurface<T>::~PointCloudSurface()
-{
-  int dummy=0;
-}
+{}
 
 template <class T>
 template <class C>

@@ -505,10 +505,11 @@ template <class T>
 MathVector<StaticVector<T,3>> getBarycentricCoordinates(T x, T y)
 {
 #if __cplusplus >= 201103L
-  if(std::isnan(x) || std::isinf(x) || std::isnan(y) || std::isinf(y)) {
+  if(std::isnan(x) || std::isinf(x) || std::isnan(y) || std::isinf(y))
 #else
-  if(isnan(x) || isinf(x) || isnan(y) || isinf(y)) {
+  if(isnan(x) || isinf(x) || isnan(y) || isinf(y))
 #endif
+  {
     std::cout << "x="<<x;
     std::cout << "y="<<y;
     EDL_BUG;
@@ -745,7 +746,7 @@ QList<VEC> orderNodesAroundCentre(QList<VEC> x3, VEC x_centre, VEC normal)
     //
     indices << QPair<typename VEC::value_type, int>(angle, i);
   }
-  qSort(indices);
+  std::sort(indices.begin(), indices.end());
   QList<VEC> x_sorted;
   for (int i = 0; i < indices.size(); ++i) {
     x_sorted << x3[indices[i].second];
@@ -753,10 +754,6 @@ QList<VEC> orderNodesAroundCentre(QList<VEC> x3, VEC x_centre, VEC normal)
   //
   return x_sorted;
 }
-
-
-
-
 
 }
 
