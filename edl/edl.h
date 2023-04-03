@@ -24,6 +24,12 @@
 
 #define EDL_NAMESPACE edl
 
+namespace EDL_NAMESPACE
+{
+template <class V> struct MathVector;
+template <class T, unsigned int DIM> class StaticVector;
+}
+
 #ifdef _WIN32
 #undef min
 #undef max
@@ -164,6 +170,19 @@ namespace EDL_NAMESPACE
   bool almostEqual(int x, int y, int)
   {
     return x == y;
+  }
+
+  template<typename T, unsigned int N> inline
+  bool almostEqual(MathVector<StaticVector<T,N>> x, MathVector<StaticVector<T,N>> y, int ulp=1000)
+  {
+    bool almost_equal = true;
+    for (int i = 0; i < N; ++i) {
+      if (!almostEqual(x[i], y[i], ulp)) {
+        almost_equal = false;
+        break;
+      }
+    }
+    return almost_equal;
   }
 
   template <typename T>

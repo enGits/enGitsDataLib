@@ -210,16 +210,3 @@ inline void MathVector<V>::minimisePerCoord(const MathVector<V>& vec)
     }
   }
 }
-
-// component-wise equal operator
-// -----------------------
-template <class V>
-bool MathVector<V>::equal(const MathVector<V>& vec)
-{
-  for (unsigned int i = 0; i < this->size(); ++i) {
-    if (!almostEqual((*this)[i], vec[i])) {
-     return false;
-    }
-  }
-  return true;
-}

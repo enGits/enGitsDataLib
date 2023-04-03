@@ -27,6 +27,7 @@
 namespace EDL_NAMESPACE
 {
 template <class V> struct MathVector;
+template <class T, unsigned int DIM> class StaticVector;
 }
 
 #include <iostream>
@@ -94,9 +95,7 @@ struct MathVector : public V
   uint_t dim() { return this->size(); }
   void minimisePerCoord(const MathVector<V>& vec);
   void maximisePerCoord(const MathVector<V>& vec);
-  bool equal(const MathVector<V>& vec);
-
-
+  
 
   // STL
   // ---
