@@ -15,12 +15,15 @@
 # +         is obtained from enGits GmbH.                                   +
 # +                                                                         +
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.0.0)
 
 # limit configuration types (must be done before project() statement)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited config" FORCE)
 
 project(enGitsDataLib)
+
+# export build setup for development environment
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(A_DEBUG_BUILD OFF CACHE BOOL "Build a debug version?")
 if (${A_DEBUG_BUILD})
