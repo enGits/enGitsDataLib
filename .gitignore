@@ -8,6 +8,9 @@
 *.old
 temp
 *.output
+*.cpp.*
+*.h.*
+!*.h.in
 
 # objects and archives - anywhere
 *.[oa]
@@ -15,10 +18,7 @@ temp
 *.so
 *.so.*
 *.jar
-build/*
-build-debug/*
-build-*/*
-build.*/*
+*.pyc
 
 # Qt generated files
 moc_*
@@ -32,28 +32,55 @@ lex.yy.c
 core
 callgrind*
 
+# build folder(s) and executables
+/platforms/
+release
+debug
+Release
+Debug
+Release-static
+Debug-static
+
 # generated Makefiles
 Makefile
 Makefile.Debug
 Makefile.Release
-CMakeLists.txt.user.*
+Makefile.*engrid*
 
+# CMake
+*.cmake
+build/
+build*/
+
+netgen_svn
+third_party
+third_party64
+tmp.txt
+*.kdevelop.pcs
+engrid.kdevelop.ignore_pcs
 .bzr
 .hg
 *.user
+*.user.*
 qtc-gdbmacros
 *.sp
 *.out
 *.vtu
+*.egc
+*.bcs
+netgen_svn_old
 *.tag
 *.output
+docs
+*.tmp
+*.dbg
+compile_commands.json
+*.kdev4
 
 # LaTeX generated files - anywhere
 *.aux
 *.log
-*.pdf
 *.toc
-*.backup
 
 # source packages - anywhere
 *.tar.bz2
@@ -62,20 +89,56 @@ qtc-gdbmacros
 
 # ignore the persistent .build tag in the main directory
 /.build
-/.build-*
 
 *.exe
 *.Debug
 *.Release
 
+.*
+
 *.vtk
+*.vtr
 *.kdevses
+doxygen/*
+doxy*
+Doxy*
+misc/*
 
-# Doxygen out directory
-doc/doxygen/output
+# ignore Visual Studio local files
+*.suo
+*.ncb
+*.vcproj.*
 
-# Build directory
-ipl-build-desktop
 
-# VSCode
-.vscode/
+src/litter/*
+blockcfd-build-desktop/*
+
+# VTK
+*.pvsm
+
+blockcfd*
+
+# CUDA
+*.i
+*.ii
+main.*.o
+
+# binaries
+bin/*
+lib/*
+
+# OpenFOAM
+*linux64GccDPOpt*
+*.dep
+
+*_LOCAL_*
+*_BASE_*
+*_REMOTE_*
+
+main.bbl
+main.blg
+main.dvi
+main.pdf
+parameters.csv
+parameters.tex
+manual.tks
