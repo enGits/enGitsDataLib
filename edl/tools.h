@@ -25,6 +25,7 @@
 
 #include "edl.h"
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace EDL_NAMESPACE
@@ -49,6 +50,31 @@ T interpolate3(T x, T x1, T x2, T x3, T x4, T y1, T y2, T y3, T y4)
   //
   T w = (x - x2)/(x3 - x2);
   return a*w + b*w*w + c*w*w*w + y2;
+}
+
+template <typename C>
+edl::StaticVector<typename C::value_type, 4> statistics(const C& container)
+{
+  typedef typename C::value_type scalar_t;
+  //
+  scalar_t sum(0);
+  scalar_t sum_sq(0);
+  scalar_t min_value =  std::numeric_limits<scalar_t>::max();
+  scalar_t max_value = -std::numeric_limits<scalar_t>::max();
+  for (auto i = container.begin(); i != container.end(); ++i) {
+    auto value = *i;
+    sum    += value;
+    sum_sq += sqr(value);
+    min_value = std::min(min_value, value);
+    max_value = std::max(max_value, value);
+  }
+  //
+  edl::StaticVector<typename C::value_type, 4> result;
+  result[0] = sum/container.size();
+  result[1] = std::sqrt(std::max(scalar_t(0), sum_sq/container.size() - sqr(result[0])));
+  result[2] = min_value;
+  result[3] = max_value;
+  return result;
 }
 
 } // namespace
