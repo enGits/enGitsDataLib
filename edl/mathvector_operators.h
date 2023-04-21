@@ -44,13 +44,18 @@ inline void MathVector<V>::operator= (const ParseNode<L,O,R> &expr)
   };
 };
 
-// MathVector<V> = vector<V::value_type>
-// -------------------------------------
+// MathVector<V> = generic_container<V::value_type>
+// ------------------------------------------------
 template <class V>
-inline void MathVector<V>::operator= (const std::vector<typename V::value_type> &v)
-{
+template <class C>
+inline void MathVector<V>::operator= (const C &v)
+{  
   for (uint_t i = 0; i < this->size(); ++i) {
-    (*this)[i] = v[i];
+    if (i < v.size()) {
+      (*this)[i] = v[i];
+    } else {
+      (*this)[i] = 0;
+    }
   };
 };
 

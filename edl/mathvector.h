@@ -74,11 +74,11 @@ struct MathVector : public V
   // operators
   // ---------
   void operator=  (const MathVector<V> &vec);
-  //void operator=  (MathVector<V> &vec);
-  void operator=  (const std::vector<typename V::value_type> &vec);
   void operator-= (const MathVector<V> &vec); 
   void operator+= (const MathVector<V> &vec);
   void operator*= (const scalar_t s);
+
+  template <class C> void operator=  (const C &vec);
 
   // assignment to an expression
   template <class L, class O, class R> void operator= (const ParseNode<L,O,R> &expr);
