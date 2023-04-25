@@ -59,11 +59,8 @@ protected: // attributes
   std::vector<node_t> m_Nodes;
   matrix_t            m_Matrix;
   matrix_t            m_InvMatrix;
-  vector_t            m_B;
   vector_t            m_A;
   bool                m_MatrixPrepared = false;
-  bool                m_VectorPrepared = false;
-
 
 protected: // methods
 
@@ -72,10 +69,22 @@ protected: // methods
     matrix_t A;
     A.initAll(0);
     //
+    // 2*wi*x**2
+    // 2*wi*x*y
+    // 2*wi*x*z
+
+    // 2*wi*x*y
+    // 2*wi*y**2
+    // 2*wi*y*z
+
+    // 2*wi*x*z
+    // 2*wi*y*z
+    // 2*wi*z**2
+    //
     for (auto node : m_Nodes) {
       for (int i = 0; i < DIM; ++i) {
         for (int j = 0; j < DIM; ++j) {
-          A[i][j]+= node.weight*node.x[i]*node.x[j];
+          A[i][j] += node.weight*node.x[i]*node.x[j];
         }
       }
     }
@@ -98,7 +107,12 @@ public: // methods
     }
     m_Nodes.push_back(node);
     m_MatrixPrepared = false;
-    m_VectorPrepared = false;
+  }
+
+  template<typename T>
+  void addNode(const T& x, const T& x0, value_t w=1)
+  {
+    addNode(x - x0, w);
   }
 
   void reset()
@@ -151,12 +165,13 @@ public: // methods
       prepareMatrix();
     }
   
-    std::vector<std::vector<value_t>> C( m_Nodes.size(), std::vector<value_t>(3));
-    for (int i = 0; i < m_Nodes.size(); ++i) {
-      node_t node = m_Nodes[i];
-      for (int j = 0; j < DIM; ++j) {
-        for (int k = 0; k < DIM; ++k) {
-          C[i][k] += (m_InvMatrix[k][j] * node.x[j]) * node.weight;
+    std::vector<vector_t> C(m_Nodes.size());
+    for (int i_node = 0; i_node < m_Nodes.size(); ++i_node) {
+      node_t node = m_Nodes[i_node];
+      for (int i = 0; i < DIM; ++i) {
+        C[i_node][i] = 0;
+        for (int j = 0; j < DIM; ++j) {
+          C[i_node][i] += (m_InvMatrix[i][j] * node.x[j]) * node.weight;
         }
       }
     }
