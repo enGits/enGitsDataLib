@@ -233,7 +233,7 @@ template <class VEC>
 bool isInsideCartesianBox(VEC x, VEC x1, VEC x2)
 {
   for (int i = 0; i < 3; ++i) {
-    if (x[i] < x1[i] || x[i] > x2[i]) {
+    if (x[i] < x1[i] || x[i] >= x2[i]) {
       return false;
     }
   }
