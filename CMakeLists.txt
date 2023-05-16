@@ -97,8 +97,10 @@ set(engitsdatalib_HEADERS
 edl/bmap.h
 edl/containertricks.h
 edl/csvreader.h
+edl/doctest.h
 edl/edlerror.h
 edl/edl.h
+edl/fastremovelist.h
 edl/geometrytools.h
 edl/interpolation.h
 edl/interpolationcurve.h

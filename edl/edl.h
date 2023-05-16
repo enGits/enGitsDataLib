@@ -40,6 +40,8 @@ template <class T, unsigned int DIM> class StaticVector;
 #include <limits>
 #include <QMetaType>
 
+#include "edl/doctest.h"
+
 namespace EDL_NAMESPACE
 {
 #ifdef REAL_FLOAT
