@@ -24,9 +24,14 @@
 #define TOOLS_H
 
 #include "edl.h"
+#include "edl/mathvector.h"
+
+#include <cmath>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "doctest.h"
 
 namespace EDL_NAMESPACE
 {
@@ -76,6 +81,21 @@ edl::StaticVector<typename C::value_type, 4> statistics(const C& container)
   result[3] = max_value;
   return result;
 }
+
+TEST_CASE("simple sine wave statistics")
+{
+  std::vector<double> sine_wave;
+  int N = 1000;
+  for (int i = 0; i < N; ++i) {
+    sine_wave.push_back(std::sin(i*2*M_PI/N));
+  }
+  auto stats = statistics(sine_wave);
+  CHECK(stats[0] == doctest::Approx(0.0));
+  CHECK(stats[1] == doctest::Approx(1.0/std::sqrt(2.0)));
+  CHECK(stats[2] == doctest::Approx(-1.0));
+  CHECK(stats[3] == doctest::Approx(1.0));
+}
+
 
 } // namespace
 

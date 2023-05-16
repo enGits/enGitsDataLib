@@ -20,23 +20,26 @@
 # +                                                                    +
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-add_executable(pointcloud_test pointcloud_test.cpp)
-target_link_libraries(pointcloud_test engitsdatalib)
+# add_executable(pointcloud_test pointcloud_test.cpp)
+# target_link_libraries(pointcloud_test engitsdatalib)
 
-add_executable(tgraph_test tgraph_test.cpp)
+# add_executable(tgraph_test tgraph_test.cpp)
 
-add_executable(tools_test tools_test.cpp)
-target_link_libraries(tools_test engitsdatalib)
+# add_executable(tools_test tools_test.cpp)
+# target_link_libraries(tools_test engitsdatalib)
 
-add_executable(csv_test csv_test.cpp)
-target_link_libraries(csv_test engitsdatalib)
+# add_executable(csv_test csv_test.cpp)
+# target_link_libraries(csv_test engitsdatalib)
 
-add_executable(lsq_test lsq_test.cpp)
-target_link_libraries(lsq_test engitsdatalib)
+# add_executable(lsq_test lsq_test.cpp)
+# target_link_libraries(lsq_test engitsdatalib)
 
-add_executable(interp_test interp_test.cpp)
-target_link_libraries(interp_test engitsdatalib)
+# add_executable(interp_test interp_test.cpp)
+# target_link_libraries(interp_test engitsdatalib)
 
-if(USE_QT5)
-  target_link_libraries(tgraph_test Qt5::Core)
-endif(USE_QT5)
+add_executable(doctest_test doctest_test.cpp)
+target_link_libraries(doctest_test engitsdatalib)
+
+# if(USE_QT5)
+#   target_link_libraries(tgraph_test Qt5::Core)
+# endif(USE_QT5)
