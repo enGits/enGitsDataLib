@@ -23,6 +23,7 @@
 #include "edl/doctest.h"
 #include "edl/tools.h"
 #include "edl/fastremovelist.h"
+#include "edl/tlsqgrad.h"
 
 int main(int argc, const char** argv)
 {

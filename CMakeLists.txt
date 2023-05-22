@@ -133,6 +133,7 @@ edl/tsparsetwodimarray.h
 edl/unit.h
 edl/varcontainer.h
 edl/tgraph.h
+edl/tlsqgrad.h
 edl/tools.h
 )
 
