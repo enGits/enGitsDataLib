@@ -755,6 +755,32 @@ QList<VEC> orderNodesAroundCentre(QList<VEC> x3, VEC x_centre, VEC normal)
   return x_sorted;
 }
 
+
+template <class VEC>
+bool checkPointPlaneSide(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p)
+{
+  VEC normal, aux;
+  aux = (x1 - x0);
+  normal = aux.cross(x2 - x0);
+  typename VEC::value_type dot_x3 = normal*(x3 - x0);
+  typename VEC::value_type dot_p = normal*(p - x0);
+  return ((dot_x3*dot_p)>=0);
+}
+
+/*
+  returns true if the point p is inside the tetrahedron formed by x0,x1,x2 and x3.
+
+ */
+template <class VEC>
+bool isPointInTetra(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p)
+{
+  return  checkPointPlaneSide(x0, x1, x2, x3, p) &&
+          checkPointPlaneSide(x1, x2, x3, x0, p) &&
+          checkPointPlaneSide(x2, x3, x0, x1, p) &&
+          checkPointPlaneSide(x3, x0, x1, x2, p);   
+}
+
+
 }
 
 #endif
