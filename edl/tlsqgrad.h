@@ -28,6 +28,7 @@
 
 #include "edl/edl.h"
 
+
 namespace EDL_NAMESPACE
 {
   template <typename T, uint8_t NVAR_TLSQGR> class TLSqGrad3D;

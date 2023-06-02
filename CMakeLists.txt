@@ -100,6 +100,7 @@ edl/csvreader.h
 edl/doctest.h
 edl/edlerror.h
 edl/edl.h
+edl/edl.cpp
 edl/fastremovelist.h
 edl/geometrytools.h
 edl/interpolation.h

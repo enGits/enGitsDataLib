@@ -25,6 +25,8 @@
 #include "edl.h"
 #include <vector>
 
+#include <iostream>
+
 namespace EDL_NAMESPACE
 {
   

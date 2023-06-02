@@ -805,8 +805,11 @@ void findBoundingBox(std::vector<VEC> & points, VEC & xyzmin, VEC &xyzmax)
   }
 }
 
+}
+
 TEST_CASE("test function findBoundingBox")
 {
+  using namespace edl;
   typedef MathVector<StaticVector<float,3> > vec3_t;
   std::vector<vec3_t> points;
   points.push_back(vec3_t{1,0,0});
@@ -824,10 +827,6 @@ TEST_CASE("test function findBoundingBox")
   CHECK(edl::almostEqual(xyzmax[1],float(5.2))==true);
   CHECK(edl::almostEqual(xyzmax[2],float(17))==true);
 }
-
-}
-
-
 
 
 #endif
