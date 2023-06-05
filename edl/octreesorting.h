@@ -2,6 +2,7 @@
 #ifndef OCTREE_H
 #define OCTREE_H
 
+#include <vector>
 
 template <typename VEC>
 struct OctreeBucket 
@@ -141,8 +142,7 @@ void OctreeSorting< CONT>::OctreeSorting::divideBucket(OctreeBucket<vector_t>* b
     for (auto b_new: new_buckets) {
       divideBucket(b_new, n,tol);
     }
-   }
   }
-
+}
 
 #endif

@@ -25,6 +25,8 @@
 #include "edl/fastremovelist.h"
 #include "edl/tlsqgrad.h"
 #include "edl/geometrytools.h"
+#include "edl/pointcloudsurface.h"
+#include "edl/lsqinterpolation.h"
 
 int main(int argc, const char** argv)
 {
