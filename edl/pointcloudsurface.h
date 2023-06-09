@@ -127,7 +127,7 @@ public:
       }
       sort(dists.begin(), dists.end());
       //
-      LsqInterpolation3D<T> lsq;
+      LsqInterpolation3D<T> lsq(x0);
       size_t num_weights = std::min(size_t(NUM_WEIGHTS), m_Points.size());
       std::vector<vec_t> X(2*num_weights);
       for (int j = 0; j < num_weights; ++j) {
@@ -135,7 +135,7 @@ public:
         X[j] = m_Points[dists[j].second];
         X[j+num_weights] = m_Normal + m_Points[dists[j].second];
       }
-      lsq.setNodes(x0, X, m_DistExp);
+      lsq.setNodes(X, m_DistExp);
       for (int j = 0; j < num_weights; ++j) {
         m_Weights[i].weight[j] = lsq.weights()[j] + lsq.weights()[j+num_weights];
       }
