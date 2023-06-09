@@ -27,6 +27,7 @@
 #include "edl/mathvector.h"
 #include "edl/smallsquarematrix.h"
 
+#include <sys/types.h>
 #include <vector>
 
 namespace EDL_NAMESPACE
@@ -49,6 +50,17 @@ protected: // data types
   typedef SmallSquareMatrix<value_t,4>        matrix_t;
 
 
+public: // data types
+
+  enum class mode_t
+  {
+    XYZ,
+    XY,
+    XZ,
+    YZ    
+  };
+
+
 protected: // attributes
 
   geovec_t              m_X0;
@@ -56,6 +68,7 @@ protected: // attributes
   std::vector<value_t>  m_CollectedWeights;
   std::vector<geovec_t> m_CollectedNodes;
   bool                  m_Valid{false};
+  mode_t                m_Mode{mode_t::XYZ};
 
 
 protected: // methods
@@ -108,6 +121,8 @@ public: // methods
 
   LsqInterpolation3D(geovec_t x0 = geovec_t(0,0,0)) : m_X0(x0) {}
 
+  void setMode(mode_t mode) { m_Mode = mode; }
+
   template<typename C>
   void setNodes(C& X, value_t distance_exponent=0.0)
   {
@@ -125,7 +140,7 @@ public: // methods
     A.initAll(0);
     for (auto x : X) {
       value_t  w  = std::pow((x - m_X0).abs()/min_dist, distance_exponent);
-      vector_t DX = x - m_X0;
+      geovec_t DX = x - m_X0;
       value_t  dx = DX[0];
       value_t  dy = DX[1];
       value_t  dz = DX[2];
@@ -150,9 +165,46 @@ public: // methods
       A[3][3] += 2*dz*dz*w;
     }
     //
-    matrix_t AI = A.inverse();
+    matrix_t AI;
+    if (m_Mode == mode_t::XYZ) {
+      AI = A.inverse();
+    } else {
+      if (m_Mode == mode_t::XY) {
+        auto M = A.subMatrix(3,3).inverse();
+        AI.initAll(0);
+        for (int i = 0; i < 3; ++i) {
+          for (int j = 0; j < 3; ++j) {
+            AI[i][j] = M[i][j];
+          }
+        }
+      }
+      if (m_Mode == mode_t::XZ) {
+        auto M = A.subMatrix(2,2).inverse();
+        AI.initAll(0);
+        for (int i = 0; i < 4; ++i) {
+          for (int j = 0; j < 4; ++j) {
+            if      (i < 2 && j < 2) AI[i][j] = M[i][j];
+            else if (i < 2 && j > 2) AI[i][1] = M[i][j-1];
+            else if (i > 2 && j < 2) AI[i][j] = M[i-1][j];
+            else if (i > 2 && j > 2) AI[i][j] = M[i-1][j-1];
+          }
+        }
+      }
+      if (m_Mode == mode_t::YZ) {
+        auto M = A.subMatrix(1,1).inverse();
+        AI.initAll(0);
+        for (int i = 0; i < 4; ++i) {
+          for (int j = 0; j < 4; ++j) {
+            if      (i < 1 && j < 1) AI[i][j] = M[i][j];
+            else if (i < 1 && j > 1) AI[i][1] = M[i][j-1];
+            else if (i > 1 && j < 1) AI[i][j] = M[i-1][j];
+            else if (i > 1 && j > 1) AI[i][j] = M[i-1][j-1];
+          }
+        }
+      }
+    }
     for (int i = 0; i < m_Alpha.size(); ++i) {
-      vector_t DX = X[i] - m_X0;
+      geovec_t DX = X[i] - m_X0;
       value_t  dx = DX[0];
       value_t  dy = DX[1];
       value_t  dz = DX[2];
@@ -233,15 +285,17 @@ TEST_CASE("LsqInterpolation3D (setNodes)")
       vec_t g3 = g1.cross(g2);
       g3.normalise();
       //
-      std::vector<vec_t> x(num_points);
-      for (int i = 0; i < num_points; ++i) {
+      std::vector<vec_t> x;
+      x.reserve(num_points);
+      for (int i = 0; i < num_points - 1; ++i) {
         real x1 = dist1(gen);
         real x2 = dist1(gen);
         real x3 = dist1(gen);
-        x[i] = x1*g1 + x2*g2 + x3*g3;
+        x.push_back(x1*g1 + x2*g2 + x3*g3);
       }
       //
       vec_t x0 = 0.5*g1 + 0.5*g2 + 0.5*g3;
+      x.push_back(x0);
       LsqInterpolation3D<real> lsq(x0);
       lsq.setNodes(x, de);
       //

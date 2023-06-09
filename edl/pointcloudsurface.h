@@ -51,7 +51,7 @@ class PointCloudSurface
 public: // data types
 
   typedef MathVector<StaticVector<T,3>> vec_t;
-  // typedef SmallSquareMatrix<T,3>        mat_t;
+  typedef SmallSquareMatrix<T,3>        mat_t;
   // typedef LsqInterpolation3D<T>         lsq_t;
 
   struct weights_t
@@ -68,15 +68,19 @@ protected: // attributes
   std::vector<vec_t>     m_InterpolationPoints;
   std::vector<weights_t> m_Weights;
   T                      m_DistExp;
-  vec_t                  m_Normal;
+  vec_t                  m_G1;
+  vec_t                  m_G2;
+  vec_t                  m_G3;
   vec_t                  m_X0;
 
 
 public:
 
-  PointCloudSurface(vec_t n, T dist_exp=0) : m_Normal(n), m_DistExp(dist_exp) 
+  PointCloudSurface(vec_t n, T dist_exp = 0) : m_G3(n), m_DistExp(dist_exp) 
   {
-    m_Normal.normalise();
+    m_G3.normalise();
+    m_G2 = orthogonalVector(m_G3);
+    m_G1 = m_G2.cross(m_G3);
   }
 
   template <class C> 
@@ -111,10 +115,14 @@ public:
     }
     m_X0 *= T(1)/m_Points.size();
     //
+    mat_t M;
+    M.setColumn(0, m_G1);
+    M.setColumn(1, m_G2);
+    M.setColumn(2, m_G3);
+    M = M.inverse();
+    //
     for (size_t i = 0; i < m_InterpolationPoints.size(); ++i) {
       vec_t x0 = m_InterpolationPoints[i];
-      T scal = (x0 - m_X0)*m_Normal;
-      x0 -= scal*m_Normal;
       //
       // find the NUM_WEIGHTS closest points
       //
@@ -127,17 +135,20 @@ public:
       }
       sort(dists.begin(), dists.end());
       //
-      LsqInterpolation3D<T> lsq(x0);
+      LsqInterpolation3D<T> lsq;
+      lsq.setMode(LsqInterpolation3D<T>::mode_t::XY);
+      //
       size_t num_weights = std::min(size_t(NUM_WEIGHTS), m_Points.size());
-      std::vector<vec_t> X(2*num_weights);
+      std::vector<vec_t> X(num_weights);
       for (int j = 0; j < num_weights; ++j) {
         m_Weights[i].index[j] = dists[j].second;
-        X[j] = m_Points[dists[j].second];
-        X[j+num_weights] = m_Normal + m_Points[dists[j].second];
+        vec_t x3d = m_Points[dists[j].second] - x0;
+        vec_t x2d = M*x3d;
+        X[j] = vec_t(x2d[0], x2d[1], T(0));
       }
       lsq.setNodes(X, m_DistExp);
       for (int j = 0; j < num_weights; ++j) {
-        m_Weights[i].weight[j] = lsq.weights()[j] + lsq.weights()[j+num_weights];
+        m_Weights[i].weight[j] = lsq.weights()[j];
       }
       for (int j = num_weights; j < NUM_WEIGHTS; ++j) {
         m_Weights[i].weight[j] = T(0);
@@ -193,11 +204,9 @@ TEST_CASE("PointCloudSurface")
   real err_max  = 0;
   for (int i_loop = 0; i_loop < num_loops; ++i_loop) {
     //
-    //vec_t g1(dist1(gen), dist1(gen), dist1(gen));
-    vec_t g1(1,0,0);
+    vec_t g1(dist1(gen), dist1(gen), dist1(gen));
     g1.normalise();
-    //vec_t g2 = orthogonalVector(g1);
-    vec_t g2(0,1,0);
+    vec_t g2 = orthogonalVector(g1);
     g2.normalise();
     vec_t g3 = g1.cross(g2);
     g3.normalise();
@@ -214,9 +223,9 @@ TEST_CASE("PointCloudSurface")
       vec_t _C(0, dist3(gen), dist3(gen));
       vec_t C = T*_C;
       a[i] = dist3(gen);
-      b[i] = _C[0];
-      c[i] = _C[1];
-      d[i] = _C[2];
+      b[i] = C[0];
+      c[i] = C[1];
+      d[i] = C[2];
     }
     //
     std::vector<vec_t> points(size_i*size_j);
@@ -230,7 +239,7 @@ TEST_CASE("PointCloudSurface")
     //
     std::vector<vec_t> ipoints(num_ipoints);
     for (int i = 0; i < num_ipoints; ++i) {
-      real c1 = 0.05*dist1(gen);
+      real c1 = 0.05*dist2(gen);
       real c2 = dist2(gen);
       real c3 = dist2(gen);
       ipoints[i] = c1*g1 + c2*g2 + c3*g3;
@@ -250,7 +259,7 @@ TEST_CASE("PointCloudSurface")
       }
     }
     //
-    PointCloudSurface<real,10> pcs(g1);
+    PointCloudSurface<real,10> pcs(g1, 0);
     pcs.setPoints(points);
     pcs.setInterpolationPoints(ipoints);
     pcs.computeWeights();
