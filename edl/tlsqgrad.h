@@ -135,6 +135,10 @@ public:
 
 } // namespace EDL_NAMESPACE
 
+// ----------------------------------------------------------------------------
+// TESTS
+// ----------------------------------------------------------------------------
+
 #include <random>
 
 TEST_CASE("TLSqGrad3D with linear gradient (scalar function)")
