@@ -106,7 +106,7 @@ protected: // methods
 
 public: // methods
 
-  LsqInterpolation3D(geovec_t x0) : m_X0(x0) {}
+  LsqInterpolation3D(geovec_t x0 = geovec_t(0,0,0)) : m_X0(x0) {}
 
   template<typename C>
   void setNodes(C& X, value_t distance_exponent=0.0)
