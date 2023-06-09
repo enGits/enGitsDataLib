@@ -315,8 +315,8 @@ TEST_CASE("LsqInterpolation3D (multiple addNode)")
       vec_t x0 = 0.5*g1 + 0.5*g2 + 0.5*g3;
       LsqInterpolation3D<real> lsq(x0);
       for (auto _x : x) {
-        vec3_t  Dx = _x - x0;
-        real    w  = 1.0/std::max(1e-4, Dx.abs());
+        vec_t Dx = _x - x0;
+        real  w  = 1.0/std::max(real(1e-4), Dx.abs());
         lsq.addNode(_x, w);
       }
       //
