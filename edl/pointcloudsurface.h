@@ -23,553 +23,254 @@
 #ifndef POINTCLOUDSURFACE_H
 #define POINTCLOUDSURFACE_H
 
-#include "edlerror.h"
-#include "tlist.h"
-#include "mathvector.h"
-#include "tsparsetwodimarray.h"
-#include "smallsquarematrix.h"
-#include "linsolve.h"
-#include "geometrytools.h"
+#include "edl/edl.h"
+#include "edl/edlerror.h"
+#include "edl/mathvector.h"
+#include "edl/lsqinterpolation.h"
+#include "edl/geometrytools.h"
+#include "edl/smallsquarematrix.h"
 
-#include <thread>
-#include <QThread>
+#include <array>
+#include <iostream>
+#include <vector>
 
 namespace EDL_NAMESPACE
 {
-template <class T> class PointCloudSurface;
+template <class T, uint8_t NUM_WEIGHTS> class PointCloudSurface;
 }
 
-#include <cstddef>
-#include <cstdlib>
-#include <typeinfo>
 #include <limits>
 
 namespace EDL_NAMESPACE
 {
 
-template <class T>  
-class PointCloudSurface : public List
+template <class T, uint8_t NUM_WEIGHTS>  
+class PointCloudSurface
 {
 
 public: // data types
 
   typedef MathVector<StaticVector<T,3>> vec_t;
-  typedef SmallSquareMatrix<T,3>        mat_t;
+  // typedef SmallSquareMatrix<T,3>        mat_t;
+  // typedef LsqInterpolation3D<T>         lsq_t;
 
-  struct weight_t
+  struct weights_t
   {
-    T      weight;
-    size_t index;
+    T      weight[NUM_WEIGHTS];
+    size_t index [NUM_WEIGHTS];
   };
-
-  struct DistanceWeightedAverage
-  {
-    static void compute(TList<vec_t>& points, TList<vec_t>&, vec_t x, vec_t, TList<T>& weights);
-  };
-
-  struct DistanceWeightedLeastSquares
-  {
-    static void compute(TList<vec_t>& points, TList<vec_t>& normals, vec_t x, vec_t n, TList<T>& weights);
-  };
-
 
 private: // data types
 
-  friend class WeightThread;
-
-  template <class I>
-  class WeightThread : public QThread
-  {
-  public:
-    PointCloudSurface<T>* m_PCS;
-    std::vector<std::list<weight_t>> m_LocalWeights;
-    size_t m_I1, m_I2;
-    WeightThread(PointCloudSurface<T>* pcs, size_t i1, size_t i2);
-    virtual void run();
-  };
-
-  QMutex m_Mutex;
-
-  
 protected: // attributes
   
-  TList<vec_t>                 m_Points;
-  TList<vec_t>                 m_Normals;
-  TList<vec_t>                 m_InterpolationPoints;
-  TList<vec_t>                 m_InterpolationNormals;
-  TSparseTwoDimArray<weight_t> m_Weights;
-  bool                         m_SizeDefined = false;
-  T                            m_WeightThreshold = 0.01;
-  bool                         m_WeightsReady = false;
-  vec_t                        m_PlaneOrigin = vec_t(0,0,0);
-  vec_t                        m_PlaneNormal = vec_t(1,0,0);
-  T                            m_PlaneStdDev   = 0;
-  T                            m_PlaneMeanDist = 0;
-  size_t                       m_MaxStencilSize;
-  size_t                       m_MinStencilSize;
-  T                            m_AveStencilSize;
+  std::vector<vec_t>     m_Points;
+  std::vector<vec_t>     m_InterpolationPoints;
+  std::vector<weights_t> m_Weights;
+  T                      m_DistExp;
+  vec_t                  m_Normal;
+  vec_t                  m_X0;
 
 
 public:
 
-  PointCloudSurface();
-  ~PointCloudSurface();
-  
+  PointCloudSurface(vec_t n, T dist_exp=0) : m_Normal(n), m_DistExp(dist_exp) 
+  {
+    m_Normal.normalise();
+  }
+
   template <class C> 
-  void setPoints(const C& points);
-  
-  template <class C> 
-  void setNormals(const C& normals);
-  void setNormals(const vec_t& normal);
+  void setPoints(const C& points)
+  {
+    m_Points.clear();
+    m_Points.reserve(points.size());
+    for (const vec_t& p : points) {
+      m_Points.push_back(p);
+    }
+  }
   
   template <class C>
-  void setInterpolationPoints(const C& points);
-
-  template <class C>
-  void setInterpolationPoints(const C& points, vec_t normal);
-
-  template <class C1, class C2>
-  void setInterpolationPoints(const C1& points, const C2& normals);
+  void setInterpolationPoints(const C& points)
+  {
+    m_InterpolationPoints.clear();
+    m_InterpolationPoints.reserve(points.size());
+    for (const vec_t& p : points) {
+      m_InterpolationPoints.push_back(p);
+    }
+  }
   
-  template <class I> 
-  void computeWeights();
-  bool weightsReady() { return m_WeightsReady; }
+  void computeWeights()
+  {
+    using namespace std;
+    m_Weights.clear();
+    m_Weights.resize(m_InterpolationPoints.size());
+    //
+    m_X0 = vec_t(0,0,0);
+    for (vec_t x : m_Points) {
+      m_X0 += x;
+    }
+    m_X0 *= T(1)/m_Points.size();
+    //
+    for (size_t i = 0; i < m_InterpolationPoints.size(); ++i) {
+      vec_t x0 = m_InterpolationPoints[i];
+      T scal = (x0 - m_X0)*m_Normal;
+      x0 -= scal*m_Normal;
+      //
+      // find the NUM_WEIGHTS closest points
+      //
+      vector<pair<T,size_t>> dists;
+      dists.reserve(m_Points.size());
+      for (size_t j = 0; j < m_Points.size(); ++j) {
+        vec_t xj = m_Points[j];
+        T dist = (x0-xj).abs();
+        dists.push_back(make_pair(dist, j));
+      }
+      sort(dists.begin(), dists.end());
+      //
+      LsqInterpolation3D<T> lsq;
+      size_t num_weights = std::min(size_t(NUM_WEIGHTS), m_Points.size());
+      std::vector<vec_t> X(2*num_weights);
+      for (int j = 0; j < num_weights; ++j) {
+        m_Weights[i].index[j] = dists[j].second;
+        X[j] = m_Points[dists[j].second];
+        X[j+num_weights] = m_Normal + m_Points[dists[j].second];
+      }
+      lsq.setNodes(x0, X, m_DistExp);
+      for (int j = 0; j < num_weights; ++j) {
+        m_Weights[i].weight[j] = lsq.weights()[j] + lsq.weights()[j+num_weights];
+      }
+      for (int j = num_weights; j < NUM_WEIGHTS; ++j) {
+        m_Weights[i].weight[j] = T(0);
+      }
+    }
+  }
 
   int numPoints() { return m_Points.size(); }
   int numInterpolationPoints() { return m_InterpolationPoints.size(); }
 
   template <class C1, class C2>
-  void interpolate(const C1& src, C2& dst, int vars_per_point=1);
-
-  void planeFit(T tol=1e-8);
-  vec_t planeNormal()   { return m_PlaneNormal; }
-  vec_t planeOrigin()   { return m_PlaneOrigin; }
-  T     planeStdDev()   { return m_PlaneStdDev; }
-  T     planeMeanDist() { return m_PlaneMeanDist; }
-
-  int maxInterpolationStencilSize() { return m_MaxStencilSize; }
-  int minInterpolationStencilSize() { return m_MinStencilSize; }
-  T   averageInterpolationStencilSize() { return m_AveStencilSize; }
-
-  void setWeightsThreshold(T threshold) { m_WeightThreshold = threshold; }
+  void interpolate(const C1& src, C2& dst, int vars_per_point=1)
+  {
+    for (int i = 0; i < m_InterpolationPoints.size(); ++i) {
+      for (int j = 0; j < vars_per_point; ++j) {
+        dst[i*vars_per_point + j] = T(0);
+        for (int k = 0; k < NUM_WEIGHTS; ++k) {
+          size_t idx = m_Weights[i].index[k];
+          real   w   = m_Weights[i].weight[k];
+          dst[i*vars_per_point + j] += w*src[idx*vars_per_point + j];
+        }
+      }
+    }
+  }
 
 };
 
-template <class T>
-PointCloudSurface<T>::PointCloudSurface()
-  : List(10, 10), m_InterpolationPoints(0, 10), m_InterpolationNormals(&m_InterpolationPoints), m_Weights(&m_InterpolationPoints)
-{
-  m_Points.link(this);
-  m_Normals.link(this);
-  m_Normals.setDefaultValue(vec_t(1,0,0));
-}
-
-template <class T>
-PointCloudSurface<T>::~PointCloudSurface()
-{}
-
-template <class T>
-template <class C>
-void PointCloudSurface<T>::setPoints(const C& points)
-{
-  if (!m_SizeDefined) {
-    alloc(points.size());
-    m_SizeDefined = true;
-  }
-  if (points.size() != numActiveEntries()) {
-    throw EdlError("size of provided container does not match");
-  }
-  //
-  typename C::const_iterator iter = points.begin();
-  size_t i = 0;
-  while (iter != points.end()) {
-    m_Points[i] = *iter;
-    ++iter;
-    ++i;
-  }
-}
-
-template <class T>
-template <class C>
-void PointCloudSurface<T>::setNormals(const C& normals)
-{
-  if (!m_SizeDefined) {
-    alloc(normals.size());
-    m_SizeDefined = true;
-  }
-  if (normals.size() != numActiveEntries()) {
-    throw EdlError("size of provided container does not match");
-  }
-  //
-  typename C::const_iterator iter = normals.begin();
-  size_t i = 0;
-  while (iter != normals.end()) {
-    m_Normals[i] = *iter;
-    ++iter;
-    ++i;
-  }
-}
-
-template <class T>
-void PointCloudSurface<T>::setNormals(const vec_t& normal)
-{
-  if (!m_SizeDefined) {
-    throw EdlError("please call setPoints first");
-  }
-  FORALL(i, this->) {
-    m_Normals[i] = normal;
-  }
-}
-
-template <class T>
-template <class C>
-void PointCloudSurface<T>::setInterpolationPoints(const C& points)
-{
-  size_t delta = points.size() - m_InterpolationPoints.maxNumEntries();
-  if (m_InterpolationPoints.numActiveEntries() > 0) {
-    m_InterpolationPoints.delAll();
-  }
-  m_InterpolationPoints.setDelta(delta);
-  m_InterpolationPoints.alloc(points.size());
-  //
-  typename C::const_iterator iter = points.begin();
-  size_t i = 0;
-  while (iter != points.end()) {
-    m_InterpolationPoints[i] = *iter;
-    ++iter;
-    ++i;
-  }
-}
-
-template <class T>
-template <class C1, class C2>
-void PointCloudSurface<T>::setInterpolationPoints(const C1& points, const C2& normals)
-{
-  if (points.size() != normals.size()) {
-    throw EdlError("points and normals must have the same size");
-  }
-  //
-  size_t delta = points.size() - m_InterpolationPoints.maxNumEntries();
-  if (m_InterpolationPoints.numActiveEntries() > 0) {
-    m_InterpolationPoints.delAll();
-  }
-  m_InterpolationPoints.setDelta(delta);
-  m_InterpolationPoints.alloc(points.size());
-  //
-  typename C1::const_iterator iter1 = points.begin();
-  typename C2::const_iterator iter2 = normals.begin();
-  size_t i = 0;
-  while (iter1 != points.end()) {
-    m_InterpolationPoints[i] = *iter1;
-    m_InterpolationNormals[i] = *iter2;
-    ++iter1;
-    ++iter2;
-    ++i;
-  }
-}
-
-template <class T>
-template <class C>
-void PointCloudSurface<T>::setInterpolationPoints(const C& points, vec_t normal)
-{
-  size_t delta = points.size() - m_InterpolationPoints.maxNumEntries();
-  if (m_InterpolationPoints.numActiveEntries() > 0) {
-    m_InterpolationPoints.delAll();
-  }
-  m_InterpolationPoints.setDelta(delta);
-  m_InterpolationPoints.alloc(points.size());
-  //
-  typename C::const_iterator iter = points.begin();
-  size_t i = 0;
-  while (iter != points.end()) {
-    m_InterpolationPoints[i] = *iter;
-    m_InterpolationNormals[i] = normal;
-    ++iter;
-    ++i;
-  }
-}
-
-template <class T>
-template <class I>
-void PointCloudSurface<T>::computeWeights()
-{
-  m_Weights.resetData(m_InterpolationPoints.size(), m_InterpolationPoints.size());
-  int num_cores = 1; //std::min(m_InterpolationPoints.size(), std::max(size_t(1), size_t(std::thread::hardware_concurrency())));
-  std::vector<WeightThread<I>*> threads(num_cores);
-  for (int ith = 0; ith < num_cores; ++ith) {
-    size_t i1 = ith*m_InterpolationPoints.size()/num_cores;
-    size_t i2 = std::min(m_InterpolationPoints.size(), (ith+1)*m_InterpolationPoints.size()/num_cores);
-    threads[ith] = new WeightThread<I>(this, i1, i2);
-  }
-  for (int ith = 0; ith < num_cores; ++ith) {
-    threads[ith]->start();
-  }
-  for (int ith = 0; ith < num_cores; ++ith) {
-    threads[ith]->wait();
-    for (size_t i = threads[ith]->m_I1; i < threads[ith]->m_I2; ++i) {
-      for (weight_t wgt : threads[ith]->m_LocalWeights[i - threads[ith]->m_I1]) {
-        m_Weights.newSubEntry(i) = wgt;
-      }
-    }
-    delete threads[ith];
-  }
-  //
-  m_MinStencilSize = m_Weights.size();
-  m_MaxStencilSize = 0;
-  m_AveStencilSize = 0;
-  int N = 0;
-  FORALL(i, m_Weights.) {
-    ++N;
-    m_MinStencilSize = std::min(m_MinStencilSize, m_Weights.count(i));
-    m_MaxStencilSize = std::max(m_MaxStencilSize, m_Weights.count(i));
-    m_AveStencilSize += T(m_Weights.count(i));
-  }
-  m_AveStencilSize /= N;
-  //
-  m_WeightsReady = true;
-}
-
-template <class T>
-template <class C1, class C2>
-void PointCloudSurface<T>::interpolate(const C1& src, C2& dst, int vars_per_point)
-{
-  T _zero = 0;
-  typename C2::value_type zero(_zero);
-
-//  FORALL(i, m_InterpolationPoints.) {
-//    dst[i] = zero;
-//    for (int j = 0; j < m_Weights.count(i); ++j) {
-//      size_t idx = m_Weights.at(i,j).index;
-//      dst[i] += m_Weights.at(i,j).weight * src[idx];
-//    }
-//  }
-
-  FORALL (i_point, m_InterpolationPoints.) {
-    for (int i_var = 0; i_var < vars_per_point; ++i_var) {
-      size_t dst_idx = i_point*vars_per_point + i_var;
-      dst[dst_idx] = zero;
-      for (int i_contrib = 0; i_contrib < m_Weights.count(i_point); ++i_contrib) {
-        size_t src_idx = m_Weights.at(i_point, i_contrib).index*vars_per_point + i_var;
-        dst[dst_idx] += m_Weights.at(i_point, i_contrib).weight * src[src_idx];
-      }
-    }
-  }
-}
-
-template <class T>
-void PointCloudSurface<T>::planeFit(T tol)
-{
-  SmallSquareMatrix<T,4> A;
-  A.initAll(0);
-  vec_t sum(0,0,0);
-  vec_t sum_sq(0,0,0);
-  FORALL(i, m_Points.) {
-    //
-    A[0][0] += 1;
-    A[0][1] -= m_Points[i][0];
-    A[0][2] -= m_Points[i][1];
-    A[0][3] -= m_Points[i][2];
-    //
-    A[1][0] -= m_Points[i][0];
-    A[1][1] += m_Points[i][0]*m_Points[i][0];
-    A[1][2] += m_Points[i][0]*m_Points[i][1];
-    A[1][3] += m_Points[i][0]*m_Points[i][2];
-    //
-    A[2][0] -= m_Points[i][1];
-    A[2][1] += m_Points[i][1]*m_Points[i][0];
-    A[2][2] += m_Points[i][1]*m_Points[i][1];
-    A[2][3] += m_Points[i][1]*m_Points[i][2];
-    //
-    A[3][0] -= m_Points[i][2];
-    A[3][1] += m_Points[i][2]*m_Points[i][0];
-    A[3][2] += m_Points[i][2]*m_Points[i][1];
-    A[3][3] += m_Points[i][2]*m_Points[i][2];
-    //
-    for (int j = 0; j < 3; ++j) {
-      sum[j]    += m_Points[i][j];
-      sum_sq[j] += m_Points[i][j]*m_Points[i][j];
-    }
-  }
-  //
-  vec_t x_mean, x_std, n;
-  for (int i = 0; i < 3; ++i) {
-    x_mean[i] = sum[i]/m_Points.size();
-    x_std[i]  = sqrt(sum_sq[i]/m_Points.size() - x_mean[i]*x_mean[i]);
-    n[i]      = 1.0/std::max(T(0.01), x_std[i]);
-  }
-  n.normalise();
-  //
-  MathVector<StaticVector<T,4>> rhs(0,0,0,0), result(0, n[0], n[1], n[2]);
-  try {
-    iterLinsolve(A, rhs, result, tol);
-  } catch (LinSolveError e) {
-    std::cerr << "cannot fit plane (det(A)=" << e.det << ")" << std::endl;
-    throw e;
-  }
-  n[0] = result[1];
-  n[1] = result[2];
-  n[2] = result[3];
-  n.normalise();
-  m_PlaneOrigin = result[0]*n;
-  m_PlaneNormal = n;
-  //
-  m_PlaneStdDev   = 0;
-  m_PlaneMeanDist = 0;
-  int count = 0;
-  FORALL(i, m_Points.) {
-    auto dx = m_Points[i] - m_PlaneOrigin;
-    auto d  = dx*m_PlaneNormal;
-    m_PlaneStdDev   += d*d;
-    m_PlaneMeanDist += dx.abs();
-    ++count;
-  }
-  m_PlaneStdDev /= count;
-  m_PlaneStdDev = std::sqrt(m_PlaneStdDev);
-  m_PlaneMeanDist /= count;
-}
-
-template <class T>
-template <class I>
-PointCloudSurface<T>::WeightThread<I>::WeightThread(PointCloudSurface<T>* pcs, size_t i1, size_t i2)
-{
-  m_PCS = pcs;
-  m_I1  = i1;
-  m_I2  = i2;
-}
-
-template <class T>
-template <class I>
-void PointCloudSurface<T>::WeightThread<I>::run()
-{
-  m_PCS->m_Mutex.lock();
-  TList<T>* global_weights = new TList<T>(m_PCS);
-  m_PCS->m_Mutex.unlock();
-  m_LocalWeights.resize(m_I2 - m_I1, std::list<weight_t>());
-  for (size_t i = m_I1; i < m_I2; ++i) {
-    I::compute(m_PCS->m_Points, m_PCS->m_Normals, m_PCS->m_InterpolationPoints[i], m_PCS->m_InterpolationNormals[i], *global_weights);
-    T total_weight = 0;
-    T max_weight = 0;
-    FORALL(j, global_weights->) {
-      max_weight = std::max(max_weight, global_weights->at(j));
-      if (global_weights->at(j) > m_PCS->m_WeightThreshold) {
-        total_weight += global_weights->at(j);
-        weight_t wgt;
-        wgt.index = j;
-        wgt.weight = global_weights->at(j);
-        m_LocalWeights[i - m_I1].push_back(wgt);
-      }
-    }
-    for (weight_t& wgt : m_LocalWeights[i - m_I1]) {
-      wgt.weight /= total_weight;
-    }
-  }
-  m_PCS->m_Mutex.lock();
-  delete global_weights;
-  m_PCS->m_Mutex.unlock();
-}
-
-
-
-
-template <class T>
-void PointCloudSurface<T>::DistanceWeightedAverage::compute(TList<vec_t>& points, TList<vec_t>&, vec_t x, vec_t, TList<T>& weights)
-{
-  T min_d = std::numeric_limits<T>::max();
-  std::list<T> min_ds;
-  bool sorted = false;
-  FORALL(i, weights.) {    
-    T d = (points[i] - x).abs();
-    if (min_ds.size() < 4) {
-      min_ds.push_back(d);
-    } else {
-      if (!sorted) {
-        min_ds.sort();
-        sorted = true;
-      }
-      if (d < min_ds.back()) {
-        min_ds.pop_back();
-        min_ds.push_front(d);
-        min_ds.sort();
-      }
-    }
-    min_d = std::min(min_d, d);
-    weights[i] = d;
-  }
-  //
-  min_ds.sort();
-  min_d = std::max(min_d, std::numeric_limits<T>::min());
-  T total_weight = 0;
-  //
-  FORALL(i, points.) {
-    if (weights[i] <= min_ds.back()) {
-      weights[i] = 1.0/std::max(min_d, weights[i]);
-      total_weight += weights[i];
-    } else {
-      weights[i] = 0;
-    }
-  }
-  //
-  FORALL(i, points.) {
-    weights[i] /= total_weight;
-  }
-}
-  
-template <class T>
-void PointCloudSurface<T>::DistanceWeightedLeastSquares::compute(TList<vec_t>& points, TList<vec_t>& normals, vec_t x, vec_t n, TList<T>& weights)
-{
-  vec_t g1 = n;
-  vec_t g2 = orthogonalVector(n);
-  vec_t g3 = g1.cross(g2);
-  g1.normalise();
-  g2.normalise();
-  g3.normalise();
-  mat_t G;
-  G.setColumn(0, g1);
-  G.setColumn(1, g2);
-  G.setColumn(2, g3);
-  mat_t GI = G.inverse();
-  //
-  vec_t x2(1,0,0);
-  //
-  T min_dist = std::numeric_limits<T>::max();
-  FORALL(i, weights.) {
-    vec_t dx = points[i] - x;
-    T dxn = dx*g1;
-    dx -= dxn*g1;
-    //weights[i] = (points[i] - x).abs();
-    weights[i] = dx.abs();
-    min_dist = std::min(min_dist, weights[i]);
-  }
-  //
-  min_dist = std::max(min_dist, std::numeric_limits<T>::min());
-  //
-  mat_t A;
-  A.initAll(0);
-  FORALL(i, points.) {
-    vec_t xi2 = points[i] - x;
-    xi2 = GI*xi2;
-    xi2[0] = 1;
-    weights[i] = 1.0/std::max(min_dist, weights[i]);
-    A[0] += weights[i]*weights[i] *        xi2;
-    A[1] += weights[i]*weights[i] * xi2[1]*xi2;
-    A[2] += weights[i]*weights[i] * xi2[2]*xi2;
-  }
-  mat_t AI = A.inverse();
-  T total_weight = 0;
-  FORALL(i, points.) {
-    vec_t xi2 = points[i] - x;
-    xi2 = GI*xi2;
-    xi2[0] = 1;
-    weights[i] = weights[i]*weights[i] * (AI*xi2)*x2;
-    total_weight += weights[i];
-  }
-  FORALL(i, points.) {
-    weights[i] /= total_weight;
-  }
-}
-  
-  
 } // namespace
+
+#include <random>
+
+TEST_CASE("PointCloudSurface")
+{
+  using namespace edl;
+  typedef float real;
+  typedef MathVector<StaticVector<real,3>> vec_t;
+  typedef SmallSquareMatrix<real,3>        mat_t;
+  //
+  const int  size_i      = 100;
+  const int  size_j      = 100;
+  const int  num_ipoints = 50;
+  const int  num_loops   = 10;
+  const int  num_vars    = 5;
+  const real range       = 3;
+  //
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<real> dist1(0.1, 1.0);
+  std::uniform_real_distribution<real> dist2(0, 1);
+  std::uniform_real_distribution<real> dist3(-3, 3);
+  //
+  bool all_good = true;
+  real err_max  = 0;
+  for (int i_loop = 0; i_loop < num_loops; ++i_loop) {
+    //
+    //vec_t g1(dist1(gen), dist1(gen), dist1(gen));
+    vec_t g1(1,0,0);
+    g1.normalise();
+    //vec_t g2 = orthogonalVector(g1);
+    vec_t g2(0,1,0);
+    g2.normalise();
+    vec_t g3 = g1.cross(g2);
+    g3.normalise();
+    //
+    // linear test function
+    //
+    mat_t T;
+    T[0] = g1;
+    T[1] = g2;
+    T[2] = g3;
+    T = T.transp();
+    real a[num_vars], b[num_vars], c[num_vars], d[num_vars];
+    for (int i = 0; i < num_vars; ++i) {
+      vec_t _C(0, dist3(gen), dist3(gen));
+      vec_t C = T*_C;
+      a[i] = dist3(gen);
+      b[i] = _C[0];
+      c[i] = _C[1];
+      d[i] = _C[2];
+    }
+    //
+    std::vector<vec_t> points(size_i*size_j);
+    for (int i = 0; i < size_i; ++i) {
+      for (int j = 0; j < size_j; ++j) {
+        real c2 = i*1.0/(size_i-1);
+        real c3 = j*1.0/(size_j-1);
+        points[i*size_j + j] = c2*g2 + c3*g3;
+      }
+    }
+    //
+    std::vector<vec_t> ipoints(num_ipoints);
+    for (int i = 0; i < num_ipoints; ++i) {
+      real c1 = 0.05*dist1(gen);
+      real c2 = dist2(gen);
+      real c3 = dist2(gen);
+      ipoints[i] = c1*g1 + c2*g2 + c3*g3;
+    }
+    //
+    std::vector<real> vars(num_vars*points.size());
+    for (int i = 0; i < points.size(); ++i) {
+      for (int j = 0; j < num_vars; ++j) {
+        vars[i*num_vars + j] = a[j] + b[j]*points[i][0] + c[j]*points[i][1] + d[j]*points[i][2];
+      }
+    }
+    //
+    std::vector<real> ivars(num_vars*ipoints.size());
+    for (int i = 0; i < ipoints.size(); ++i) {
+      for (int j = 0; j < num_vars; ++j) {
+        ivars[i*num_vars + j] = a[j] + b[j]*ipoints[i][0] + c[j]*ipoints[i][1] + d[j]*ipoints[i][2];
+      }
+    }
+    //
+    PointCloudSurface<real,10> pcs(g1);
+    pcs.setPoints(points);
+    pcs.setInterpolationPoints(ipoints);
+    pcs.computeWeights();
+    std::vector<real> result(num_vars*ipoints.size());
+    pcs.interpolate(vars, result, num_vars);
+    //
+    for (int i = 0; i < ipoints.size(); ++i) {
+      for (int j = 0; j < num_vars; ++j) {
+        real f0 = ivars[i*num_vars + j];
+        real f1 = result[i*num_vars + j];
+        real err = std::abs(f0-f1);
+        err_max = std::max(err_max, err);
+        if (err > 1e-4*range) {
+          all_good = false;
+        }
+      }
+    }
+  }
+  CHECK(all_good);
+}
 
 #endif // POINTCLOUDSURFACE_H
 

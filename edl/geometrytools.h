@@ -31,6 +31,7 @@
 #include <QPair>
 
 #include "edlerror.h"
+#include "edl.h"
 
 namespace EDL_NAMESPACE
 {
@@ -755,6 +756,77 @@ QList<VEC> orderNodesAroundCentre(QList<VEC> x3, VEC x_centre, VEC normal)
   return x_sorted;
 }
 
+
+
+/*
+  checks if point p is in the in the side of the plane formed by (x0,x1,x2) as x3.
+  Returns true if p and x3 are in the same side or lay in the plane, and false otherwise
+ */
+template <class VEC>
+bool checkPointPlaneSide(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p)
+{
+  VEC normal, aux;
+  aux = (x1 - x0);
+  normal = aux.cross(x2 - x0);
+  typename VEC::value_type dot_x3 = normal*(x3 - x0);
+  typename VEC::value_type dot_p = normal*(p - x0);
+  return ((dot_x3*dot_p)>=0);
 }
+
+/*
+  returns true if the point p is inside the tetrahedron formed by x0,x1,x2 and x3.
+ */
+template <class VEC>
+bool isPointInTetra(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p)
+{
+  return  checkPointPlaneSide(x0, x1, x2, x3, p) &&
+          checkPointPlaneSide(x1, x2, x3, x0, p) &&
+          checkPointPlaneSide(x2, x3, x0, x1, p) &&
+          checkPointPlaneSide(x3, x0, x1, x2, p);   
+}
+
+template <class VEC>
+void findBoundingBox(std::vector<VEC> & points, VEC & xyzmin, VEC &xyzmax)
+{
+  size_t n = points[0].size();
+  for (size_t i =0; i<n; ++i) {
+    xyzmin[i] = FLT_MAX;
+    xyzmax[i] = - FLT_MAX;
+  }
+  for (auto p: points) {
+    for (size_t i=0; i<n; i++) {
+      if (xyzmin[i] > p[i]) {
+        xyzmin[i] = p[i];
+      }
+      if (xyzmax[i] < p[i]) {
+        xyzmax[i] = p[i];
+      }
+    }
+  }
+}
+
+}
+
+TEST_CASE("test function findBoundingBox")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<float,3> > vec3_t;
+  std::vector<vec3_t> points;
+  points.push_back(vec3_t{1,0,0});
+  points.push_back(vec3_t{0,5.2,0});
+  points.push_back(vec3_t{2,1,14});
+  points.push_back(vec3_t{-9,3,17});
+  points.push_back(vec3_t{3.3,-12.4,3});
+  points.push_back(vec3_t{1.8,0,-15});
+  vec3_t xyzmin,xyzmax;
+  edl::findBoundingBox<vec3_t>(points,xyzmin,xyzmax);
+  CHECK(edl::almostEqual(xyzmin[0],float(-9.0))==true);
+  CHECK(edl::almostEqual(xyzmin[1],float(-12.4))==true);
+  CHECK(edl::almostEqual(xyzmin[2],float(-15))==true);
+  CHECK(edl::almostEqual(xyzmax[0],float(3.3))==true);
+  CHECK(edl::almostEqual(xyzmax[1],float(5.2))==true);
+  CHECK(edl::almostEqual(xyzmax[2],float(17))==true);
+}
+
 
 #endif

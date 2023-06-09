@@ -19,11 +19,14 @@
 // + If not, see <http://www.gnu.org/licenses/>.                        +
 // +                                                                    +
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#define DOCTEST_CONFIG_IMPLEMENT
 #include "edl/doctest.h"
+
 #include "edl/tools.h"
 #include "edl/fastremovelist.h"
 #include "edl/tlsqgrad.h"
+#include "edl/geometrytools.h"
+#include "edl/pointcloudsurface.h"
+#include "edl/lsqinterpolation.h"
 
 int main(int argc, const char** argv)
 {

@@ -20,12 +20,7 @@
 // +                                                                    +
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#include "geometrytools.h"
-#include "linsolve.h"
-#include "containertricks.h"
+#define DOCTEST_CONFIG_IMPLEMENT
+#include "edl/doctest.h"
 
-#include <cmath>
 
-namespace EDL_NAMESPACE
-{
-} // namespace

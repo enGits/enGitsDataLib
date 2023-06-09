@@ -28,15 +28,16 @@
 
 #include "edl/edl.h"
 
+
 namespace EDL_NAMESPACE
 {
-  template <typename T, uint8_t NUM_VARS> class TLSqGrad3D;
+  template <typename T, uint8_t NVAR_TLSQGR> class TLSqGrad3D;
 }
 
 namespace EDL_NAMESPACE
 {
 
-template <typename T, uint8_t NUM_VARS>
+template <typename T, uint8_t NVAR_TLSQGR>
 class TLSqGrad3D
 {
 
@@ -49,13 +50,13 @@ class TLSqGrad3D
   T m_Azx{0};
   T m_Azy{0};
   T m_Azz{0};
-  T m_Bx[NUM_VARS]{0};
-  T m_By[NUM_VARS]{0};
-  T m_Bz[NUM_VARS]{0};
+  T m_Bx[NVAR_TLSQGR]{0};
+  T m_By[NVAR_TLSQGR]{0};
+  T m_Bz[NVAR_TLSQGR]{0};
   T m_X0{0};
   T m_Y0{0};
   T m_Z0{0};
-  T m_F0[NUM_VARS]{0};
+  T m_F0[NVAR_TLSQGR]{0};
 
   uint16_t m_NumPoints{0};
 
@@ -63,7 +64,7 @@ public:
 
   CUDA_DH TLSqGrad3D(T x, T y, T z, T* f) : m_X0(x), m_Y0(y), m_Z0(z)
   {
-    for (int i = 0; i < NUM_VARS; ++i) {
+    for (int i = 0; i < NVAR_TLSQGR; ++i) {
       m_F0[i] = f[i];
     }
   }
@@ -89,7 +90,7 @@ public:
     m_Azy += Dy*Dz*w;
     m_Azz += Dz*Dz*w;
     //
-    for (int i = 0; i < NUM_VARS; ++i) {
+    for (int i = 0; i < NVAR_TLSQGR; ++i) {
       T Df = f[i] - m_F0[i];
       m_Bx[i] += Df*Dx*w;
       m_By[i] += Df*Dy*w;
@@ -120,7 +121,7 @@ public:
     T AI_zy = -m_Axx*m_Azy + m_Axy*m_Azx;
     T AI_zz =  m_Axx*m_Ayy - m_Axy*m_Ayx;
     //
-    for (int i = 0; i < NUM_VARS; ++i) {
+    for (int i = 0; i < NVAR_TLSQGR; ++i) {
       fx[i] = inv_det*(AI_xx*m_Bx[i] + AI_xy*m_By[i] + AI_xz*m_Bz[i]);
       fy[i] = inv_det*(AI_yx*m_Bx[i] + AI_yy*m_By[i] + AI_yz*m_Bz[i]);
       fz[i] = inv_det*(AI_zx*m_Bx[i] + AI_zy*m_By[i] + AI_zz*m_Bz[i]);

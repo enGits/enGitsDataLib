@@ -2,6 +2,7 @@
 #ifndef OCTREE_H
 #define OCTREE_H
 
+#include <vector>
 
 template <typename VEC>
 struct OctreeBucket 
@@ -24,19 +25,19 @@ class OctreeSorting
 
 private:
   std::vector<OctreeBucket<vector_t>*> m_buckets;
-    void divideBucket(OctreeBucket<vector_t>* b, int n, OctreeSorting::scalar_t tol, int n_3=10, int n_2 = 5);
+  void divideBucket(OctreeBucket<vector_t>* b, int n, OctreeSorting::scalar_t tol, int n_3=10, int n_2 = 5);
 
 public:
-    void dividePointsIntoBuckets(int n, CONT points, OctreeSorting::scalar_t tol, int num_points);
-    OctreeSorting(){};
-    std::vector<OctreeBucket<vector_t>*> getBuckets(){return m_buckets;};
+  void dividePointsIntoBuckets(int n, CONT points, OctreeSorting::scalar_t tol, int num_points);
+  void dividePointsIntoBuckets(int n, CONT points, OctreeSorting::scalar_t tol, int num_points, OctreeSorting::vector_t xyzmin, OctreeSorting::vector_t xyzmax);
+  OctreeSorting(){};
+  std::vector<OctreeBucket<vector_t>*> getBuckets(){return m_buckets;};
 };
 
 
 template <typename CONT>
 void OctreeSorting<CONT>::dividePointsIntoBuckets(int n, CONT points, OctreeSorting::scalar_t tol, int num_points)
 {
-  std::vector< OctreeBucket<vector_t>* > buckets;
   auto xyzmin = points[0];
   auto xyzmax = points[0];
   //creating bounding box around points
@@ -55,6 +56,14 @@ void OctreeSorting<CONT>::dividePointsIntoBuckets(int n, CONT points, OctreeSort
   xyzmin[0] = xyzmin[0]-tol; xyzmin[1] = xyzmin[1]-tol; xyzmin[2] = xyzmin[2]-tol;
   xyzmax[0] = xyzmax[0]+tol; xyzmax[1] = xyzmax[1]+tol; xyzmax[2] = xyzmax[2]+tol;
   //creating octree and copying data
+  dividePointsIntoBuckets(n, points, tol, num_points, xyzmin, xyzmax);
+}
+
+template <typename CONT>
+void OctreeSorting<CONT>::dividePointsIntoBuckets(int n, CONT points, OctreeSorting::scalar_t tol, int num_points, OctreeSorting::vector_t xyzmin, OctreeSorting::vector_t xyzmax)
+{
+  std::vector< OctreeBucket<vector_t>* > buckets;
+  //creating octree and copying data
   OctreeBucket<vector_t>*  b;
   b = new OctreeBucket<vector_t>(xyzmin, xyzmax);
   b->m_Points.resize(num_points);
@@ -62,7 +71,7 @@ void OctreeSorting<CONT>::dividePointsIntoBuckets(int n, CONT points, OctreeSort
     b->m_Points[i] = points[i];
   }
   // //starting division
- divideBucket(b,n,tol);
+  divideBucket(b,n,tol);
 }
 
 template <typename CONT>
@@ -133,8 +142,7 @@ void OctreeSorting< CONT>::OctreeSorting::divideBucket(OctreeBucket<vector_t>* b
     for (auto b_new: new_buckets) {
       divideBucket(b_new, n,tol);
     }
-   }
   }
-
+}
 
 #endif
