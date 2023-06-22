@@ -230,11 +230,11 @@ bool isInsideTriangle(VEC r, typename VEC::value_type tol=1e-4)
   return true;
 }
 
-template <class VEC>
-bool isInsideCartesianBox(VEC x, VEC x1, VEC x2)
+template <class VEC, class T = float>
+bool isInsideCartesianBox(VEC x, VEC x1, VEC x2, T tol = 1e-4)
 {
   for (int i = 0; i < 3; ++i) {
-    if (x[i] < x1[i] || x[i] >= x2[i]) {
+    if (x[i] < (x1[i]-tol) || x[i] >= (x2[i]+tol)) {
       return false;
     }
   }
@@ -763,26 +763,31 @@ QList<VEC> orderNodesAroundCentre(QList<VEC> x3, VEC x_centre, VEC normal)
   Returns true if p and x3 are in the same side or lay in the plane, and false otherwise
  */
 template <class VEC>
-bool checkPointPlaneSide(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p)
+bool checkPointPlaneSide(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p, typename VEC::value_type tol=1e-3)
 {
   VEC normal, aux;
   aux = (x1 - x0);
   normal = aux.cross(x2 - x0);
   typename VEC::value_type dot_x3 = normal*(x3 - x0);
   typename VEC::value_type dot_p = normal*(p - x0);
-  return ((dot_x3*dot_p)>=0);
+  VEC v_x3 = x3-x0;
+  VEC v_p = p-x0;
+  if (abs(dot_p)/normal.abs()<tol) { //if the laying on the plane
+    return true;
+  }
+  return ((dot_x3*dot_p)>= 0);
 }
 
 /*
   returns true if the point p is inside the tetrahedron formed by x0,x1,x2 and x3.
  */
 template <class VEC>
-bool isPointInTetra(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p)
+bool isPointInTetra(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p, typename VEC::value_type tol=1e-3)
 {
-  return  checkPointPlaneSide(x0, x1, x2, x3, p) &&
-          checkPointPlaneSide(x1, x2, x3, x0, p) &&
-          checkPointPlaneSide(x2, x3, x0, x1, p) &&
-          checkPointPlaneSide(x3, x0, x1, x2, p);   
+  return  checkPointPlaneSide(x0, x1, x2, x3, p, tol) &&
+          checkPointPlaneSide(x1, x2, x3, x0, p, tol) &&
+          checkPointPlaneSide(x2, x3, x0, x1, p, tol) &&
+          checkPointPlaneSide(x3, x0, x1, x2, p, tol);   
 }
 
 template <class VEC>

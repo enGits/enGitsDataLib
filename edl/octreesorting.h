@@ -132,7 +132,7 @@ void OctreeSorting< CONT>::OctreeSorting::divideBucket(OctreeBucket<vector_t>* b
 //   //sort cells in new buckets
     for (auto point : b->m_Points) {
       for (auto b_new : new_buckets) {
-        if (isInsideCartesianBox(point,b_new->m_xyzmin, b_new->m_xyzmax))
+        if (isInsideCartesianBox(point,b_new->m_xyzmin, b_new->m_xyzmax,0))
         {
           b_new->m_Points.push_back(point);
         }
