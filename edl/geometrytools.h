@@ -361,12 +361,12 @@ typename VEC::value_type hexaVol(VEC x0, VEC x1, VEC x2, VEC x3, VEC x4, VEC x5,
 {
   typename VEC::value_type V = 0;
   VEC p = 1.0/8.0*(x0+x1+x2+x3+x4+x5+x6+x7);
-  V += pyraVol(x0, x1, x3, x2, p, neg);
+  V += pyraVol(x0, x1, x2, x3, p, neg);
+  V += pyraVol(x4, x7, x6, x5, p, neg);
   V += pyraVol(x0, x4, x5, x1, p, neg);
-  V += pyraVol(x4, x6, x7, x5, p, neg);
-  V += pyraVol(x2, x3, x7, x6, p, neg);
-  V += pyraVol(x1, x5, x7, x3, p, neg);
-  V += pyraVol(x0, x2, x6, x4, p, neg);
+  V += pyraVol(x1, x5, x6, x2, p, neg);
+  V += pyraVol(x3, x2, x6, x7, p, neg);
+  V += pyraVol(x0, x3, x7, x4, p, neg);
   return V;
 }
 
@@ -810,7 +810,68 @@ void findBoundingBox(std::vector<VEC> & points, VEC & xyzmin, VEC &xyzmax)
   }
 }
 
+template <class C>
+bool vectorsAreCoplanar(const C& vectors, typename C::value_type::value_type rel_tol=1e-3)
+{
+  typedef typename C::value_type   vec;
+  typedef typename vec::value_type real;
+  //
+  if (vectors.size() < 4) {
+    return true;
+  }
+  //
+  // compute the centre of all points
+  //
+  vec centre(0,0,0);
+  for (int i = 0; i < vectors.size(); ++i) {
+    centre += vectors[i];
+  }
+  centre *= 1.0/vectors.size();
+  //
+  // compute the average distance from the centre
+  //
+  real ave_dist = 0;
+  for (int i = 0; i < vectors.size(); ++i) {
+    ave_dist += (vectors[i] - centre).abs();
+  }
+  ave_dist *= 1.0/vectors.size();
+  //
+  // find a normal which is not a zero vector
+  //
+  vec normal;
+  bool normal_found = false;
+  for (int i = 0; i < vectors.size(); ++i) {
+    for (int j = 0; j < vectors.size(); ++j) {
+      if (i != j) {
+        vec a = vectors[i] - centre;
+        vec b = vectors[j] - centre;
+        normal = a.cross(b);
+        if (normal.abs() > ave_dist*rel_tol) {
+          normal_found = true;
+          break;
+        }
+      }
+    }
+    if (normal_found) {
+      break;
+    }
+  }
+  if (!normal_found) {
+    return true;
+  }
+  //
+  // check if all vectors are coplanar
+  //
+  for (int i = 0; i < vectors.size(); ++i) {
+    vec a = vectors[i] - centre;
+    if (std::abs(a*normal) > ave_dist*rel_tol) {
+      return false;
+    }
+  }
+  return true;
 }
+
+} // end namespace edl
 
 TEST_CASE("test function findBoundingBox")
 {
@@ -833,5 +894,26 @@ TEST_CASE("test function findBoundingBox")
   CHECK(edl::almostEqual(xyzmax[2],float(17))==true);
 }
 
+TEST_CASE("test function vectorsAreCoplanar")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<float,3> > vec3_t;
+  std::vector<vec3_t> points;
+  points.push_back(vec3_t{1,0,0});
+  points.push_back(vec3_t{0,1,0});
+  points.push_back(vec3_t{2,0,0});
+  CHECK(edl::vectorsAreCoplanar(points)==true);
+  points.push_back(vec3_t{0,2,0});
+  CHECK(edl::vectorsAreCoplanar(points)==true);
+  points.push_back(vec3_t{0,0,1});
+  CHECK(edl::vectorsAreCoplanar(points)==false);
+  points.clear();
+  points.push_back(vec3_t{1.0,0,0});
+  points.push_back(vec3_t{1.1,0,0});
+  points.push_back(vec3_t{1.2,0,0});
+  points.push_back(vec3_t{1.3,0,0});
+  points.push_back(vec3_t{1.4,0,0});
+  CHECK(edl::vectorsAreCoplanar(points)==true);
+}
 
 #endif
