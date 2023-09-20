@@ -133,84 +133,14 @@ public: // methods
       max_dist = std::max(max_dist, (x - m_X0).abs());
     }
     min_dist = std::max(min_dist, max_dist/100);
-    m_Alpha.resize(X.size());
-    matrix_t A;
-    std::vector<value_t> weights;
-    weights.reserve(X.size());
-    A.initAll(0);
+    m_CollectedNodes.clear();
+    m_CollectedNodes.reserve(X.size());
+    m_CollectedWeights.clear();
+    m_CollectedWeights.reserve(X.size());
     for (auto x : X) {
       value_t  w  = std::pow((x - m_X0).abs()/min_dist, distance_exponent);
-      geovec_t DX = x - m_X0;
-      value_t  dx = DX[0];
-      value_t  dy = DX[1];
-      value_t  dz = DX[2];
-      //
-      weights.push_back(w);
-      //
-      A[0][0] += 2*w;
-      A[0][1] += 2*dx*w;
-      A[0][2] += 2*dy*w;
-      A[0][3] += 2*dz*w;
-      A[1][0] += 2*dx*w;
-      A[1][1] += 2*dx*dx*w;
-      A[1][2] += 2*dx*dy*w;
-      A[1][3] += 2*dx*dz*w;
-      A[2][0] += 2*dy*w;
-      A[2][1] += 2*dx*dy*w;
-      A[2][2] += 2*dy*dy*w;
-      A[2][3] += 2*dy*dz*w;
-      A[3][0] += 2*dz*w;
-      A[3][1] += 2*dx*dz*w;
-      A[3][2] += 2*dy*dz*w;
-      A[3][3] += 2*dz*dz*w;
+      addNode(x, w);
     }
-    //
-    matrix_t AI;
-    if (m_Mode == mode_t::XYZ) {
-      AI = A.inverse();
-    } else {
-      if (m_Mode == mode_t::XY) {
-        auto M = A.subMatrix(3,3).inverse();
-        AI.initAll(0);
-        for (int i = 0; i < 3; ++i) {
-          for (int j = 0; j < 3; ++j) {
-            AI[i][j] = M[i][j];
-          }
-        }
-      }
-      if (m_Mode == mode_t::XZ) {
-        auto M = A.subMatrix(2,2).inverse();
-        AI.initAll(0);
-        for (int i = 0; i < 4; ++i) {
-          for (int j = 0; j < 4; ++j) {
-            if      (i < 2 && j < 2) AI[i][j] = M[i][j];
-            else if (i < 2 && j > 2) AI[i][1] = M[i][j-1];
-            else if (i > 2 && j < 2) AI[i][j] = M[i-1][j];
-            else if (i > 2 && j > 2) AI[i][j] = M[i-1][j-1];
-          }
-        }
-      }
-      if (m_Mode == mode_t::YZ) {
-        auto M = A.subMatrix(1,1).inverse();
-        AI.initAll(0);
-        for (int i = 0; i < 4; ++i) {
-          for (int j = 0; j < 4; ++j) {
-            if      (i < 1 && j < 1) AI[i][j] = M[i][j];
-            else if (i < 1 && j > 1) AI[i][1] = M[i][j-1];
-            else if (i > 1 && j < 1) AI[i][j] = M[i-1][j];
-            else if (i > 1 && j > 1) AI[i][j] = M[i-1][j-1];
-          }
-        }
-      }
-    }
-    for (int i = 0; i < m_Alpha.size(); ++i) {
-      geovec_t DX = X[i] - m_X0;
-      value_t  dx = DX[0];
-      value_t  dy = DX[1];
-      value_t  dz = DX[2];
-      m_Alpha[i] = 2*weights[i]*(AI[0][0] + AI[0][1]*dx + AI[0][2]*dy + AI[0][3]*dz);
-    }
-    m_Valid = true;
   }
 
   void addNode(geovec_t x, value_t weight)
@@ -231,6 +161,42 @@ public: // methods
       computeWeights();
     }
     return m_Alpha;
+  }
+
+  /**
+    * @brief compute a pure interpolation without any extrapolation if possible
+    * @return a vector of interpolation weights (>0) if possible
+    */
+  std::vector<value_t> pureInterpolationWeights()
+  {
+    using namespace std;
+    //
+    LsqInterpolation3D<value_t> lsq(m_X0);
+    vector<geovec_t> X = m_CollectedNodes;
+    vector<value_t>  w;
+    lsq.setMode(m_Mode);    
+    //
+    bool all_positive = false;
+    while (!all_positive) {
+      lsq.setNodes(X, 0);
+      w = lsq.weights();
+      vector<pair<int, value_t>> wi(w.size());
+      // sort weights
+      for (int i = 0; i < w.size(); ++i) {
+        wi[i] = make_pair(i, w[i]);
+      }
+      sort(wi.begin(), wi.end(), [](const pair<int, value_t> &a, const pair<int, value_t> &b) { return a.second < b.second; });
+      // check if all weights are positive
+      all_positive = wi[0].second > 0;
+      if (!all_positive) {
+        vector<geovec_t> X_new;
+        for (int i = 1; i < wi.size(); ++i) {
+          X_new.push_back(m_CollectedNodes[wi[i].first]);
+        }
+        X = X_new;
+      }
+    }
+    return w;
   }
 
 };
@@ -391,6 +357,61 @@ TEST_CASE("LsqInterpolation3D (multiple addNode)")
   CHECK(all_good);
 }
 
-#endif // TGRAPH_H
+TEST_CASE("LsqInterpolation3D (pureInterpolation)")
+{
+  using namespace edl;
+  using namespace std;
+  typedef float real;
+  typedef MathVector<StaticVector<real,3>> vec_t;
+  //
+  vector<real> coeff = {1, 2, 3, 4};
+  vector<vec_t> X;
+  X.push_back(vec_t(0,0,0));
+  X.push_back(vec_t(1,0,0));
+  X.push_back(vec_t(2,0,0));
+  X.push_back(vec_t(0,1,0));
+  X.push_back(vec_t(1,1,0));
+  X.push_back(vec_t(2,1,0));
+  X.push_back(vec_t(0,0,1));
+  X.push_back(vec_t(1,0,1));
+  X.push_back(vec_t(2,0,1));
+  X.push_back(vec_t(0,1,1));
+  X.push_back(vec_t(1,1,1));
+  X.push_back(vec_t(2,1,1));
+  //
+  vector<real> F;
+  for (auto x : X) {
+    real f = coeff[0] + coeff[1]*x[0] + coeff[2]*x[1] + coeff[3]*x[2];
+    F.push_back(f);
+  }
+  //
+  vec_t x0(1.5,0.5,0.5);
+  LsqInterpolation3D<real> lsq(x0);
+  lsq.setNodes(X, 0);
+  auto w = lsq.pureInterpolationWeights();
+  //auto w = lsq.weights();
+  //
+  real f1 = coeff[0] + coeff[1]*x0[0] + coeff[2]*x0[1] + coeff[3]*x0[2];
+  real f2 = 0;
+  for (int i = 0; i < X.size(); ++i) {
+    f2 += w[i]*F[i];
+  }
+  CHECK(f1 == doctest::Approx(f2));
+  //
+  // CHECK(w[0]  == doctest::Approx(0.000));
+  // CHECK(w[1]  == doctest::Approx(0.125));
+  // CHECK(w[2]  == doctest::Approx(0.125));
+  // CHECK(w[3]  == doctest::Approx(0.000));
+  // CHECK(w[4]  == doctest::Approx(0.125));
+  // CHECK(w[5]  == doctest::Approx(0.125));
+  // CHECK(w[6]  == doctest::Approx(0.000));
+  // CHECK(w[7]  == doctest::Approx(0.125));
+  // CHECK(w[8]  == doctest::Approx(0.125));
+  // CHECK(w[9]  == doctest::Approx(0.000));
+  // CHECK(w[10] == doctest::Approx(0.125));
+  // CHECK(w[11] == doctest::Approx(0.125));
+}
+
+#endif // LSQINTERPOLATION_H
 
 

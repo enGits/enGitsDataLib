@@ -136,6 +136,7 @@ edl/varcontainer.h
 edl/tgraph.h
 edl/tlsqgrad.h
 edl/tools.h
+edl/weightedset.h
 )
 
 set(engitsdatalib_SOURCES

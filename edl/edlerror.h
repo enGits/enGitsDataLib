@@ -31,8 +31,6 @@ class EdlError;
 #include <cstddef>
 #include <iostream>
 
-class EdlError;
-
 #include <string>
 #include <QString>
 
