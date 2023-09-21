@@ -135,8 +135,7 @@ public:
       }
       sort(dists.begin(), dists.end());
       //
-      LsqInterpolation3D<T> lsq;
-      lsq.setMode(LsqInterpolation3D<T>::mode_t::XY);
+      LsqInterpolationCoPlanar<T> lsq;
       //
       size_t num_weights = std::min(size_t(NUM_WEIGHTS), m_Points.size());
       std::vector<vec_t> X(num_weights);

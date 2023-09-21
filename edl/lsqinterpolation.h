@@ -33,6 +33,7 @@
 namespace EDL_NAMESPACE
 {
 template <typename T> class LsqInterpolation3D;
+template <typename T> class LsqInterpolationCoPlanar;
 }
 
 namespace EDL_NAMESPACE
@@ -68,7 +69,6 @@ protected: // attributes
   std::vector<value_t>  m_CollectedWeights;
   std::vector<geovec_t> m_CollectedNodes;
   bool                  m_Valid{false};
-  mode_t                m_Mode{mode_t::XYZ};
 
 
 protected: // methods
@@ -121,8 +121,6 @@ public: // methods
 
   LsqInterpolation3D(geovec_t x0 = geovec_t(0,0,0)) : m_X0(x0) {}
 
-  void setMode(mode_t mode) { m_Mode = mode; }
-
   template<typename C>
   void setNodes(C& X, value_t distance_exponent=0.0)
   {
@@ -163,40 +161,128 @@ public: // methods
     return m_Alpha;
   }
 
-  /**
-    * @brief compute a pure interpolation without any extrapolation if possible
-    * @return a vector of interpolation weights (>0) if possible
-    */
-  std::vector<value_t> pureInterpolationWeights()
+};
+
+template <typename VALUE_TYPE>
+class LsqInterpolationCoPlanar : public LsqInterpolation3D<VALUE_TYPE>
+{
+
+protected: // data types
+
+  using typename LsqInterpolation3D<VALUE_TYPE>::value_t;
+  using typename LsqInterpolation3D<VALUE_TYPE>::geovec_t;
+
+  typedef MathVector<StaticVector<value_t,3>> vector_t;
+  typedef SmallSquareMatrix<value_t,3>        matrix_t;
+
+
+protected: // methods
+
+  void projectToPlane()
   {
-    using namespace std;
+    geovec_t x0 = origin();
+    geovec_t n  = normal();
+    geovec_t g3 = n;
+    geovec_t g1 = orthogonalVector(g3);
+    geovec_t g2 = g3.cross(g1);
     //
-    LsqInterpolation3D<value_t> lsq(m_X0);
-    vector<geovec_t> X = m_CollectedNodes;
-    vector<value_t>  w;
-    lsq.setMode(m_Mode);    
+    // base matrix
     //
-    bool all_positive = false;
-    while (!all_positive) {
-      lsq.setNodes(X, 0);
-      w = lsq.weights();
-      vector<pair<int, value_t>> wi(w.size());
-      // sort weights
-      for (int i = 0; i < w.size(); ++i) {
-        wi[i] = make_pair(i, w[i]);
-      }
-      sort(wi.begin(), wi.end(), [](const pair<int, value_t> &a, const pair<int, value_t> &b) { return a.second < b.second; });
-      // check if all weights are positive
-      all_positive = wi[0].second > 0;
-      if (!all_positive) {
-        vector<geovec_t> X_new;
-        for (int i = 1; i < wi.size(); ++i) {
-          X_new.push_back(m_CollectedNodes[wi[i].first]);
+    matrix_t B;
+    B.initAll(0);
+    B.setColumn(0, g1);
+    B.setColumn(1, g2);
+    B.setColumn(2, g3);
+    matrix_t BI = B.inverse();
+    //
+    // project nodes
+    //
+    for (int i = 0; i < this->m_CollectedNodes.size(); ++i) {
+      geovec_t dx = (this->m_CollectedNodes[i] - x0);
+      this->m_CollectedNodes[i] = BI*dx;
+    }
+    //
+    // project origin
+    //
+    geovec_t dx = this->m_X0 - x0;
+    this->m_X0 = BI*dx;
+  }
+
+  void computeWeights()
+  {
+    projectToPlane();
+    auto N = this->m_CollectedNodes.size();
+    this->m_Alpha.resize(N);
+    matrix_t A;
+    A.initAll(0);
+    for (int i = 0; i < N; ++i) {
+      vector_t DX = this->m_CollectedNodes[i] - this->m_X0;
+      value_t  dx = DX[0];
+      value_t  dy = DX[1];
+      value_t  dz = DX[2];
+      //
+      auto w = this->m_CollectedWeights[i];
+      //
+      A[0][0] += 2*w;
+      A[0][1] += 2*dx*w;
+      A[0][2] += 2*dy*w;
+      A[1][0] += 2*dx*w;
+      A[1][1] += 2*dx*dx*w;
+      A[1][2] += 2*dx*dy*w;
+      A[2][0] += 2*dy*w;
+      A[2][1] += 2*dx*dy*w;
+      A[2][2] += 2*dy*dy*w;
+    }
+    //
+    matrix_t AI = A.inverse();
+    for (int i = 0; i < this->m_Alpha.size(); ++i) {
+      vector_t DX = this->m_CollectedNodes[i] - this->m_X0;
+      value_t  dx = DX[0];
+      value_t  dy = DX[1];
+      value_t  dz = DX[2];
+      this->m_Alpha[i] = 2*this->m_CollectedWeights[i]*(AI[0][0] + AI[0][1]*dx + AI[0][2]*dy);
+    }
+    this->m_Valid = true;
+  }
+
+
+public:
+
+  LsqInterpolationCoPlanar(geovec_t x0 = geovec_t(0,0,0)) : LsqInterpolation3D<VALUE_TYPE>(x0) {}
+
+  const std::vector<value_t>& weights()
+  {
+    if (!this->m_Valid) {
+      computeWeights();
+    }
+    return this->m_Alpha;
+  }  
+
+  geovec_t origin()
+  {
+    geovec_t x(0,0,0);
+    for (auto _x : this->m_CollectedNodes) {
+      x += _x;
+    }
+    return value_t(1)/this->m_CollectedNodes.size() * x;
+  }
+
+  geovec_t normal()
+  {
+    geovec_t x0 = origin();
+    geovec_t n(0,0,0);
+    for (int i = 0; i < this->m_CollectedNodes.size(); ++i) {
+      geovec_t dxi = this->m_CollectedNodes[i] - x0;
+      for (int j = i+1; j < this->m_CollectedNodes.size(); ++j) {
+        geovec_t dxj = this->m_CollectedNodes[j] - x0;
+        geovec_t dn  = dxi.cross(dxj);
+        if (dn*n < 0) {
+          dn *= -1;
         }
-        X = X_new;
+        n += dn;
       }
     }
-    return w;
+    return n.normalised();
   }
 
 };
@@ -357,60 +443,119 @@ TEST_CASE("LsqInterpolation3D (multiple addNode)")
   CHECK(all_good);
 }
 
-TEST_CASE("LsqInterpolation3D (pureInterpolation)")
+
+TEST_CASE("LsqInterpolationCoPlanar (one interpolation only)")
 {
   using namespace edl;
-  using namespace std;
   typedef float real;
   typedef MathVector<StaticVector<real,3>> vec_t;
   //
-  vector<real> coeff = {1, 2, 3, 4};
-  vector<vec_t> X;
+  vec_t g1 = vec_t(1,0,0);
+  g1.normalise();
+  vec_t g2 = vec_t(0,0,1);//orthogonalVector(g1);
+  g2.normalise();
+  vec_t g3 = g1.cross(g2);
+  std::vector<vec_t> X;
   X.push_back(vec_t(0,0,0));
-  X.push_back(vec_t(1,0,0));
-  X.push_back(vec_t(2,0,0));
-  X.push_back(vec_t(0,1,0));
-  X.push_back(vec_t(1,1,0));
-  X.push_back(vec_t(2,1,0));
-  X.push_back(vec_t(0,0,1));
-  X.push_back(vec_t(1,0,1));
-  X.push_back(vec_t(2,0,1));
-  X.push_back(vec_t(0,1,1));
-  X.push_back(vec_t(1,1,1));
-  X.push_back(vec_t(2,1,1));
+  X.push_back(1*g1 + 0*g2 + 0*g3);
+  X.push_back(0*g1 + 1*g2 + 0*g3);
+  X.push_back(1*g1 + 1*g2 + 0*g3);
+  auto x0 = 0.5*g1 + 0.5*g2;
   //
-  vector<real> F;
-  for (auto x : X) {
-    real f = coeff[0] + coeff[1]*x[0] + coeff[2]*x[1] + coeff[3]*x[2];
-    F.push_back(f);
+  real a = 1;
+  real b = 2;
+  real c = 3;
+  real d = 4;
+  real f1 = a + b*x0[0] + c*x0[1] + d*x0[2];
+  //
+  LsqInterpolationCoPlanar<real> lsq(x0);
+  lsq.setNodes(X);
+  auto n = lsq.normal();
+  if (n*g3 < 0) {
+    n *= -1;
+  }
+  CHECK(n[0] == doctest::Approx(g3[0]));
+  CHECK(n[1] == doctest::Approx(g3[1]));
+  CHECK(n[2] == doctest::Approx(g3[2]));
+  auto w = lsq.weights();
+  real f2 = 0.0;
+  for (int i = 0; i < w.size(); ++i) {
+    f2 += w[i]*(a + b*X[i][0] + c*X[i][1] + d*X[i][2]);
   }
   //
-  vec_t x0(1.5,0.5,0.5);
-  LsqInterpolation3D<real> lsq(x0);
-  lsq.setNodes(X, 0);
-  auto w = lsq.pureInterpolationWeights();
-  //auto w = lsq.weights();
-  //
-  real f1 = coeff[0] + coeff[1]*x0[0] + coeff[2]*x0[1] + coeff[3]*x0[2];
-  real f2 = 0;
-  for (int i = 0; i < X.size(); ++i) {
-    f2 += w[i]*F[i];
-  }
   CHECK(f1 == doctest::Approx(f2));
-  //
-  // CHECK(w[0]  == doctest::Approx(0.000));
-  // CHECK(w[1]  == doctest::Approx(0.125));
-  // CHECK(w[2]  == doctest::Approx(0.125));
-  // CHECK(w[3]  == doctest::Approx(0.000));
-  // CHECK(w[4]  == doctest::Approx(0.125));
-  // CHECK(w[5]  == doctest::Approx(0.125));
-  // CHECK(w[6]  == doctest::Approx(0.000));
-  // CHECK(w[7]  == doctest::Approx(0.125));
-  // CHECK(w[8]  == doctest::Approx(0.125));
-  // CHECK(w[9]  == doctest::Approx(0.000));
-  // CHECK(w[10] == doctest::Approx(0.125));
-  // CHECK(w[11] == doctest::Approx(0.125));
 }
+
+
+TEST_CASE("LsqInterpolationCoPlanar (setNodes)")
+{
+  using namespace edl;
+  typedef float real;
+  typedef MathVector<StaticVector<real,3>> vec_t;
+  //
+  const int  num_points  = 10;
+  const int  num_loops   = 10;
+  const int  num_vars    = 5;
+  const real range       = 3;
+  //
+  const std::vector<real> dist_exp = {0, 0.5, 1, 2};
+  //
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<real> dist1(-1, 1);
+  std::uniform_real_distribution<real> dist2(-range/2, range/2);
+  //
+  bool all_good = true;
+  for (real de : dist_exp) {
+    real max_err = 0;
+    for (int i_loop = 0; i_loop < num_loops; ++i_loop) {
+      //
+      // linear test function
+      //
+      real a[num_vars], b[num_vars], c[num_vars];
+      for (int i = 0; i < num_vars; ++i) {
+        a[i] = dist2(gen);
+        b[i] = dist2(gen);
+        c[i] = dist2(gen);
+      }
+      //
+      vec_t g1(dist1(gen), dist1(gen), dist1(gen));
+      //vec_t g1(1,0,0);
+      g1.normalise();
+      vec_t g2 = orthogonalVector(g1);
+      //vec_t g2 = vec_t(0,1,0);
+      g2.normalise();
+      //
+      std::vector<vec_t> x;
+      x.reserve(num_points);
+      for (int i = 0; i < num_points - 1; ++i) {
+        real x1 = dist1(gen);
+        real x2 = dist1(gen);
+        x.push_back(x1*g1 + x2*g2);
+      }
+      //
+      vec_t x0 = 0.5*g1 + 0.5*g2;
+      x.push_back(x0);
+      LsqInterpolationCoPlanar<real> lsq(x0);
+      lsq.setNodes(x, de);
+      //
+      for (int i_var = 0; i_var < num_vars; ++i_var) {
+        real f0 = a[i_var] + b[i_var]*x0[0] + c[i_var]*x0[1];
+        real fi = 0;
+        for (int i = 0; i < num_points; ++i) {
+          fi += lsq.weights()[i]*(a[i_var] + b[i_var]*x[i][0] + c[i_var]*x[i][1]);
+        }
+        real err = std::abs(f0 - fi);
+        max_err = std::max(max_err, err);
+        if (err > 1e-4*range) {
+          all_good = false;
+        }
+      }
+    }
+  }
+  CHECK(all_good);
+}
+
 
 #endif // LSQINTERPOLATION_H
 
