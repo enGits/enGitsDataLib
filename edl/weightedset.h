@@ -214,6 +214,10 @@ public:
     */
   bool tranferToFixedArrays(size_t n_dimension,
                             int* indices, T* weights);
+
+  const std::vector<std::pair<size_t, T>>& entries() const { return v; }
+  std::pair<size_t, T>& operator[](size_t i) { return v[i]; }
+  const std::pair<size_t, T>& operator[](size_t i) const { return v[i]; }
 };
 
 template<class T>
