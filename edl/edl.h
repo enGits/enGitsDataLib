@@ -229,6 +229,61 @@ namespace EDL_NAMESPACE
   };
 #endif
 
+template <typename T>
+inline std::uint8_t ilog2(T x)
+{
+  std::uint8_t n = 0;
+  while (x >>= 1) ++n;
+  return n;
+}
+
 Q_DECLARE_METATYPE(EDL_NAMESPACE::real)
 
-#endif
+#endif // EDL_H
+
+
+// ----------------------------------------------------------------------------
+// TESTS
+// ----------------------------------------------------------------------------
+
+TEST_CASE("ilog2")
+{
+  using namespace EDL_NAMESPACE;
+  //
+  CHECK(ilog2(0) == 0);
+  CHECK(ilog2(1) == 0);
+  CHECK(ilog2(2) == 1);
+  CHECK(ilog2(4) == 2);
+  CHECK(ilog2(8) == 3);
+  CHECK(ilog2(16) == 4);
+  CHECK(ilog2(32) == 5);
+  CHECK(ilog2(64) == 6);
+  CHECK(ilog2(128) == 7);
+  CHECK(ilog2(256) == 8);
+  CHECK(ilog2(512) == 9);
+  CHECK(ilog2(1024) == 10);
+  CHECK(ilog2(2048) == 11);
+  CHECK(ilog2(4096) == 12);
+  CHECK(ilog2(8192) == 13);
+  CHECK(ilog2(16384) == 14);
+  CHECK(ilog2(32768) == 15);
+  CHECK(ilog2(65536) == 16);
+  //
+  CHECK(ilog2(2+1) == 1);
+  CHECK(ilog2(4+1) == 2);
+  CHECK(ilog2(8+1) == 3);
+  CHECK(ilog2(16+1) == 4);
+  CHECK(ilog2(32+1) == 5);
+  CHECK(ilog2(64+1) == 6);
+  CHECK(ilog2(128+1) == 7);
+  CHECK(ilog2(256+1) == 8);
+  CHECK(ilog2(512+1) == 9);
+  CHECK(ilog2(1024+1) == 10);
+  CHECK(ilog2(2048+1) == 11);
+  CHECK(ilog2(4096+1) == 12);
+  CHECK(ilog2(8192+1) == 13);
+  CHECK(ilog2(16384+1) == 14);
+  CHECK(ilog2(32768+1) == 15);
+  CHECK(ilog2(65536+1) == 16);
+
+}

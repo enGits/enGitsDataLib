@@ -28,6 +28,7 @@
 #include "edl/pointcloudsurface.h"
 #include "edl/lsqinterpolation.h"
 #include "edl/weightedset.h"
+#include "edl/octree.h"
 
 int main(int argc, const char** argv)
 {

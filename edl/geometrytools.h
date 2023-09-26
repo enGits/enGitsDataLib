@@ -765,17 +765,23 @@ QList<VEC> orderNodesAroundCentre(QList<VEC> x3, VEC x_centre, VEC normal)
 template <class VEC>
 bool checkPointPlaneSide(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p, typename VEC::value_type tol=1e-3)
 {
-  VEC normal, aux;
-  aux = (x1 - x0);
-  normal = aux.cross(x2 - x0);
-  typename VEC::value_type dot_x3 = normal*(x3 - x0);
-  typename VEC::value_type dot_p = normal*(p - x0);
-  VEC v_x3 = x3-x0;
-  VEC v_p = p-x0;
-  if (abs(dot_p)/normal.abs()<tol) { //if the laying on the plane
+  typedef typename VEC::value_type real;
+  //
+  VEC a = x1 - x0;
+  VEC b = x2 - x0;
+  VEC c = x3 - x0;
+  VEC d = p  - x0;
+  VEC n = a.cross(b);
+  n.normalise();
+  real sd = n*d;
+  if (std::abs(sd) < tol) {
     return true;
   }
-  return ((dot_x3*dot_p)>= 0);
+  real sc = n*c;
+  if (sc*sd >= 0) {
+    return true;
+  }
+  return false;
 }
 
 /*
@@ -791,7 +797,7 @@ bool isPointInTetra(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, 
 }
 
 template <class VEC>
-void findBoundingBox(std::vector<VEC> & points, VEC & xyzmin, VEC &xyzmax)
+void findBoundingBox(const std::vector<VEC> & points, VEC & xyzmin, VEC &xyzmax)
 {
   size_t n = points[0].size();
   for (size_t i =0; i<n; ++i) {

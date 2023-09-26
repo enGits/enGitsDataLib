@@ -113,7 +113,7 @@ edl/mathvector.h
 edl/mathvector_methods.h
 edl/mathvector_operators.h
 edl/mathvector_structs.h
-edl/octreesorting.h
+edl/octree.h
 edl/pmap.h
 edl/pointcloudsurface.h
 edl/profile.h

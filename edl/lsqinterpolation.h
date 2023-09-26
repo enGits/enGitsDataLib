@@ -27,6 +27,7 @@
 #include "edl/mathvector.h"
 #include "edl/smallsquarematrix.h"
 
+#include <iostream>
 #include <sys/types.h>
 #include <vector>
 
@@ -460,7 +461,7 @@ TEST_CASE("LsqInterpolationCoPlanar (one interpolation only)")
   X.push_back(1*g1 + 0*g2 + 0*g3);
   X.push_back(0*g1 + 1*g2 + 0*g3);
   X.push_back(1*g1 + 1*g2 + 0*g3);
-  auto x0 = 0.5*g1 + 0.5*g2;
+  vec_t x0 = 0.5*g1 + 0.5*g2;
   //
   real a = 1;
   real b = 2;
