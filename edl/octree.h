@@ -70,8 +70,6 @@ public: // data types
   typedef VEC vector_t;
   typedef typename vector_t::value_type scalar_t;
 
-  bool m_Dbg = false;
-  bool dbg() const { return m_Dbg; };
 
 protected: // data types
 
@@ -109,14 +107,24 @@ protected: // data types
     //
     vector_t getCoordinates(const Octree<VEC>& octree) const
     {
-      vector_t x1 = octree.getBoundingBoxX1();
-      vector_t x2 = octree.getBoundingBoxX2();
-      vector_t dx = x2 - x1;
+      scalar_t x1[3], x2[3], dx[3];
+      //vector_t x1 = octree.getBoundingBoxX1();
+      //vector_t x2 = octree.getBoundingBoxX2();
+      //vector_t dx = x2 - x1;
+      x1[0] = octree.getBoundingBoxX1()[0];
+      x1[1] = octree.getBoundingBoxX1()[1];
+      x1[2] = octree.getBoundingBoxX1()[2];
+      x2[0] = octree.getBoundingBoxX2()[0];
+      x2[1] = octree.getBoundingBoxX2()[1];
+      x2[2] = octree.getBoundingBoxX2()[2];
+      dx[0] = x2[0] - x1[0];
+      dx[1] = x2[1] - x1[1];
+      dx[2] = x2[2] - x1[2];
       //
       vector_t x;
-      x[0] = x1[0] + m_Ix * dx[0] / 65535.0;
-      x[1] = x1[1] + m_Iy * dx[1] / 65535.0;
-      x[2] = x1[2] + m_Iz * dx[2] / 65535.0;
+      x[0] = x1[0] + m_Ix * dx[0] / scalar_t(65535);
+      x[1] = x1[1] + m_Iy * dx[1] / scalar_t(65535);
+      x[2] = x1[2] + m_Iz * dx[2] / scalar_t(65535);
       return x;
     };
     //
@@ -186,9 +194,6 @@ protected: // data types
       } else {
         m_Level = octree.m_Nodes[parent].m_Level + 1;
       }
-      if (octree.dbg()) {
-        std::cout << "creating node " << v1.toString() << " " << v2.toString() << std::endl;
-      }
       vector_t x1 = v1.getCoordinates(octree);
       vector_t x2 = v2.getCoordinates(octree);
       vector_t dx = x2 - x1;
@@ -252,8 +257,10 @@ protected: // attributes
   std::vector<vector_t>         m_Points;
   std::vector<vertex_t>         m_Vertices;
   int                           m_MaxBucketSize;
+  bool                          m_ApproximateSearch = false;
   vector_t                      m_X1;
   vector_t                      m_X2;
+  bool                          m_CustomBoundingBox = false;
   std::vector<std::vector<int>> m_Vertex2Node;
   std::vector<std::vector<int>> m_SearchList;
   int                           m_MaxLevel = 0;  
@@ -264,21 +271,9 @@ protected: // methods
 
   int find(vector_t x, int node_index) const
   {
-    if (m_Dbg) {
-      std::cout << "find " << x << " in bucket " << node_index << " : ";
-      std::cout << m_Nodes[node_index].m_X1 << " ";
-      std::cout << m_Nodes[node_index].m_X2 << std::endl;
-      if (!isInsideCartesianBox(x, m_Nodes[node_index].m_X1, m_Nodes[node_index].m_X2)) {
-        std::cout << "ERROR: point not in bucket" << std::endl;
-      }
-    }
     if (m_Nodes[node_index].m_Children.size() == 0) {
       scalar_t min_dist = 10*m_Nodes[node_index].m_Diagonal;
       int closest_point_index = -1;
-      if (dbg()) {
-        std::cout << "searching in bucket " << node_index << " : ";
-        std::cout << m_Nodes[node_index].toString() << std::endl;
-      }
       //
       // search all points in the search list
       //
@@ -413,19 +408,32 @@ public:
     * @brief Get the first corner of the overall bounding box.
     * @return The first corner of the overall bounding box.
     */
-  vector_t getBoundingBoxX1() const { return m_X1; };
+  const vector_t& getBoundingBoxX1() const { return m_X1; };
 
   /**
     * @brief Get the second corner of the overall bounding box.
     * @return The second corner of the overall bounding box.
     */
-  vector_t getBoundingBoxX2() const { return m_X2; };
+  const vector_t& getBoundingBoxX2() const { return m_X2; };
+
+  void setMaximalBucketSize(int max_bucket_size) { m_MaxBucketSize = max_bucket_size; }
+  void approximateSearchOn() { m_ApproximateSearch = true; }
+  void approximateSearchOff() { m_ApproximateSearch = false; }
+
+  void setBoundingBox(vector_t x1, vector_t x2) 
+  {
+    m_X1 = x1;
+    m_X2 = x2; 
+    m_CustomBoundingBox = true;
+  }
 
   template <typename C>
   void setPoints(const C points)
   {
     m_Nodes.clear();
-    findBoundingBox(points, m_X1, m_X2);
+    if (!m_CustomBoundingBox) {
+      findBoundingBox(points, m_X1, m_X2);
+    }
     vertex_t v1, v2;
     v2.m_Ix = 65535;
     v2.m_Iy = 65535;
@@ -453,8 +461,22 @@ public:
     m_SearchList.resize(m_Nodes.size());
     for (int i = 0; i < m_Nodes.size(); ++i) {
       if (m_Nodes[i].m_Children.size() == 0) {
-        auto vertices = getUniqueVertices(i);
-        m_SearchList[i] = getSearchPoints(m_Nodes[i].m_Centre, vertices, 1.5*m_Nodes[i].m_Diagonal);
+        if (m_ApproximateSearch) {
+          if (m_Nodes[i].m_PointIndices.size() == 0) {
+            auto& parent = m_Nodes[m_Nodes[i].m_Parent];
+            for (int child_index : parent.m_Children) {
+              const node_t& child = m_Nodes[child_index];
+              if (child.m_PointIndices.size() != 0) {
+                m_SearchList[i].insert(m_SearchList[i].end(), child.m_PointIndices.begin(), child.m_PointIndices.end());
+              }
+            }
+          } else {
+            m_SearchList[i] = m_Nodes[i].m_PointIndices;
+          }
+        } else {
+          auto vertices = getUniqueVertices(i);
+          m_SearchList[i] = getSearchPoints(m_Nodes[i].m_Centre, vertices, 1.5*m_Nodes[i].m_Diagonal);
+        }
       }
     }
   }
@@ -586,7 +608,7 @@ public:
 #include <random>
 
 
-TEST_CASE("Octree: regularly spaced points")
+TEST_CASE("Octree__regularly_spaced_points")
 {
   //
   // This doesn't test much...
@@ -616,9 +638,7 @@ TEST_CASE("Octree: regularly spaced points")
   // create the octree
   //
   Octree<vec_t> octree(10);
-  //octree.m_Dbg = true;
   octree.setPoints(points);
-  std::cout << "depth = " << octree.depth() << std::endl;
   //
   // create a set of test points
   //
@@ -639,7 +659,7 @@ TEST_CASE("Octree: regularly spaced points")
   }
 }
 
-TEST_CASE("Octree: random points search")
+TEST_CASE("Octree__random_points_search")
 {
   using namespace edl;
   using namespace std;
@@ -691,17 +711,57 @@ TEST_CASE("Octree: random points search")
   // perform the tests
   //
   //octree.dbgPrint();
-  std::cout << "depth = " << octree.depth() << std::endl;
   for (int i = 0; i < num_tests; ++i) {
     vec_t p = test_points[i];
     int   j = octree.nearestPointIndex(p);
-    if (j != nearest_point[i]) {
-      octree.m_Dbg = true;
-      std::cout << "ERROR: nearest point is wrong. It should be " << nearest_point[i] << std::endl;
-      j = octree.nearestPointIndex(p);
-      exit(EXIT_FAILURE);
-    }
     CHECK(j == nearest_point[i]);
+  }
+}
+
+TEST_CASE("Octree__random_points_search_approximate")
+{
+  using namespace edl;
+  using namespace std;
+  typedef float real;
+  typedef MathVector<StaticVector<real,3>> vec_t;
+  //
+  const int  num_points  = 1000;
+  const int  num_tests   = 100;
+  const real range       = 3;
+  //
+  // create a set of random points
+  //
+  //random_device rd;
+  mt19937 gen(42);
+  uniform_real_distribution<real> dist1(-range/2, range/2);
+  vector<vec_t> points(num_points);
+  for (int i = 0; i < num_points; ++i) {
+    points[i] = vec_t(dist1(gen), dist1(gen), dist1(gen));
+  }
+  //
+  // create the octree
+  //
+  Octree<vec_t> octree(10);
+  octree.approximateSearchOn();
+  octree.setPoints(points);
+  //
+  // create a set of test points
+  //
+  vector<vec_t> test_points(num_tests);
+  for (int i = 0; i < num_tests; ++i) {
+    test_points[i] = vec_t(dist1(gen), dist1(gen), dist1(gen));
+  }
+  //
+  // perform the tests
+  //
+  for (int i = 0; i < num_tests; ++i) {
+    vec_t p = test_points[i];
+    int   j = octree.nearestPointIndex(p);
+    //
+    // check if we find any point at all
+    // We cannot check if the point is correct, because the search is approximate
+    //
+    CHECK(j >= 0);
   }
 }
 

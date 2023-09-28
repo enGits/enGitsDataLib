@@ -199,6 +199,11 @@ public:
    */
   SmallSquareMatrix<T,N> transp();
 
+  /**
+    * Transpose the matrix in place.
+    */
+  void transpose();
+
   /// matrix vector multiplication operator
   MathVector<StaticVector<T,N> > operator* (const MathVector<StaticVector<T,N> > &vec) const;
 
@@ -613,6 +618,16 @@ SmallSquareMatrix<T,N> SmallSquareMatrix<T,N>::transp()
     }
   }
   return M_t;
+}
+
+template <class T, uint_t N>
+void SmallSquareMatrix<T,N>::transpose()
+{
+  for (uint_t i = 0; i < N; i++) {
+    for (uint_t j = i+1; j < N; j++) {
+      std::swap((*this)[i][j], (*this)[j][i]);
+    }
+  }
 }
 
 template <class T, uint_t N>

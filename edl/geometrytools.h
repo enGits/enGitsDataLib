@@ -767,17 +767,17 @@ bool checkPointPlaneSide(const VEC& x0, const VEC& x1, const VEC& x2, const VEC&
 {
   typedef typename VEC::value_type real;
   //
-  VEC a = x1 - x0;
-  VEC b = x2 - x0;
-  VEC c = x3 - x0;
-  VEC d = p  - x0;
+  VEC a(x1[0]-x0[0], x1[1]-x0[1], x1[2]-x0[2]);
+  VEC b(x2[0]-x0[0], x2[1]-x0[1], x2[2]-x0[2]);
+  VEC c(x3[0]-x0[0], x3[1]-x0[1], x3[2]-x0[2]);
+  VEC d(p[0]-x0[0], p[1]-x0[1], p[2]-x0[2]);
   VEC n = a.cross(b);
   n.normalise();
-  real sd = n*d;
+  real sd = n[0]*d[0] + n[1]*d[1] + n[2]*d[2];
   if (std::abs(sd) < tol) {
     return true;
   }
-  real sc = n*c;
+  real sc = n[0]*c[0] + n[1]*c[1] + n[2]*c[2];
   if (sc*sd >= 0) {
     return true;
   }
@@ -790,10 +790,11 @@ bool checkPointPlaneSide(const VEC& x0, const VEC& x1, const VEC& x2, const VEC&
 template <class VEC>
 bool isPointInTetra(const VEC& x0, const VEC& x1, const VEC& x2, const VEC& x3, const VEC& p, typename VEC::value_type tol=1e-3)
 {
-  return  checkPointPlaneSide(x0, x1, x2, x3, p, tol) &&
-          checkPointPlaneSide(x1, x2, x3, x0, p, tol) &&
-          checkPointPlaneSide(x2, x3, x0, x1, p, tol) &&
-          checkPointPlaneSide(x3, x0, x1, x2, p, tol);   
+  if (!checkPointPlaneSide(x0, x1, x2, x3, p, tol)) return false;
+  if (!checkPointPlaneSide(x1, x2, x3, x0, p, tol)) return false;
+  if (!checkPointPlaneSide(x2, x3, x0, x1, p, tol)) return false;
+  if (!checkPointPlaneSide(x3, x0, x1, x2, p, tol)) return false;
+  return true;
 }
 
 template <class VEC>
@@ -877,9 +878,63 @@ bool vectorsAreCoplanar(const C& vectors, typename C::value_type::value_type rel
   return true;
 }
 
+template <class C>
+bool vectorsAreColinear(const C& vectors, typename C::value_type::value_type rel_tol=1e-3)
+{
+  if (vectors.size() < 3) {
+    return true;
+  }
+  //
+  // find the two points which are furthest apart
+  //
+  typedef typename C::value_type     vec_t;
+  typedef typename vec_t::value_type real_t;
+  //
+  vec_t dir       = vectors[1] - vectors[0];
+  vec_t centre    = 0.5*(vectors[0] + vectors[1]);
+  real_t max_dist = 0;
+  for (int i = 0; i < vectors.size(); ++i) {
+    for (int j = i+1; j < vectors.size(); ++j) {
+      vec_t  v    = vectors[j] - vectors[i];
+      real_t dist = v.abs2();
+      if (dist > max_dist) {
+        max_dist = dist;
+        dir      = v;
+        centre   = 0.5*(vectors[i] + vectors[j]);
+      }
+    }
+  }
+  max_dist = sqrt(max_dist);
+  dir *= real_t(1.0)/max_dist;
+  //
+  // check if all vectors are colinear
+  //
+  for (int i = 0; i < vectors.size(); ++i) {
+    vec_t v = vectors[i] - centre;
+    v.normalise();
+    if (std::abs(v*dir) < 0.9) {
+      return false;
+    }
+    // intersection(VEC x_straight, VEC v_straight, VEC x_plane, VEC n_plane)
+    real_t k  = intersection(centre, dir, vectors[i], dir);
+    vec_t xi = centre + k*dir;
+    if ((xi - vectors[i]).abs() > max_dist*rel_tol) {
+      return false;
+    }
+  }
+  return true;
+}
+
 } // end namespace edl
 
-TEST_CASE("test function findBoundingBox")
+// ----------------------------------------------------------------------------
+// TESTS
+// ----------------------------------------------------------------------------
+
+#include <random>
+#include <chrono>
+
+TEST_CASE("findBoundingBox")
 {
   using namespace edl;
   typedef MathVector<StaticVector<float,3> > vec3_t;
@@ -900,7 +955,7 @@ TEST_CASE("test function findBoundingBox")
   CHECK(edl::almostEqual(xyzmax[2],float(17))==true);
 }
 
-TEST_CASE("test function vectorsAreCoplanar")
+TEST_CASE("vectorsAreCoplanar")
 {
   using namespace edl;
   typedef MathVector<StaticVector<float,3> > vec3_t;
@@ -920,6 +975,89 @@ TEST_CASE("test function vectorsAreCoplanar")
   points.push_back(vec3_t{1.3,0,0});
   points.push_back(vec3_t{1.4,0,0});
   CHECK(edl::vectorsAreCoplanar(points)==true);
+}
+
+TEST_CASE("isPointInTetra")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<float,3> > vec3_t;
+  vec3_t x0(0,0,0);
+  vec3_t x1(1,0,0);
+  vec3_t x2(0,1,0);
+  vec3_t x3(0,0,1);
+  vec3_t p(0.25,0.25,0.25);
+  CHECK(edl::isPointInTetra(x0,x1,x2,x3,p)==true);
+  p = vec3_t(0.25,0.25,0.75);
+  CHECK(edl::isPointInTetra(x0,x1,x2,x3,p)==false);
+  p = vec3_t(0.25,0.25,-0.25);
+  CHECK(edl::isPointInTetra(x0,x1,x2,x3,p)==false);
+  p = vec3_t(0.25,0.75,0.25);
+  CHECK(edl::isPointInTetra(x0,x1,x2,x3,p)==false);
+  p = vec3_t(0.75,0.25,0.25);
+  CHECK(edl::isPointInTetra(x0,x1,x2,x3,p)==false);
+  p = vec3_t(-0.25,0.25,0.25);
+  CHECK(edl::isPointInTetra(x0,x1,x2,x3,p)==false);
+  p = vec3_t(0.25,-0.25,0.25);
+  CHECK(edl::isPointInTetra(x0,x1,x2,x3,p)==false);
+}
+
+TEST_CASE("isPointInTetra_speed")
+{
+  using namespace edl;
+  using namespace std;
+  typedef float real;
+  typedef MathVector<StaticVector<real,3>> vec_t;
+  //
+  const int  num_points  = 500000;
+  const real range       = 2;
+  //
+  // the tetrahedron
+  //
+  vec_t x0(0,0,0);
+  vec_t x1(1,0,0);
+  vec_t x2(0,1,0);
+  vec_t x3(0,0,1);
+  //
+  // create a set of random points
+  //
+  mt19937 gen(42);
+  uniform_real_distribution<real> dist1(-range/2, range/2);
+  vector<vec_t> points(num_points);
+  for (int i = 0; i < num_points; ++i) {
+    points[i] = vec_t(dist1(gen), dist1(gen), dist1(gen));
+  }
+  //
+  // check the time it takes to check if the points are inside the tetrahedron
+  //
+  auto start = chrono::high_resolution_clock::now();
+  for (int i = 0; i < num_points; ++i) {
+    isPointInTetra(x0,x1,x2,x3,points[i]);
+  }
+  auto end = chrono::high_resolution_clock::now();
+  auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
+  cout << "isPointInTetra: " << duration.count() << " microseconds" << endl;
+}
+
+TEST_CASE("vectorsAreColinear")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<float, 3>> vec_t;
+  std::vector<vec_t> points;
+  points.push_back(vec_t{0, 0, 0});
+  points.push_back(vec_t{1, 0, 0});
+  points.push_back(vec_t{10, 0, 0});
+  CHECK(edl::vectorsAreColinear(points)==true);
+  points.push_back(vec_t{0, 0.009, 0});
+  CHECK(edl::vectorsAreColinear(points)==true);
+  points.push_back(vec_t{0, 0.011, 0});
+  CHECK(edl::vectorsAreColinear(points)==false);
+  points.clear();
+  points.push_back(vec_t{1.0, 0, 0});
+  points.push_back(vec_t{1.1, 0, 0});
+  points.push_back(vec_t{1.2, 0, 0});
+  points.push_back(vec_t{1.3, 0, 0});
+  points.push_back(vec_t{1.4, 0, 0});
+  CHECK(edl::vectorsAreColinear(points)==true);
 }
 
 #endif

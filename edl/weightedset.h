@@ -141,6 +141,7 @@ public:
   T weightAbsMax();                 ///< Compute maximum absolute weight
   T realValue(T* a);                ///< Compute sum(a[j[i]] * t[i]) for all i (compatibility)
   T computeValue(const T* a) const; ///< Compute sum(a[j[i]] * t[i]) for all i
+  bool isValid() const { return v.size() > 0; }  ///< Check if set is valid (has entries)
 
   void operator=(const WeightedSet<T>& a_ws)
   {
