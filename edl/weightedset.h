@@ -137,11 +137,12 @@ public:
   T getWeight(const size_t& ll) const;     ///< return the weight of the ll-th pair (index, weight)
   size_t highNodeAddress() const;   ///< Find highest index stored v[..].first (compatibility)
   size_t highestIndex() const;      ///< Find highest index stored v[..].first
-  T weightSum();                    ///< Compute sum of weights
+  T weightSum() const;              ///< Compute sum of weights
   T weightAbsMax();                 ///< Compute maximum absolute weight
   T realValue(T* a);                ///< Compute sum(a[j[i]] * t[i]) for all i (compatibility)
   T computeValue(const T* a) const; ///< Compute sum(a[j[i]] * t[i]) for all i
   bool isValid() const { return v.size() > 0; }  ///< Check if set is valid (has entries)
+  bool isSorted() const { return sure_sorted; }  ///< Check if set is sorted
 
   void operator=(const WeightedSet<T>& a_ws)
   {
@@ -157,6 +158,13 @@ public:
   void operator+=(const WeightedSet<T>& a_ws) 
   {
     add(a_ws);
+  }
+
+  void operator-= (const WeightedSet<T>& a_ws)
+  {
+    WeightedSet<T> minus_ws(a_ws);
+    minus_ws *= -1.;
+    add(minus_ws);
   }
 
   void multScalar(const T& scalar)
@@ -215,6 +223,15 @@ public:
     */
   bool tranferToFixedArrays(size_t n_dimension,
                             int* indices, T* weights);
+
+  /**
+    * compare two WeightedSets
+    * @param a_ws the other WeightedSet
+    * @param tol the maximally allowed difference
+    * @return bool true if equal
+    */
+  bool isEqualTo(const WeightedSet<T>& a_ws, const T& tol=1e-4) const;
+  bool isEqualTo(WeightedSet<T>& a_ws, const T& tol=1e-4);
 
   const std::vector<std::pair<size_t, T>>& entries() const { return v; }
   std::pair<size_t, T>& operator[](size_t i) { return v[i]; }
@@ -442,7 +459,7 @@ inline void WeightedSet<T>::concatenate(const WeightedSet<T>& w, const T& s)
 }
 
 template<class T>
-inline T WeightedSet<T>::weightSum()
+inline T WeightedSet<T>::weightSum() const
 {
   T weight_sum = t_zero;
   for(size_t i=0; i < v.size(); i++) {
@@ -818,13 +835,56 @@ WeightedSet<T> operator/(WeightedSet<T>& ws, const S scalar)
   return result;
 }
 
+template <typename T>
+bool WeightedSet<T>::isEqualTo(const WeightedSet<T>& a_ws, const T& tol) const
+{
+  if (v.size() != a_ws.v.size()) {
+    return false;
+  }
+  T weight_sum = weightSum();
+  for (size_t i = 0; i < v.size(); ++i) {
+    if (v[i].first != a_ws.v[i].first) {
+      return false;
+    }
+    if (std::abs(v[i].second - a_ws.v[i].second) > tol*weight_sum) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <typename T>
+bool WeightedSet<T>::isEqualTo(WeightedSet<T>& a_ws, const T& tol)
+{
+  if (!isSorted()) {
+    sortWS();
+  }
+  if (!a_ws.isSorted()) {
+    a_ws.sortWS();
+  }
+  
+  if (v.size() != a_ws.v.size()) {
+    return false;
+  }
+  T weight_sum = weightSum();
+  for (size_t i = 0; i < v.size(); ++i) {
+    if (v[i].first != a_ws.v[i].first) {
+      return false;
+    }
+    if (std::abs(v[i].second - a_ws.v[i].second) > tol*weight_sum) {
+      return false;
+    }
+  }
+  return true;
+}
+
 } // namespace EDL_NAMESPACE
 
 // ----------------------------------------------------------------------------
 // TESTS
 // ----------------------------------------------------------------------------
 
-TEST_CASE("WeightedSet: operators")
+TEST_CASE("WeightedSet_operators")
 {
   using namespace EDL_NAMESPACE;
   //
@@ -847,6 +907,35 @@ TEST_CASE("WeightedSet: operators")
   //
   ws3.adjustWeightSumMult(1);
   CHECK(ws3.weightSum() == doctest::Approx(1.0));
+  //
+  WeightedSet<real> ws4;
+  ws4 += ws1;
+  CHECK(ws4.getSize() == ws1.getSize());
+  CHECK(ws4.weightSum() == ws1.weightSum());
+}
+
+TEST_CASE("WeightedSet_isEqualTo")
+{
+  typedef float real;
+  {
+    edl::WeightedSet<real> ws1, ws2;
+    ws1.pushBack(1, 0.1);
+    ws1.pushBack(2, 0.2);
+    ws1.pushBack(4, 0.3);
+    ws1.adjustWeightSumMult(1.0);
+    ws2.pushBack(1, 0.1);
+    ws2.pushBack(2, 0.2);
+    ws2.pushBack(4, 0.3);
+    ws2.adjustWeightSumMult(1.0);
+    CHECK(ws1.isEqualTo(ws2));
+    ws2.pushBack(5, 0.4);
+    CHECK(!ws1.isEqualTo(ws2));
+    ws1.pushBack(5, 0.4);
+    CHECK(ws1.isEqualTo(ws2));
+    ws1.pushBack(6, 0.5);
+    ws2.pushBack(6, 0.501);
+    CHECK(!ws1.isEqualTo(ws2));
+  }
 }
 
 #endif
