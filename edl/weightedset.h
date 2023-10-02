@@ -77,8 +77,9 @@ protected:
 
   std::vector<std::pair<size_t, T>> v;
   bool sure_sorted;
-  T t_zero;
-  T t_one;
+  T    t_zero;
+  T    t_one;
+  bool m_IsExtrapolation = false;
 
 
 public:
@@ -121,28 +122,31 @@ public:
   WeightedSet(std::vector<int> vn, T t);
 
   // Member functions
-  void pushBack(const size_t& j, const T& t);            ///< appends a pair (j,s)
-  void setup();                                          ///< initializes
-  void sortWS();                                         ///< sort contents by index (first)
-  void clearWS();                                        ///< Erase all contents
-  void printNumSets();                                   ///< print to screen
-  void add(const WeightedSet<T>& w);                     ///< add:         v = v + w
-  void multiplyAdd(const WeightedSet<T>& w, const T& s); ///< mult_add:    v = v + s*w
-  void concatenate(const WeightedSet<T>& w);             ///< concatenate: v = [v , w]
-  void concatenate(const WeightedSet<T>& w, const T& s); ///< concatenate: v = [v , s*w]
-  void unify();    ///< adds up weights for multiple indicees and makes indicees unique
-  void shrinkToFit();  ///< Eliminates all deleted entries
-  size_t getSize() const;                  ///< return number of pairs.
-  size_t getIndex(const size_t& ll) const; ///< return the index of the ll-th pair (index, weight)
-  T getWeight(const size_t& ll) const;     ///< return the weight of the ll-th pair (index, weight)
-  size_t highNodeAddress() const;   ///< Find highest index stored v[..].first (compatibility)
-  size_t highestIndex() const;      ///< Find highest index stored v[..].first
-  T weightSum() const;              ///< Compute sum of weights
-  T weightAbsMax();                 ///< Compute maximum absolute weight
-  T realValue(T* a);                ///< Compute sum(a[j[i]] * t[i]) for all i (compatibility)
-  T computeValue(const T* a) const; ///< Compute sum(a[j[i]] * t[i]) for all i
-  bool isValid() const { return v.size() > 0; }  ///< Check if set is valid (has entries)
-  bool isSorted() const { return sure_sorted; }  ///< Check if set is sorted
+  void pushBack(const size_t& j, const T& t);                ///< appends a pair (j,s)
+  void setup();                                              ///< initializes
+  void sortWS();                                             ///< sort contents by index (first)
+  void clearWS();                                            ///< Erase all contents
+  void printNumSets();                                       ///< print to screen
+  void add(const WeightedSet<T>& w);                         ///< add:         v = v + w
+  void multiplyAdd(const WeightedSet<T>& w, const T& s);     ///< mult_add:    v = v + s*w
+  void concatenate(const WeightedSet<T>& w);                 ///< concatenate: v = [v , w]
+  void concatenate(const WeightedSet<T>& w, const T& s);     ///< concatenate: v = [v , s*w]
+  void unify();                                              ///< adds up weights for multiple indices and makes indices unique
+  void shrinkToFit();                                        ///< Eliminates all deleted entries
+  size_t getSize() const;                                    ///< return number of pairs.
+  size_t getIndex(const size_t& ll) const;                   ///< return the index of the ll-th pair (index, weight)
+  T getWeight(const size_t& ll) const;                       ///< return the weight of the ll-th pair (index, weight)
+  size_t highNodeAddress() const;                            ///< Find highest index stored v[..].first (compatibility)
+  size_t highestIndex() const;                               ///< Find highest index stored v[..].first
+  T weightSum() const;                                       ///< Compute sum of weights
+  T weightAbsMax();                                          ///< Compute maximum absolute weight
+  T realValue(T* a);                                         ///< Compute sum(a[j[i]] * t[i]) for all i (compatibility)
+  T computeValue(const T* a) const;                          ///< Compute sum(a[j[i]] * t[i]) for all i
+  bool isValid() const { return v.size() > 0; }              ///< Check if set is valid (has entries)
+  bool isSorted() const { return sure_sorted; }              ///< Check if set is sorted
+  bool isExtrapolation() const { return m_IsExtrapolation; } ///< Check if set is extrapolation
+
+  void setIsExtrapolation(bool a_IsExtrapolation) { m_IsExtrapolation = a_IsExtrapolation; } ///< Set extrapolation flag
 
   void operator=(const WeightedSet<T>& a_ws)
   {
@@ -841,6 +845,9 @@ bool WeightedSet<T>::isEqualTo(const WeightedSet<T>& a_ws, const T& tol) const
   if (v.size() != a_ws.v.size()) {
     return false;
   }
+  if (isExtrapolation() != a_ws.isExtrapolation()) {
+    return false;
+  }
   T weight_sum = weightSum();
   for (size_t i = 0; i < v.size(); ++i) {
     if (v[i].first != a_ws.v[i].first) {
@@ -861,9 +868,11 @@ bool WeightedSet<T>::isEqualTo(WeightedSet<T>& a_ws, const T& tol)
   }
   if (!a_ws.isSorted()) {
     a_ws.sortWS();
-  }
-  
+  }  
   if (v.size() != a_ws.v.size()) {
+    return false;
+  }
+  if (isExtrapolation() != a_ws.isExtrapolation()) {
     return false;
   }
   T weight_sum = weightSum();
