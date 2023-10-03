@@ -651,7 +651,6 @@ TEST_CASE("Octree__regularly_spaced_points")
   //
   // perform the tests
   //
-  bool all_good = true;
   for (int i = 0; i < test_points.size(); ++i) {
     vec_t p = test_points[i];
     int   j = octree.nearestPointIndex(p);
