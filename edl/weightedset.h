@@ -24,6 +24,7 @@
 // +                                                                         +
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #include "edl/edlerror.h"
+#include <cstdint>
 #if !defined(WEIGHTEDSET_HH)
 #define WEIGHTEDSET_HH
 
@@ -76,11 +77,10 @@ class WeightedSet
 protected:
 
   std::vector<std::pair<size_t, T>> v;
-  bool sure_sorted;
-  T    t_zero;
-  T    t_one;
-  bool m_IsExtrapolation = false;
-
+  bool   sure_sorted;
+  T      t_zero;
+  T      t_one;
+  uint16_t m_Flags = 0;
 
 public:
 
@@ -142,21 +142,21 @@ public:
   T weightAbsMax();                                          ///< Compute maximum absolute weight
   T realValue(T* a);                                         ///< Compute sum(a[j[i]] * t[i]) for all i (compatibility)
   T computeValue(const T* a) const;                          ///< Compute sum(a[j[i]] * t[i]) for all i
-  bool isValid() const { return v.size() > 0; }              ///< Check if set is valid (has entries)
-  bool isSorted() const { return sure_sorted; }              ///< Check if set is sorted
-  bool isExtrapolation() const { return m_IsExtrapolation; } ///< Check if set is extrapolation
-
-  void setIsExtrapolation(bool a_IsExtrapolation) { m_IsExtrapolation = a_IsExtrapolation; } ///< Set extrapolation flag
+  bool     isValid() const          { return v.size() > 0; } ///< Check if set is valid (has entries)
+  bool     isSorted() const         { return sure_sorted; }  ///< Check if set is sorted
+  uint16_t flags() const            { return m_Flags; }      ///< Get info flags
+  void     setFlags(uint16_t flags) { m_Flags = flags; }     ///< Set info flags
 
   void operator=(const WeightedSet<T>& a_ws)
   {
-    v.clear();             /// @todo not sure, if this frees the mem
+    v.clear();
     v.reserve(a_ws.v.size());
     v.resize(a_ws.v.size());
     for(size_t i=0; i<a_ws.v.size(); i++) {
       v[i] = a_ws.v[i];
     }
     sure_sorted = a_ws.sure_sorted;
+    m_Flags     = a_ws.m_Flags;
   }
 
   void operator+=(const WeightedSet<T>& a_ws) 
@@ -845,7 +845,7 @@ bool WeightedSet<T>::isEqualTo(const WeightedSet<T>& a_ws, const T& tol) const
   if (v.size() != a_ws.v.size()) {
     return false;
   }
-  if (isExtrapolation() != a_ws.isExtrapolation()) {
+  if (flags() != a_ws.flags()) {
     return false;
   }
   T weight_sum = weightSum();
@@ -872,7 +872,7 @@ bool WeightedSet<T>::isEqualTo(WeightedSet<T>& a_ws, const T& tol)
   if (v.size() != a_ws.v.size()) {
     return false;
   }
-  if (isExtrapolation() != a_ws.isExtrapolation()) {
+  if (flags() != a_ws.flags()) {
     return false;
   }
   T weight_sum = weightSum();
