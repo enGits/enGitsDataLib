@@ -492,9 +492,6 @@ public:
     if (m_Nodes[node_index].m_Level > m_MaxLevelLimit) {
       EDL_BUG;
     }
-    if (m_Nodes[node_index].m_PointIndices.size() == 1) {
-      int dummy=0;
-    }
     //
     const std::vector<vertex_t>& vertices = m_Nodes[node_index].m_Vertices;
     const vertex_t& v1 = vertices[0];
