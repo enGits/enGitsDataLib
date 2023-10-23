@@ -25,6 +25,7 @@
 
 #include <bits/stdint-uintn.h>
 #include <cstdint>
+#include <fstream>
 #include <iostream>
 
 #include <ostream>
@@ -37,6 +38,7 @@
 #include "edl/edl.h"
 #include "edl/edlerror.h"
 #include "edl/geometrytools.h"
+#include "edl/mathvector.h"
 
 namespace EDL_NAMESPACE
 {
@@ -61,8 +63,7 @@ namespace EDL_NAMESPACE
 
 */
 
-template <typename VEC>
-struct VectorBoxCheck
+template <typename VEC> struct OctreeVectorCheck 
 {
   static bool isInsideCartesianBox(const VEC& x, const VEC& x1, const VEC& x2)
   {
@@ -73,8 +74,16 @@ struct VectorBoxCheck
     }
     return true;
   }
+  static bool match(const VEC& x1, const VEC& x2)
+  {
+    return false;
+  }
+  static void boundingBox(const VEC& item, VEC& x1, VEC& x2)
+  {
+    x1 = item;
+    x2 = item;
+  }
 };
-
 
 template <typename VEC, typename ITEM, typename CHECK>
 class Octree
@@ -272,9 +281,9 @@ protected: // attributes
 
   std::vector<node_t>           m_Nodes;
   std::vector<item_t>           m_Items;
-  std::vector<vertex_t>         m_Vertices;
   int                           m_MaxBucketSize;
   bool                          m_ApproximateSearch = false;
+  bool                          m_AllowEmptyBuckets = false;
   vector_t                      m_X1;
   vector_t                      m_X2;
   bool                          m_CustomBoundingBox = false;
@@ -295,7 +304,10 @@ protected: // methods
       // search all items in the search list
       //
       for (int item_index : m_SearchList[node_index]) {
-        scalar_t dist = (x - m_Items[item_index]).abs();
+        vector_t x1, x2;
+        check_t::boundingBox(m_Items[item_index], x1, x2);
+        vector_t x_item = 0.5 * (x1 + x2);
+        scalar_t dist = (x - x_item).abs();
         if (dist < min_dist) {
           min_dist = dist;
           closest_item_index = item_index;
@@ -330,6 +342,44 @@ protected: // methods
           return find(x, m_Nodes[node_index].m_Children[4]);
         } else {
           return find(x, m_Nodes[node_index].m_Children[0]);
+        }
+      }
+    }
+    return -1;
+  }
+
+  int findBucket(vector_t x, int node_index) const
+  {
+    if (m_Nodes[node_index].m_Children.size() == 0) {
+      return node_index;
+    }
+    //
+    if (x[0] > m_Nodes[node_index].m_Centre[0]) {
+      if (x[1] > m_Nodes[node_index].m_Centre[1]) {
+        if (x[2] > m_Nodes[node_index].m_Centre[2]) {
+          return findBucket(x, m_Nodes[node_index].m_Children[7]);
+        } else {
+          return findBucket(x, m_Nodes[node_index].m_Children[3]);
+        }
+      } else {
+        if (x[2] > m_Nodes[node_index].m_Centre[2]) {
+          return findBucket(x, m_Nodes[node_index].m_Children[5]);
+        } else {
+          return findBucket(x, m_Nodes[node_index].m_Children[1]);
+        }
+      }
+    } else {
+      if (x[1] > m_Nodes[node_index].m_Centre[1]) {
+        if (x[2] > m_Nodes[node_index].m_Centre[2]) {
+          return findBucket(x, m_Nodes[node_index].m_Children[6]);
+        } else {
+          return findBucket(x, m_Nodes[node_index].m_Children[2]);
+        }
+      } else {
+        if (x[2] > m_Nodes[node_index].m_Centre[2]) {
+          return findBucket(x, m_Nodes[node_index].m_Children[4]);
+        } else {
+          return findBucket(x, m_Nodes[node_index].m_Children[0]);
         }
       }
     }
@@ -404,7 +454,11 @@ protected: // methods
         if (m_Nodes[node_index].m_Children.size() == 0) {
           auto node_items = m_Nodes[node_index].getItems(*this);
           for (int item_index : node_items) {
-            if ((m_Items[item_index] - x_search).abs() <= radius) {
+            vector_t x1, x2;
+            check_t::boundingBox(m_Items[item_index], x1, x2);
+            if ((x1 - x_search).abs() <= radius) {
+              items.insert(item_index);
+            } else if ((x2 - x_search).abs() <= radius) {
               items.insert(item_index);
             }
           }
@@ -436,6 +490,8 @@ public:
   void setMaximalBucketSize(int max_bucket_size) { m_MaxBucketSize = max_bucket_size; }
   void approximateSearchOn() { m_ApproximateSearch = true; }
   void approximateSearchOff() { m_ApproximateSearch = false; }
+  void allowEmptyBucketsOn() { m_AllowEmptyBuckets = true; }
+  void allowEmptyBucketsOff() { m_AllowEmptyBuckets = false; }
 
   void setBoundingBox(vector_t x1, vector_t x2) 
   {
@@ -449,7 +505,21 @@ public:
   {
     m_Nodes.clear();
     if (!m_CustomBoundingBox) {
-      findBoundingBox(items, m_X1, m_X2);
+      bool first_item = true;
+      for (auto item : items) {
+        vector_t x1, x2;
+        check_t::boundingBox(item, x1, x2);
+        if (first_item) {
+          m_X1 = x1;
+          m_X2 = x2;
+          first_item = false;
+        } else {
+          for (int i = 0; i < x1.size(); ++i) {
+            m_X1[i] = std::min(m_X1[i], x1[i]);
+            m_X2[i] = std::max(m_X2[i], x2[i]);
+          }
+        }
+      }
     }
     vertex_t v1, v2;
     v2.m_Ix = 65535;
@@ -479,7 +549,7 @@ public:
     for (int i = 0; i < m_Nodes.size(); ++i) {
       if (m_Nodes[i].m_Children.size() == 0) {
         if (m_ApproximateSearch) {
-          if (m_Nodes[i].m_ItemIndices.size() == 0) {
+          if (m_Nodes[i].m_ItemIndices.size() == 0 && !m_AllowEmptyBuckets) {
             auto& parent = m_Nodes[m_Nodes[i].m_Parent];
             for (int child_index : parent.m_Children) {
               const node_t& child = m_Nodes[child_index];
@@ -500,6 +570,12 @@ public:
 
   void refineNode(int node_index)
   {
+    vector_t x1 = m_Nodes[node_index].m_X1;
+    vector_t x2 = m_Nodes[node_index].m_X2;
+    vector_t xc = 0.5 * (x1 + x2);
+    auto lx = x2[0] - x1[0];
+    auto ly = x2[1] - x1[1];
+    auto lz = x2[2] - x1[2];
     if (m_Nodes[node_index].m_ItemIndices.size() <= m_MaxBucketSize) {
       return;
     }
@@ -543,6 +619,10 @@ public:
       item_t p = m_Items[item_index];
       for (int i = 0; i < 8; ++i) {
         if (check_t::isInsideCartesianBox(p,potential_children[i].m_X1, potential_children[i].m_X2)) {
+          if (item_index == 12762 && node_index == 2329) {
+            std::cout << potential_children[i].m_X1 << " " << potential_children[i].m_X2 << std::endl;
+            int dummy=0;
+          }
           potential_children[i].m_ItemIndices.push_back(item_index);
         }
       }
@@ -577,6 +657,27 @@ public:
     return find(x, 0);
   }
 
+  std::vector<int> getBucketContents(vector_t x) const
+  {
+    std::vector<int> items;
+    int node_index = findBucket(x, 0);
+    if (node_index != -1) {
+      items = m_Nodes[node_index].m_ItemIndices;
+    }
+    return items;
+  }
+
+  int findMatchingItem(vector_t x) const
+  {
+    auto items = getBucketContents(x);
+    for (int item_index : items) {
+      if (check_t::match(x, m_Items[item_index])) {
+        return item_index;
+      }
+    }
+    return -1;
+  }
+
   void dbgPrint()
   {
     for (int i = 0; i < m_Nodes.size(); ++i) {
@@ -606,6 +707,91 @@ public:
     return m_MaxLevel;
   }
 
+  /**
+    * @brief Write the octree to a legacy VTK file.
+    * This method does not require the VTK library.
+    * @param file_name The name of the file to write.
+    */
+  void writeVtkFile(std::string file_name)
+  {
+    std::ofstream file(file_name);
+    file << "# vtk DataFile Version 2.0" << std::endl;
+    file << "Octree" << std::endl;
+    file << "ASCII" << std::endl;
+    file << "DATASET UNSTRUCTURED_GRID" << std::endl;
+    //
+    // first count the number of vertices
+    //
+    buildVertexStructures();
+    std::map<int,vector_t> vertex_map;
+    for (auto node : m_Nodes) {
+      if (node.m_Children.size() == 0) {
+        for (auto v : node.m_Vertices) {
+          vertex_map[v.m_Index] = v.getCoordinates(*this);
+        }
+      }
+    }
+    //
+    // write the vertices
+    //
+    file << "POINTS " << vertex_map.size() << " float" << std::endl;
+    for (auto V : vertex_map) {
+      auto x = V.second;
+      file << x[0] << " " << x[1] << " " << x[2] << std::endl;
+    }
+    //
+    // write the cells
+    //
+    int num_cells = 0;
+    for (auto node : m_Nodes) {
+      if (node.m_Children.size() == 0) {
+        num_cells += 1;
+      }
+    }
+    file << "CELLS " << num_cells << " " << 9*num_cells << std::endl;
+    for (int i = 0; i < m_Nodes.size(); ++i) {
+      if (m_Nodes[i].m_Children.size() == 0) {
+        file << "8 ";
+        for (auto vertex : m_Nodes[i].m_Vertices) {
+          file << vertex.m_Index << " ";
+        }
+        file << std::endl;
+      }
+    }
+    //
+    // write the cell types
+    //
+    file << "CELL_TYPES " << num_cells << std::endl;
+    for (int i = 0; i < num_cells; ++i) {
+      file << "11" << std::endl;
+    }
+    //
+    // write the data
+    //
+    file << "CELL_DATA " << num_cells << std::endl;
+    file << "SCALARS index int 1" << std::endl;
+    file << "LOOKUP_TABLE default" << std::endl;
+    for (int i = 0; i < m_Nodes.size(); ++i) {
+      if (m_Nodes[i].m_Children.size() == 0) {
+        file << i << std::endl;
+      }
+    }
+    file << "SCALARS level int 1" << std::endl;
+    file << "LOOKUP_TABLE default" << std::endl;
+    for (int i = 0; i < m_Nodes.size(); ++i) {
+      if (m_Nodes[i].m_Children.size() == 0) {
+        file << m_Nodes[i].m_Level << std::endl;
+      }
+    }
+    file << "SCALARS items int 1" << std::endl;
+    file << "LOOKUP_TABLE default" << std::endl;
+    for (int i = 0; i < m_Nodes.size(); ++i) {
+      if (m_Nodes[i].m_Children.size() == 0) {
+        file << m_Nodes[i].m_ItemIndices.size() << std::endl;
+      }
+    }
+  }
+
 };
 
 } // namespace EDL_NAMESPACE
@@ -630,7 +816,7 @@ TEST_CASE("Octree__regularly_spaced_items")
   using namespace std;
   typedef float real;
   typedef MathVector<StaticVector<real,3>> vec_t;
-  typedef Octree<vec_t, vec_t, VectorBoxCheck<vec_t>> octree_t;
+  typedef Octree<vec_t, vec_t, OctreeVectorCheck<vec_t>> octree_t;
   //
   int N = 5;
   vector<vec_t> items(N*N*N);
@@ -675,7 +861,7 @@ TEST_CASE("Octree__random_Items_search")
   using namespace std;
   typedef float real;
   typedef MathVector<StaticVector<real,3>> vec_t;
-  typedef Octree<vec_t, vec_t, VectorBoxCheck<vec_t>> octree_t;
+  typedef Octree<vec_t, vec_t, OctreeVectorCheck<vec_t>> octree_t;
   //
   const int  num_Items  = 1000;
   const int  num_tests   = 100;
@@ -735,7 +921,7 @@ TEST_CASE("Octree__random_Items_search_approximate")
   using namespace std;
   typedef float real;
   typedef MathVector<StaticVector<real,3>> vec_t;
-  typedef Octree<vec_t, vec_t, VectorBoxCheck<vec_t>> octree_t;
+  typedef Octree<vec_t, vec_t, OctreeVectorCheck<vec_t>> octree_t;
   //
   const int  num_Items  = 1000;
   const int  num_tests   = 100;
@@ -777,5 +963,203 @@ TEST_CASE("Octree__random_Items_search_approximate")
   }
 }
 
+// test a search for tetrahedra
+
+namespace OctreeTetraSearch 
+{
+
+  using namespace edl;
+  using namespace std;
+  typedef float real;
+  typedef MathVector<StaticVector<real,3>> vec_t;
+
+  struct tetra_t
+  {
+    vector<vec_t> x;
+    tetra_t() : x(4) {};
+  };
+
+  struct TetraCheck
+  {    
+    static bool isInsideCartesianBox(const tetra_t& tetra, const vec_t& x1, const vec_t& x2)
+    {
+      std::vector<vec_t> tetra_vertices(4);
+      tetra_vertices[0] = tetra.x[0];
+      tetra_vertices[1] = tetra.x[1];
+      tetra_vertices[2] = tetra.x[2];
+      tetra_vertices[3] = tetra.x[3];
+      return tetraIsInsideCartesianBox(tetra_vertices, x1, x2);
+    }
+
+    static bool match(const vec_t& x, const tetra_t& tetra)
+    {
+      return isPointInTetra(tetra.x[0], tetra.x[1], tetra.x[2], tetra.x[3], x);
+    }
+
+    static void boundingBox(const tetra_t& tetra, vec_t& x1, vec_t& x2)
+    {
+      x1 = tetra.x[0];
+      x2 = tetra.x[0];
+      for (int i = 1; i < 4; ++i) {
+        for (int j = 0; j < 3; ++j) {
+          x1[j] = std::min(x1[j], tetra.x[i][j]);
+          x2[j] = std::max(x2[j], tetra.x[i][j]);
+        }
+      }
+    }
+  };
+
+  typedef Octree<vec_t, tetra_t, TetraCheck> octree_t;
+
+} // namespace OctreeTetraSearch
+
+TEST_CASE("Octree_tetra_box_check")
+{
+  using namespace edl;
+  using namespace edl;
+  using namespace OctreeTetraSearch;
+  //
+  tetra_t tetra;
+  tetra.x[0] = vec_t(0,0,0);
+  tetra.x[1] = vec_t(1,0,0);
+  tetra.x[2] = vec_t(0,1,0);
+  tetra.x[3] = vec_t(0,0,1);
+  //
+  vec_t x1, x2;
+  //
+  x1 = vec_t( 2, 2, 2);
+  x2 = vec_t( 3, 3, 3);
+  //
+  CHECK(!TetraCheck::isInsideCartesianBox(tetra, x1, x2));
+}
+
+TEST_CASE("Octree_tetra_search")
+{
+  using namespace std;
+  using namespace edl;
+  using namespace OctreeTetraSearch;
+  using OctreeTetraSearch::real;
+  //
+  string file_name = "../../tests/sphere_test.mesh";
+  //string file_name = "../../tests/test_box.mesh";
+  vector<vec_t>       points;
+  vector<tetra_t>     tetras;
+  vector<vector<int>> tetra_vertices;
+  //
+  // read points and tetras from file
+  //
+  cout << file_name << endl;
+  ifstream file(file_name);
+  CHECK(file.is_open());
+  //
+  int N;
+  file >> N;
+  points.resize(N);
+  for (int i = 0; i < N; ++i) {
+    file >> points[i][0] >> points[i][1] >> points[i][2];
+  }
+  //
+  file >> N;
+  tetras.resize(N);
+  tetra_vertices.resize(N);
+  uint32_t i_min = -1;
+  uint32_t i_max = 0;
+  for (int i = 0; i < N; ++i) {
+    tetra_vertices[i].resize(4);
+    int dummy;
+    file >> dummy;
+    for (int j = 0; j < 4; ++j) {
+      uint32_t idx;
+      file >> idx;
+      idx -= 1;
+      tetras[i].x[j] = points[idx];
+      tetra_vertices[i][j] = idx;
+      i_min = std::min(i_min, idx);
+      i_max = std::max(i_max, idx);
+    }
+  }
+  CHECK(points.size() == 9221);
+  CHECK(tetras.size() == 41604);
+  //
+  // compute the maximal number of tetras a vertex is part of
+  //
+  vector<int> vertex_count(points.size(), 0);
+  for (auto tetra : tetra_vertices) {
+    for (auto idx : tetra) {
+      vertex_count[idx] += 1;
+    }
+  }
+  int max_vertex_count = 0;
+  for (auto count : vertex_count) {
+    max_vertex_count = std::max(max_vertex_count, count);
+  }
+  //
+  // write the tetra test mesh to a VTK file
+  //
+  /*
+  ofstream vtk_file("octree_tetra_test_tetras.vtk");
+  vtk_file << "# vtk DataFile Version 2.0" << endl;
+  vtk_file << "Tetras" << endl;
+  vtk_file << "ASCII" << endl;
+  vtk_file << "DATASET UNSTRUCTURED_GRID" << endl;
+  vtk_file << "POINTS " << points.size() << " float" << endl;
+  for (auto p : points) {
+    vtk_file << p[0] << " " << p[1] << " " << p[2] << endl;
+  }
+  vtk_file << "CELLS " << tetras.size() << " " << 5*tetras.size() << endl;
+  for (auto tetra : tetra_vertices) {
+    vtk_file << "4 ";
+    for (auto i : tetra) {
+      vtk_file << i << " ";
+    }
+    vtk_file << endl;
+  }
+  vtk_file << "CELL_TYPES " << tetras.size() << endl;
+  for (int i = 0; i < tetras.size(); ++i) {
+    vtk_file << "10" << endl;
+  }
+  // write the tetra index (item_index)
+  vtk_file << "CELL_DATA " << tetras.size() << endl;
+  vtk_file << "SCALARS tetra_index int 1" << endl;
+  vtk_file << "LOOKUP_TABLE default" << endl;
+  for (int i = 0; i < tetras.size(); ++i) {
+    vtk_file << i << endl;
+  }
+  */
+  //
+  // build the octree
+  //
+  octree_t octree(max_vertex_count);
+  octree.approximateSearchOn();
+  octree.allowEmptyBucketsOn();
+  octree.setItems(tetras);
+  //octree.writeVtkFile("octree_tetra_test_octree.vtk");
+  //
+  // loop over all Cartesian coordinates and check if we find a tetra
+  // for positions which are inside the mesh (R1 < r < R2)
+  //
+  real  R1 = 0.255;
+  real  R2 = 0.495;
+  int   n  = 10;
+  vec_t x1 = vec_t(-R2, -R2, -R2);
+  vec_t x2 = vec_t( R2,  R2,  R2);
+  for (int i = 0; i < n; ++i) {
+    real x = x1[0] + (x2[0] - x1[0])*i/(n-1);
+    for (int j = 0; j < n; ++j) {
+      real y = x1[1] + (x2[1] - x1[1])*j/(n-1);
+      for (int k = 0; k < n; ++k) {
+        real z = x1[2] + (x2[2] - x1[2])*k/(n-1);
+        vec_t p(x,y,z);
+        real r = p.abs();
+        if (R1 < r && r < R2) {
+          int idx = octree.findMatchingItem(p);
+          CHECK(idx >= 0);
+          CHECK(idx < tetras.size());
+          CHECK(TetraCheck::match(p, tetras[idx]));
+        }
+      }
+    }
+  }
+}
 
 #endif

@@ -241,6 +241,110 @@ bool isInsideCartesianBox(VEC x, VEC x1, VEC x2, T tol = 1e-4)
   return true;
 }
 
+template <class VEC>
+bool axisOverlap(const VEC& axis, const VEC& origin, const std::vector<VEC>& pts1, const std::vector<VEC>& pts2)
+{
+  real min1 =  1e10;
+  real max1 = -1e10;
+  for (auto p : pts1) {
+    real d = (p - origin)*axis;
+    min1 = std::min(min1, d);
+    max1 = std::max(max1, d);
+  }
+  real min2 = 1e10;
+  real max2 = -1e10;
+  for (auto p : pts2) {
+    real d = (p - origin)*axis;
+    min2 = std::min(min2, d);
+    max2 = std::max(max2, d);
+  }
+  return (min1 <= max2 && min2 <= max1);
+}
+
+template <class VEC>
+bool tetraIsInsideCartesianBox(const std::vector<VEC>& tetra, const VEC& x1, const VEC& x2)
+{
+  typedef VEC vec_t;
+  static const vec_t x_axis = vec_t(1,0,0);
+  static const vec_t y_axis = vec_t(0,1,0);
+  static const vec_t z_axis = vec_t(0,0,1);
+  //
+  vec_t a = 0.5*(x1 + x2);
+  vec_t b = 0.25*(tetra[0] + tetra[1] + tetra[2] + tetra[3]);
+  vec_t origin = 0.5*(a + b);
+  //
+  std::vector<vec_t> box_vertices(8);
+  box_vertices[0] = x1;
+  box_vertices[1] = vec_t(x2[0], x1[1], x1[2]);
+  box_vertices[2] = vec_t(x1[0], x2[1], x1[2]);
+  box_vertices[3] = vec_t(x2[0], x2[1], x1[2]);
+  box_vertices[4] = vec_t(x1[0], x1[1], x2[2]);
+  box_vertices[5] = vec_t(x2[0], x1[1], x2[2]);
+  box_vertices[6] = vec_t(x1[0], x2[1], x2[2]);
+  box_vertices[7] = x2;
+  //
+  vec_t axis = b - a;
+  if (!axisOverlap(axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  if (!axisOverlap(x_axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  if (!axisOverlap(y_axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  if (!axisOverlap(z_axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  axis = tetra[1] - tetra[0];
+  if (!axisOverlap(axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  axis = tetra[2] - tetra[0];
+  if (!axisOverlap(axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  axis = tetra[3] - tetra[0];
+  if (!axisOverlap(axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  axis = tetra[2] - tetra[1];
+  if (!axisOverlap(axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  axis = tetra[3] - tetra[1];
+  if (!axisOverlap(axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  axis = tetra[3] - tetra[2];
+  if (!axisOverlap(axis, origin, box_vertices, tetra)) {
+    return false;
+  }
+  vec_t n;
+  n = (tetra[1] - tetra[0]);
+  n = n.cross(tetra[2] - tetra[0]);
+  if (!axisOverlap(n, origin, box_vertices, tetra)) {
+    return false;
+  }
+  n = (tetra[2] - tetra[0]);
+  n = n.cross(tetra[3] - tetra[0]);
+  if (!axisOverlap(n, origin, box_vertices, tetra)) {
+    return false;
+  }
+  n = (tetra[3] - tetra[0]);
+  n = n.cross(tetra[1] - tetra[0]);
+  if (!axisOverlap(n, origin, box_vertices, tetra)) {
+    return false;
+  }
+  n = (tetra[2] - tetra[1]);
+  n = n.cross(tetra[3] - tetra[1]);
+  if (!axisOverlap(n, origin, box_vertices, tetra)) {
+    return false;
+  }
+  return true;
+}
+
+
 /** Calculates the intersection point M between the lines (r1,u1) and (r2,u2).
  * @param k1 Returned by reference. Verifies M = r1+k1*u1
  * @param k2 Returned by reference. Verifies M = r2+k2*u2
