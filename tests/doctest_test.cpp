@@ -21,6 +21,8 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #include "edl/doctest.h"
 
+#define EDL_DOCTEST
+
 #include "edl/tools.h"
 #include "edl/fastremovelist.h"
 #include "edl/tlsqgrad.h"

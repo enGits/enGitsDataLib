@@ -242,29 +242,85 @@ bool isInsideCartesianBox(VEC x, VEC x1, VEC x2, T tol = 1e-4)
 }
 
 template <class VEC>
-bool axisOverlap(const VEC& axis, const VEC& origin, const std::vector<VEC>& pts1, const std::vector<VEC>& pts2)
+bool axisOverlap(const VEC& axis, const VEC& origin, const std::vector<VEC>& pts_a, const std::vector<VEC>& pts_b)
 {
-  real min1 =  1e10;
-  real max1 = -1e10;
-  for (auto p : pts1) {
-    real d = (p - origin)*axis;
-    min1 = std::min(min1, d);
-    max1 = std::max(max1, d);
+  typedef typename VEC::value_type real_t;
+  //
+  real_t min1 =  1e10;
+  real_t max1 = -1e10;
+  real_t min2 =  1e10;
+  real_t max2 = -1e10;
+  if (pts_a.size() < pts_b.size()) {
+    for (int i = 0; i < pts_a.size(); ++i) {
+      real_t d = (pts_a[i] - origin)*axis;
+      min1 = std::min(min1, d);
+      max1 = std::max(max1, d);
+    }
+    //
+    // loop over points b and return true as soon as we find an overlap
+    //
+    for (int i = 0; i < pts_b.size(); ++i) {
+      real_t d = (pts_b[i] - origin)*axis;
+      if (d >= min1 && d <= max1) {
+        return true;
+      }
+    }
+  } else {
+    for (int i = 0; i < pts_b.size(); ++i) {
+      real_t d = (pts_b[i] - origin)*axis;
+      min1 = std::min(min1, d);
+      max1 = std::max(max1, d);
+    }
+    //
+    // loop over points a and return true as soon as we find an overlap
+    //
+    for (int i = 0; i < pts_a.size(); ++i) {
+      real_t d = (pts_a[i] - origin)*axis;
+      min2 = std::min(min2, d);
+      max2 = std::max(max2, d);
+      if (min1 <= max2 && min2 <= max1) {
+        return true;
+      }
+    }
   }
-  real min2 = 1e10;
-  real max2 = -1e10;
-  for (auto p : pts2) {
-    real d = (p - origin)*axis;
-    min2 = std::min(min2, d);
-    max2 = std::max(max2, d);
+  return false;
+}
+
+template <class VEC>
+bool cartesianBoxesOverlap(const VEC &a1, const VEC &a2, const VEC &b1, const VEC &b2) 
+{
+  for (int i = 0; i < a1.size(); ++i) {
+    if (a1[i] > b2[i] || a2[i] < b1[i]) {
+      return false;
+    }
   }
-  return (min1 <= max2 && min2 <= max1);
+  return true;
+}
+
+template <class VEC>
+bool pointIsInCartesianBox(const VEC& x, const VEC& x1, const VEC& x2)
+{
+  for (int i = 0; i < x.size(); ++i) {
+    if (x[i] < x1[i] || x[i] > x2[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 template <class VEC>
 bool tetraIsInsideCartesianBox(const std::vector<VEC>& tetra, const VEC& x1, const VEC& x2)
-{
+{  
   typedef VEC vec_t;
+  //
+  // get bounding box of tetra
+  //
+  // vec_t x1_tetra, x2_tetra;
+  // findBoundingBox(tetra, x1_tetra, x2_tetra);
+  // if (!cartesianBoxesOverlap(x1_tetra, x2_tetra, x1, x2)) {
+  //   return false;
+  // }
+  //
   static const vec_t x_axis = vec_t(1,0,0);
   static const vec_t y_axis = vec_t(0,1,0);
   static const vec_t z_axis = vec_t(0,0,1);

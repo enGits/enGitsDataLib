@@ -350,6 +350,11 @@ protected: // methods
 
   int findBucket(vector_t x, int node_index) const
   {
+    if (node_index == 0) {
+      if (!isInsideCartesianBox(x, m_X1, m_X2)) {
+        return -1;
+      }
+    }
     if (m_Nodes[node_index].m_Children.size() == 0) {
       return node_index;
     }
@@ -521,6 +526,13 @@ public:
         }
       }
     }
+    vector_t x_centre = 0.50 * (m_X1 + m_X2);
+    vector_t Dx       = 0.55 * (m_X2 - m_X1);
+    for (int i = 0; i < x_centre.size(); ++i) {
+      Dx[i] = std::max(Dx[0], std::max(Dx[1], Dx[2]));
+    }
+    m_X1 = x_centre - Dx;
+    m_X2 = x_centre + Dx;
     vertex_t v1, v2;
     v2.m_Ix = 65535;
     v2.m_Iy = 65535;
@@ -570,6 +582,7 @@ public:
 
   void refineNode(int node_index)
   {
+    //std::cout << "refineNode " << node_index << "\n  -" << m_Nodes.size() << " nodes in total\n  - level " << m_Nodes[node_index].m_Level << std::endl;
     vector_t x1 = m_Nodes[node_index].m_X1;
     vector_t x2 = m_Nodes[node_index].m_X2;
     vector_t xc = 0.5 * (x1 + x2);
@@ -800,6 +813,8 @@ public:
 // ----------------------------------------------------------------------------
 // TESTS
 // ----------------------------------------------------------------------------
+
+#ifdef EDL_DOCTEST
 
 #include <random>
 
@@ -1162,4 +1177,6 @@ TEST_CASE("Octree_tetra_search")
   }
 }
 
-#endif
+#endif // EDL_DOCTEST
+
+#endif // OCTREE_H
