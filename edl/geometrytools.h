@@ -1070,11 +1070,11 @@ bool vectorsAreColinear(const C& vectors, typename C::value_type::value_type rel
   // check if all vectors are colinear
   //
   for (int i = 0; i < vectors.size(); ++i) {
-    vec_t v = vectors[i] - centre;
-    v.normalise();
-    if (std::abs(v*dir) < 0.9) {
-      return false;
-    }
+    // vec_t v = vectors[i] - centre;
+    // v.normalise();
+    // if (std::abs(v*dir) < 0.9) {
+    //   return false;
+    // }
     // intersection(VEC x_straight, VEC v_straight, VEC x_plane, VEC n_plane)
     real_t k  = intersection(centre, dir, vectors[i], dir);
     vec_t xi = centre + k*dir;
@@ -1217,6 +1217,11 @@ TEST_CASE("vectorsAreColinear")
   points.push_back(vec_t{1.2, 0, 0});
   points.push_back(vec_t{1.3, 0, 0});
   points.push_back(vec_t{1.4, 0, 0});
+  CHECK(edl::vectorsAreColinear(points)==true);
+  points.clear();
+  points.push_back(vec_t{1.0, 0, 0});
+  points.push_back(vec_t{2.0, 0.00001, 0});
+  points.push_back(vec_t{3.0, 0, 0});
   CHECK(edl::vectorsAreColinear(points)==true);
 }
 
