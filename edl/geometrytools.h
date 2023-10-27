@@ -1026,12 +1026,14 @@ bool vectorsAreCoplanar(const C& vectors, typename C::value_type::value_type rel
   if (!normal_found) {
     return true;
   }
+  normal.normalise();
   //
   // check if all vectors are coplanar
   //
   for (int i = 0; i < vectors.size(); ++i) {
     vec a = vectors[i] - centre;
-    if (std::abs(a*normal) > ave_dist*rel_tol) {
+    real dist = std::abs(a*normal);
+    if (dist > ave_dist*rel_tol) {
       return false;
     }
   }
@@ -1076,9 +1078,10 @@ bool vectorsAreColinear(const C& vectors, typename C::value_type::value_type rel
     //   return false;
     // }
     // intersection(VEC x_straight, VEC v_straight, VEC x_plane, VEC n_plane)
-    real_t k  = intersection(centre, dir, vectors[i], dir);
-    vec_t xi = centre + k*dir;
-    if ((xi - vectors[i]).abs() > max_dist*rel_tol) {
+    real_t k    = intersection(centre, dir, vectors[i], dir);
+    vec_t  xi   = centre + k*dir;
+    real_t dist = (xi - vectors[i]).abs();
+    if (dist > max_dist*rel_tol) {
       return false;
     }
   }
@@ -1134,6 +1137,17 @@ TEST_CASE("vectorsAreCoplanar")
   points.push_back(vec3_t{1.2,0,0});
   points.push_back(vec3_t{1.3,0,0});
   points.push_back(vec3_t{1.4,0,0});
+  CHECK(edl::vectorsAreCoplanar(points)==true);
+  //
+  // create a regular triangle in the XY plane
+  points.clear();
+  points.push_back(vec3_t{0.0, 0.0, 0.0});
+  points.push_back(vec3_t{1.0, 0.0, 0.0});
+  points.push_back(vec3_t{0.5, 0.8660254037844386, 0.0});
+  // create a tetrahedron with the triangle as base and a point above it
+  points.push_back(vec3_t{0.5, 0.2886751345948129, 0.002});
+  CHECK(edl::vectorsAreCoplanar(points)==false);
+  points.back()[2] = 0.0005;
   CHECK(edl::vectorsAreCoplanar(points)==true);
 }
 
