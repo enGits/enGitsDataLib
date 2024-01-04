@@ -31,13 +31,13 @@
 
 namespace EDL_NAMESPACE
 {
-template <typename T, uint8_t NUM_VARS> class TLSqGrad3D;
+template <typename T, uint8_t NUM_VARS_TLSQ> class TLSqGrad3D;
 }
 
 namespace EDL_NAMESPACE
 {
 
-template <typename T, uint8_t NUM_VARS>
+template <typename T, uint8_t NUM_VARS_TLSQ>
 class TLSqGrad3D
 {
 
@@ -50,13 +50,13 @@ class TLSqGrad3D
   T m_Azx{0};
   T m_Azy{0};
   T m_Azz{0};
-  T m_Bx[NUM_VARS]{0};
-  T m_By[NUM_VARS]{0};
-  T m_Bz[NUM_VARS]{0};
+  T m_Bx[NUM_VARS_TLSQ]{0};
+  T m_By[NUM_VARS_TLSQ]{0};
+  T m_Bz[NUM_VARS_TLSQ]{0};
   T m_X0{0};
   T m_Y0{0};
   T m_Z0{0};
-  T m_F0[NUM_VARS]{0};
+  T m_F0[NUM_VARS_TLSQ]{0};
 
   uint16_t m_NumPoints{0};
 
@@ -64,7 +64,7 @@ public:
 
   CUDA_DH TLSqGrad3D(T x, T y, T z, T* f) : m_X0(x), m_Y0(y), m_Z0(z)
   {
-    for (int i = 0; i < NUM_VARS; ++i) {
+    for (int i = 0; i < NUM_VARS_TLSQ; ++i) {
       m_F0[i] = f[i];
     }
   }
@@ -90,7 +90,7 @@ public:
     m_Azy += Dy*Dz*w;
     m_Azz += Dz*Dz*w;
     //
-    for (int i = 0; i < NUM_VARS; ++i) {
+    for (int i = 0; i < NUM_VARS_TLSQ; ++i) {
       T Df = f[i] - m_F0[i];
       m_Bx[i] += Df*Dx*w;
       m_By[i] += Df*Dy*w;
@@ -105,7 +105,7 @@ public:
     addPoint(x, y, z, &f, w);
   }
 
-  CUDA_DH void computeGrad(T (& grad)[NUM_VARS][3])
+  CUDA_DH void computeGrad(T (& grad)[NUM_VARS_TLSQ][3])
   {
     T inv_det = T(1) / (m_Axx * m_Ayy * m_Azz - m_Axx * m_Ayz * m_Azy -
                         m_Axy * m_Ayx * m_Azz + m_Axy * m_Ayz * m_Azx +
@@ -121,7 +121,7 @@ public:
     T AI_zy = -m_Axx*m_Azy + m_Axy*m_Azx;
     T AI_zz =  m_Axx*m_Ayy - m_Axy*m_Ayx;
     //
-    for (int i = 0; i < NUM_VARS; ++i) {
+    for (int i = 0; i < NUM_VARS_TLSQ; ++i) {
       grad[i][0] = inv_det*(AI_xx*m_Bx[i] + AI_xy*m_By[i] + AI_xz*m_Bz[i]);
       grad[i][1] = inv_det*(AI_yx*m_Bx[i] + AI_yy*m_By[i] + AI_yz*m_Bz[i]);
       grad[i][2] = inv_det*(AI_zx*m_Bx[i] + AI_zy*m_By[i] + AI_zz*m_Bz[i]);
@@ -144,7 +144,7 @@ public:
     T AI_zy = -m_Axx*m_Azy + m_Axy*m_Azx;
     T AI_zz =  m_Axx*m_Ayy - m_Axy*m_Ayx;
     //
-    for (int i = 0; i < NUM_VARS; ++i) {
+    for (int i = 0; i < NUM_VARS_TLSQ; ++i) {
       grad[0] = inv_det*(AI_xx*m_Bx[i] + AI_xy*m_By[i] + AI_xz*m_Bz[i]);
       grad[1] = inv_det*(AI_yx*m_Bx[i] + AI_yy*m_By[i] + AI_yz*m_Bz[i]);
       grad[2] = inv_det*(AI_zx*m_Bx[i] + AI_zy*m_By[i] + AI_zz*m_Bz[i]);
@@ -211,15 +211,15 @@ TEST_CASE("TLSqGrad3D with linear gradient (vector function)")
   typedef float real;
   //
   int num_iter = 100;
-  const int num_vars = 10;
+  const int NUM_VARS_TLSQ = 10;
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<> dist1(-3.0, 3.0);
   std::uniform_real_distribution<> dist2(-0.5, 0.5);
   //
   for (int iter = 0; iter < num_iter; ++iter) {
-    real a[num_vars], b[num_vars], c[num_vars], d[num_vars], f0[num_vars];
-    for (int i = 0; i < num_vars; ++i) {
+    real a[NUM_VARS_TLSQ], b[NUM_VARS_TLSQ], c[NUM_VARS_TLSQ], d[NUM_VARS_TLSQ], f0[NUM_VARS_TLSQ];
+    for (int i = 0; i < NUM_VARS_TLSQ; ++i) {
       a[i] = dist1(gen);
       b[i] = dist1(gen);
       c[i] = dist1(gen);
@@ -228,10 +228,10 @@ TEST_CASE("TLSqGrad3D with linear gradient (vector function)")
     real x0 = dist2(gen);
     real y0 = dist2(gen);
     real z0 = dist2(gen);
-    for (int i = 0; i < num_vars; ++i) {
+    for (int i = 0; i < NUM_VARS_TLSQ; ++i) {
       f0[i] = a[i]*x0 + b[i]*y0 + c[i]*z0 + d[i];
     }
-    TLSqGrad3D<real,num_vars> lsq(x0, y0, z0, f0);
+    TLSqGrad3D<real,NUM_VARS_TLSQ> lsq(x0, y0, z0, f0);
     //
     real x[6] = { 1, -1,  0,  0,  0,  0};
     real y[6] = { 0,  0,  1, -1,  0,  0};
@@ -243,17 +243,17 @@ TEST_CASE("TLSqGrad3D with linear gradient (vector function)")
     }
     //
     for (int i = 0; i < 6; ++i) {
-      real f[num_vars];
-      for (int j = 0; j < num_vars; ++j) {
+      real f[NUM_VARS_TLSQ];
+      for (int j = 0; j < NUM_VARS_TLSQ; ++j) {
         f[j] = a[j]*x[i] + b[j]*y[i] + c[j]*z[i] + d[j];
       }
       lsq.addPoint(x[i], y[i], z[i], f);
     }
     //
-    real grad[num_vars][3];
+    real grad[NUM_VARS_TLSQ][3];
     lsq.computeGrad(grad);
     //
-    for (int i = 0; i < num_vars; ++i) {
+    for (int i = 0; i < NUM_VARS_TLSQ; ++i) {
       REQUIRE(grad[i][0] == doctest::Approx(a[i]));
       REQUIRE(grad[i][1] == doctest::Approx(b[i]));
       REQUIRE(grad[i][2] == doctest::Approx(c[i]));    
