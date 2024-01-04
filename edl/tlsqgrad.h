@@ -31,13 +31,13 @@
 
 namespace EDL_NAMESPACE
 {
-  template <typename T, uint8_t NVAR_TLSQGR> class TLSqGrad3D;
+template <typename T, uint8_t NUM_VARS> class TLSqGrad3D;
 }
 
 namespace EDL_NAMESPACE
 {
 
-template <typename T, uint8_t NVAR_TLSQGR>
+template <typename T, uint8_t NUM_VARS>
 class TLSqGrad3D
 {
 
@@ -50,13 +50,13 @@ class TLSqGrad3D
   T m_Azx{0};
   T m_Azy{0};
   T m_Azz{0};
-  T m_Bx[NVAR_TLSQGR]{0};
-  T m_By[NVAR_TLSQGR]{0};
-  T m_Bz[NVAR_TLSQGR]{0};
+  T m_Bx[NUM_VARS]{0};
+  T m_By[NUM_VARS]{0};
+  T m_Bz[NUM_VARS]{0};
   T m_X0{0};
   T m_Y0{0};
   T m_Z0{0};
-  T m_F0[NVAR_TLSQGR]{0};
+  T m_F0[NUM_VARS]{0};
 
   uint16_t m_NumPoints{0};
 
@@ -64,7 +64,7 @@ public:
 
   CUDA_DH TLSqGrad3D(T x, T y, T z, T* f) : m_X0(x), m_Y0(y), m_Z0(z)
   {
-    for (int i = 0; i < NVAR_TLSQGR; ++i) {
+    for (int i = 0; i < NUM_VARS; ++i) {
       m_F0[i] = f[i];
     }
   }
@@ -90,7 +90,7 @@ public:
     m_Azy += Dy*Dz*w;
     m_Azz += Dz*Dz*w;
     //
-    for (int i = 0; i < NVAR_TLSQGR; ++i) {
+    for (int i = 0; i < NUM_VARS; ++i) {
       T Df = f[i] - m_F0[i];
       m_Bx[i] += Df*Dx*w;
       m_By[i] += Df*Dy*w;
@@ -105,7 +105,7 @@ public:
     addPoint(x, y, z, &f, w);
   }
 
-  CUDA_DH void computeGrad(T* fx, T* fy, T* fz)
+  CUDA_DH void computeGrad(T (& grad)[NUM_VARS][3])
   {
     T inv_det = T(1) / (m_Axx * m_Ayy * m_Azz - m_Axx * m_Ayz * m_Azy -
                         m_Axy * m_Ayx * m_Azz + m_Axy * m_Ayz * m_Azx +
@@ -121,16 +121,34 @@ public:
     T AI_zy = -m_Axx*m_Azy + m_Axy*m_Azx;
     T AI_zz =  m_Axx*m_Ayy - m_Axy*m_Ayx;
     //
-    for (int i = 0; i < NVAR_TLSQGR; ++i) {
-      fx[i] = inv_det*(AI_xx*m_Bx[i] + AI_xy*m_By[i] + AI_xz*m_Bz[i]);
-      fy[i] = inv_det*(AI_yx*m_Bx[i] + AI_yy*m_By[i] + AI_yz*m_Bz[i]);
-      fz[i] = inv_det*(AI_zx*m_Bx[i] + AI_zy*m_By[i] + AI_zz*m_Bz[i]);
+    for (int i = 0; i < NUM_VARS; ++i) {
+      grad[i][0] = inv_det*(AI_xx*m_Bx[i] + AI_xy*m_By[i] + AI_xz*m_Bz[i]);
+      grad[i][1] = inv_det*(AI_yx*m_Bx[i] + AI_yy*m_By[i] + AI_yz*m_Bz[i]);
+      grad[i][2] = inv_det*(AI_zx*m_Bx[i] + AI_zy*m_By[i] + AI_zz*m_Bz[i]);
     }
   }
 
-  CUDA_DH void computeGrad(T& fx, T& fy, T& fz)
+  CUDA_DH void computeGrad(T* grad)
   {
-    computeGrad(&fx, &fy, &fz);
+    T inv_det = T(1) / (m_Axx * m_Ayy * m_Azz - m_Axx * m_Ayz * m_Azy -
+                        m_Axy * m_Ayx * m_Azz + m_Axy * m_Ayz * m_Azx +
+                        m_Axz * m_Ayx * m_Azy - m_Axz * m_Ayy * m_Azx);
+    //
+    T AI_xx =  m_Ayy*m_Azz - m_Ayz*m_Azy;
+    T AI_xy = -m_Axy*m_Azz + m_Axz*m_Azy;
+    T AI_xz =  m_Axy*m_Ayz - m_Axz*m_Ayy;
+    T AI_yx = -m_Ayx*m_Azz + m_Ayz*m_Azx;
+    T AI_yy =  m_Axx*m_Azz - m_Axz*m_Azx;
+    T AI_yz = -m_Axx*m_Ayz + m_Axz*m_Ayx;
+    T AI_zx =  m_Ayx*m_Azy - m_Ayy*m_Azx;
+    T AI_zy = -m_Axx*m_Azy + m_Axy*m_Azx;
+    T AI_zz =  m_Axx*m_Ayy - m_Axy*m_Ayx;
+    //
+    for (int i = 0; i < NUM_VARS; ++i) {
+      grad[0] = inv_det*(AI_xx*m_Bx[i] + AI_xy*m_By[i] + AI_xz*m_Bz[i]);
+      grad[1] = inv_det*(AI_yx*m_Bx[i] + AI_yy*m_By[i] + AI_yz*m_Bz[i]);
+      grad[2] = inv_det*(AI_zx*m_Bx[i] + AI_zy*m_By[i] + AI_zz*m_Bz[i]);
+    }
   }
 };
 
@@ -178,12 +196,12 @@ TEST_CASE("TLSqGrad3D with linear gradient (scalar function)")
       lsq.addPoint(x[i], y[i], z[i], f);
     }
     //
-    real fx, fy, fz;
-    lsq.computeGrad(fx, fy, fz);
+    real grad[3];
+    lsq.computeGrad(grad);
     //
-    REQUIRE(fx == doctest::Approx(a));
-    REQUIRE(fy == doctest::Approx(b));
-    REQUIRE(fz == doctest::Approx(c));    
+    REQUIRE(grad[0] == doctest::Approx(a));
+    REQUIRE(grad[1] == doctest::Approx(b));
+    REQUIRE(grad[2] == doctest::Approx(c));    
   }
 }
 
@@ -232,13 +250,13 @@ TEST_CASE("TLSqGrad3D with linear gradient (vector function)")
       lsq.addPoint(x[i], y[i], z[i], f);
     }
     //
-    real fx[num_vars], fy[num_vars], fz[num_vars];
-    lsq.computeGrad(fx, fy, fz);
+    real grad[num_vars][3];
+    lsq.computeGrad(grad);
     //
     for (int i = 0; i < num_vars; ++i) {
-      REQUIRE(fx[i] == doctest::Approx(a[i]));
-      REQUIRE(fy[i] == doctest::Approx(b[i]));
-      REQUIRE(fz[i] == doctest::Approx(c[i]));    
+      REQUIRE(grad[i][0] == doctest::Approx(a[i]));
+      REQUIRE(grad[i][1] == doctest::Approx(b[i]));
+      REQUIRE(grad[i][2] == doctest::Approx(c[i]));    
     }
   }
 }
