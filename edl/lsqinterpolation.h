@@ -81,7 +81,7 @@ protected: // methods
     matrix_t A;
     A.initAll(0);
     for (int i = 0; i < N; ++i) {
-      vector_t DX = m_CollectedNodes[i] - m_X0;
+      geovec_t DX = m_CollectedNodes[i] - m_X0;
       value_t  dx = DX[0];
       value_t  dy = DX[1];
       value_t  dz = DX[2];
@@ -108,7 +108,7 @@ protected: // methods
     //
     matrix_t AI = A.inverse();
     for (int i = 0; i < m_Alpha.size(); ++i) {
-      vector_t DX = m_CollectedNodes[i] - m_X0;
+      geovec_t DX = m_CollectedNodes[i] - m_X0;
       value_t  dx = DX[0];
       value_t  dy = DX[1];
       value_t  dz = DX[2];
@@ -137,7 +137,9 @@ public: // methods
     m_CollectedWeights.clear();
     m_CollectedWeights.reserve(X.size());
     for (auto x : X) {
-      value_t  w  = std::pow((x - m_X0).abs()/min_dist, distance_exponent);
+      value_t d = std::max((x - m_X0).abs(), min_dist);
+      value_t b = d/min_dist;
+      value_t w = std::pow(b, distance_exponent);
       addNode(x, w);
     }
   }
