@@ -580,15 +580,17 @@ VEC turnRight(const VEC &v)
   VEC u;
   u[0] =  v[1];
   u[1] = -v[0];
+  for (int i = 2; i < u.size(); ++i) u[i] = 0;
   return u;
 }
 
 template <class VEC>
 VEC turnLeft(const VEC &v)
 {
-  VEC u;
+  VEC u = {0};
   u[0] = -v[1];
   u[1] =  v[0];
+  for (int i = 2; i < u.size(); ++i) u[i] = 0;
   return u;
 }
 
