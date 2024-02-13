@@ -62,7 +62,7 @@ class TLSqGrad3D
 
 public:
 
-  CUDA_DH TLSqGrad3D(T x, T y, T z, T* f) : m_X0(x), m_Y0(y), m_Z0(z)
+  CUDA_DH TLSqGrad3D(T x, T y, T z, const T* f) : m_X0(x), m_Y0(y), m_Z0(z)
   {
     for (int i = 0; i < NUM_VARS_TLSQ; ++i) {
       m_F0[i] = f[i];
@@ -74,7 +74,7 @@ public:
     m_F0[0] = f;
   }
 
-  CUDA_DH void addPoint(T x, T y, T z, T* f, T w = 1.0)
+  CUDA_DH void addPoint(T x, T y, T z, const T* f, T w = 1.0)
   {
     T Dx = x - m_X0;
     T Dy = y - m_Y0;
