@@ -23,7 +23,8 @@
 #ifndef OCTREE_H
 #define OCTREE_H
 
-#include <bits/stdint-uintn.h>
+//#include <bits/stdint-uintn.h>
+#include <stdint.h>
 #include <cstdint>
 #include <fstream>
 #include <iostream>

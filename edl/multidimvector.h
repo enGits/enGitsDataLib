@@ -27,7 +27,8 @@
 
 #include <cstddef>
 #include <vector>
-#include <bits/stdint-uintn.h>
+//#include <bits/stdint-uintn.h>
+#include <stdint.h>
 
 namespace EDL_NAMESPACE
 {
