@@ -27,8 +27,7 @@
 #include "containertricks.h"
 
 #include <vector>
-#include <QList>
-#include <QPair>
+#include <utility> // for std::pair
 
 #include "edlerror.h"
 #include "edl.h"
@@ -886,36 +885,40 @@ typename C::value_type polyNormal(const C &pts, bool closed_loop=false)
 }
 
 template <class VEC>
-QList<VEC> orderNodesAroundCentre(QList<VEC> x3, VEC x_centre, VEC normal)
+std::vector<VEC> orderNodesAroundCentre(const std::vector<VEC> &points, VEC x_centre, VEC normal)
 {
   VEC g1 = orthogonalVector(normal).normalised();
   VEC g2 = (normal.cross(g1)).normalised();
 
-  QList<MathVector<StaticVector<typename VEC::value_type,2>>> x2;
-  for (int i = 0; i < x3.size(); ++i) {
-    VEC xc3 = x3[i] - x_centre;
-    x2 << projectVectorOnPlane(xc3, g1, g2).normalised();
+  std::vector<MathVector<StaticVector<typename VEC::value_type,2>>> planar_vecs;
+  planar_vecs.reserve(points.size());
+  for (VEC point : points) {
+    VEC center_vec = point - x_centre;
+    planar_vecs.push_back(projectVectorOnPlane(center_vec, g1, g2).normalised());
   }
 
-  QList<QPair<typename VEC::value_type, int> > indices;
-  for (int i = 0; i < x3.size(); ++i) {
-    typename VEC::value_type x     = x2[i][0];
-    typename VEC::value_type y     = x2[i][1];
+  std::vector< std::pair<typename VEC::value_type, int> > indices;
+  indices.reserve(points.size());
+  for (int i = 0; i < points.size(); ++i) {
+    typename VEC::value_type x     = planar_vecs[i][0];
+    typename VEC::value_type y     = planar_vecs[i][1];
     typename VEC::value_type angle = asin(y);
     //
     if (x < 0) {
       angle = typename VEC::value_type(M_PI) - angle;
     }
     //
-    indices << QPair<typename VEC::value_type, int>(angle, i);
+    indices.push_back(std::make_pair(angle, i));
   }
   std::sort(indices.begin(), indices.end());
-  QList<VEC> x_sorted;
-  for (int i = 0; i < indices.size(); ++i) {
-    x_sorted << x3[indices[i].second];
+
+  std::vector<VEC> sorted_points;
+  sorted_points.reserve(points.size());
+  for (auto pair : indices) {
+    sorted_points.push_back(points[pair.second]);
   }
-  //
-  return x_sorted;
+  
+  return sorted_points;
 }
 
 
