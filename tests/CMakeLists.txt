@@ -37,8 +37,11 @@
 # add_executable(interp_test interp_test.cpp)
 # target_link_libraries(interp_test engitsdatalib)
 
-add_executable(doctest_test doctest_test.cpp)
-target_link_libraries(doctest_test engitsdatalib)
+add_executable(noQT_test noQT_test.cpp)
+target_link_libraries(noQT_test engitsdatalib)
+
+# add_executable(doctest_test doctest_test.cpp)
+# target_link_libraries(doctest_test engitsdatalib)
 
 # if(USE_QT5)
 #   target_link_libraries(tgraph_test Qt5::Core)

@@ -22,17 +22,12 @@
 #ifndef EDLERROR_H
 #define EDLERROR_H
 
+#include <iostream>
+#include <string>
+#include <sstream>
+
 #include "edl.h"
 
-namespace EDL_NAMESPACE {
-class EdlError;
-}
-
-#include <cstddef>
-#include <iostream>
-
-#include <string>
-#include <QString>
 
 namespace EDL_NAMESPACE
 {
@@ -80,12 +75,11 @@ public:
 
 #define EDL_BUG \
 { \
-  QString line; \
-  line.setNum(__LINE__); \
-  QString msg = "A problem occurred within enGitsDataLib"; \
-  msg += QString("\n\nfile: ") + __FILE__ + "\nline:" + line + "\n\n"; \
-  std::cerr << qPrintable(msg) << std::endl; \
-  throw EdlError(qPrintable(msg)); \
+  std::stringstream msg; \
+  msg << "A problem occurred within enGitsDataLib"; \
+  msg << "\nfile: " << __FILE__ << "\nline: " << __LINE__ << "\n"; \
+  std::cerr << msg.str() << std::endl; \
+  throw EdlError(msg.str()); \
 };
 
 } // namespace
