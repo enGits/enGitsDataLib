@@ -26,7 +26,7 @@
 #include "smallsquarematrix.h"
 #include "containertricks.h"
 
-#include <QVector>
+#include <vector>
 #include <QList>
 #include <QPair>
 
@@ -819,13 +819,13 @@ void planeFit(const C &pts, VEC &x0, VEC &n, bool closed_loop = false)
   if (!closed_loop) {
     ++N;
   }
-  QVector<VEC> x(N);
+  std::vector<VEC> x(N);
   for (int i = 0; i < pts.size(); ++i) {
     x[i] = pts[i];
     x0 += x[i];
   }
   if (!closed_loop) {
-    x.last() = x.first();
+    x.back() = x.front();
   }
   x0 *= 1.0/pts.size();
   for (int i = 0; i < x.size(); ++i) {
@@ -866,13 +866,13 @@ typename C::value_type polyNormal(const C &pts, bool closed_loop=false)
   if (!closed_loop) {
     ++N;
   }
-  QVector<vec_t> x(N);
+  std::vector<vec_t> x(N);
   for (int i = 0; i < pts.size(); ++i) {
     x[i] = pts[i];
     x0 += x[i];
   }
   if (!closed_loop) {
-    x.last() = x.first();
+    x.back() = x.front();
   }
   x0 *= 1.0/pts.size();
   for (int i = 0; i < x.size(); ++i) {
