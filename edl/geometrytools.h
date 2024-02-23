@@ -22,15 +22,16 @@
 #ifndef geometrytools_H
 #define geometrytools_H
 
-#include "mathvector.h"
-#include "smallsquarematrix.h"
-#include "containertricks.h"
-
+#include <cstdint>
 #include <vector>
 #include <utility> // for std::pair
+#include <algorithm>
 
 #include "edlerror.h"
 #include "edl.h"
+#include "mathvector.h"
+#include "smallsquarematrix.h"
+#include "containertricks.h"
 
 namespace EDL_NAMESPACE
 {

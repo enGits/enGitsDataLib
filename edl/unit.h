@@ -23,9 +23,11 @@
 #ifndef UNIT_H
 #define UNIT_H
 
+#include <vector>
+#include <string>
+
 #include "edl/edl.h"
 
-#include <vector>
 
 namespace EDL_NAMESPACE
 {

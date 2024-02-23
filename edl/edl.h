@@ -35,10 +35,11 @@ template <class T, unsigned int DIM> class StaticVector;
 #undef max
 #endif
 
+#include <cstdint>
 #include <cfloat>
+#include <algorithm>
 #include <cmath>
 #include <limits>
-#include <QMetaType>
 
 #include "edl/doctest.h"
 
@@ -236,8 +237,6 @@ inline std::uint8_t ilog2(T x)
   while (x >>= 1) ++n;
   return n;
 }
-
-Q_DECLARE_METATYPE(EDL_NAMESPACE::real)
 
 #endif // EDL_H
 
