@@ -24,7 +24,6 @@
 #include <iostream>
 #include <stdlib.h>
 
-#include <QStringList>
 
 namespace EDL_NAMESPACE
 {
@@ -545,60 +544,60 @@ bool List::hasSameStructure(List *other_list)
   return true;
 }
 
-QStringList List::toBuffer(QByteArray& buffer)
-{
-  QStringList exclude_names;
-  exclude_names << "__tmp";
-  exclude_names << "__none";
-  buffer.clear();
-  QStringList names;
-  if (isMaster()) {
-    names << "__MASTER";
-    for (size_t i = 0; i < endIdx(); ++i) {
-      buffer += partialBuffer(i);
-    }
-    for (size_t i_client = 0; i_client < m_NumClients; ++i_client) {
-      if (!exclude_names.contains(QString(m_Client[i_client]->linkName().c_str()))) {
-        names << m_Client[i_client]->linkName().c_str();
-        for (size_t i = 0; i < endIdx(); ++i) {
-          buffer += m_Client[i_client]->partialBuffer(i);
-        }
-      }
-    }
-  } else {
-    names = master()->toBuffer(buffer);
-  }
-  return names;
-}
+// QStringList List::toBuffer(QByteArray& buffer)
+// {
+//   QStringList exclude_names;
+//   exclude_names << "__tmp";
+//   exclude_names << "__none";
+//   buffer.clear();
+//   QStringList names;
+//   if (isMaster()) {
+//     names << "__MASTER";
+//     for (size_t i = 0; i < endIdx(); ++i) {
+//       buffer += partialBuffer(i);
+//     }
+//     for (size_t i_client = 0; i_client < m_NumClients; ++i_client) {
+//       if (!exclude_names.contains(QString(m_Client[i_client]->linkName().c_str()))) {
+//         names << m_Client[i_client]->linkName().c_str();
+//         for (size_t i = 0; i < endIdx(); ++i) {
+//           buffer += m_Client[i_client]->partialBuffer(i);
+//         }
+//       }
+//     }
+//   } else {
+//     names = master()->toBuffer(buffer);
+//   }
+//   return names;
+// }
 
-void List::fromBuffer(QByteArray buffer, QStringList names)
-{
-  if (isMaster()) {
-    size_t idx = 0;
-    foreach (QString name, names) {
-      List* list = NULL;
-      if (name == "__MASTER") {
-        list = this;
-      } else {
-        for (size_t i_client = 0; i_client < m_NumClients; ++i_client) {
-          if (m_Client[i_client]->linkName() == qPrintable(name)) {
-            list = m_Client[i_client];
-            break;
-          }
-        }
-      }
-      if (list) {
-        for (size_t i = 0; i < endIdx(); ++i) {
-          QByteArray partial_buffer = buffer.mid(idx, list->dataLength());
-          list->fromPartialBuffer(i, partial_buffer);
-          idx += list->dataLength();
-        }
-      }
-    }
-  } else {
-    master()->fromBuffer(buffer, names);
-  }
-}
+// void List::fromBuffer(QByteArray buffer, QStringList names)
+// {
+//   if (isMaster()) {
+//     size_t idx = 0;
+//     foreach (QString name, names) {
+//       List* list = NULL;
+//       if (name == "__MASTER") {
+//         list = this;
+//       } else {
+//         for (size_t i_client = 0; i_client < m_NumClients; ++i_client) {
+//           if (m_Client[i_client]->linkName() == qPrintable(name)) {
+//             list = m_Client[i_client];
+//             break;
+//           }
+//         }
+//       }
+//       if (list) {
+//         for (size_t i = 0; i < endIdx(); ++i) {
+//           QByteArray partial_buffer = buffer.mid(idx, list->dataLength());
+//           list->fromPartialBuffer(i, partial_buffer);
+//           idx += list->dataLength();
+//         }
+//       }
+//     }
+//   } else {
+//     master()->fromBuffer(buffer, names);
+//   }
+// }
 
 } // namespace
 

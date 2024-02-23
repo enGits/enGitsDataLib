@@ -79,8 +79,10 @@ protected:
   T m_DefaultValue;
 
   virtual size_t dataLength() { return sizeof(T); }
-  virtual QByteArray partialBuffer(size_t);
-  virtual void       fromPartialBuffer(size_t, QByteArray);
+
+  // QT needs to be removed
+  // virtual QByteArray partialBuffer(size_t);
+  // virtual void       fromPartialBuffer(size_t, QByteArray);
 
 
 public:
@@ -514,21 +516,21 @@ void TList<T>::sortDown()
   }
 }
 
-template <class T>
-QByteArray TList<T>::partialBuffer(size_t i)
-{
-  return QByteArray((char*) (m_Value + i), sizeof(T));
-}
+// template <class T>
+// QByteArray TList<T>::partialBuffer(size_t i)
+// {
+//   return QByteArray((char*) (m_Value + i), sizeof(T));
+// }
 
-template <class T>
-void TList<T>::fromPartialBuffer(size_t i, QByteArray buffer)
-{
-  if (buffer.length() != sizeof(T)) {
-    std::cerr << "data corrupted in buffer" << std::endl;
-    exit(EXIT_FAILURE);
-  }
-  m_Value[i] = *((T*) buffer.data());
-}
+// template <class T>
+// void TList<T>::fromPartialBuffer(size_t i, QByteArray buffer)
+// {
+//   if (buffer.length() != sizeof(T)) {
+//     std::cerr << "data corrupted in buffer" << std::endl;
+//     exit(EXIT_FAILURE);
+//   }
+//   m_Value[i] = *((T*) buffer.data());
+// }
 
 } //namespace
 

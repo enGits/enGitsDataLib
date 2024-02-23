@@ -35,7 +35,7 @@ struct InvalidIndex_error;
 #include <cstddef>
 #include <cstdlib>
 #include <typeinfo>
-#include <QMutex>
+#include <mutex>
 
 namespace EDL_NAMESPACE
 {
@@ -124,7 +124,7 @@ private:
    * This will only happen in the master List.
    */
   //pthread_mutex_t m_Mutex;
-  QMutex m_Mutex;
+  std::mutex m_Mutex;
 
   /// name of this list (for linked lists only)
   std::string m_LinkName;
@@ -208,8 +208,10 @@ protected:
   virtual void customReset(real mne, real delta) {}
 
   virtual size_t dataLength() { return 0; }
-  virtual QByteArray partialBuffer(size_t) { return QByteArray(); }
-  virtual void       fromPartialBuffer(size_t, QByteArray) {}
+
+  // QT needs to be removed (implement edl::ByteArry)
+  // virtual QByteArray partialBuffer(size_t) { return QByteArray(); }
+  // virtual void       fromPartialBuffer(size_t, QByteArray) {}
 
 public:
   /**
@@ -493,8 +495,9 @@ public:
    */
   void unlockLinking();
 
-  QStringList toBuffer(QByteArray& buffer);
-  void        fromBuffer(QByteArray buffer, QStringList names);
+  // QT needs to be removed
+  // QStringList toBuffer(QByteArray& buffer);
+  // void        fromBuffer(QByteArray buffer, QStringList names);
 
   void operator=(const List &other);
 };
