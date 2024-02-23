@@ -45,8 +45,6 @@ if (${A_ENABLE_VAR3})
   add_definitions(-DWITH_VAR3)
 endif()
 
-option(USE_QT5 "Compile using the Qt5 library." ON)
-
 option(CREATE_STATIC_LIBRARY "Create a static version of engitsdatalib." OFF)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -81,17 +79,6 @@ endif(WIN32)
 # set include directory, add src directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})  # This, according to the new CMake, shouldn't be needed...
-
-# Qt4/Qt5
-if(USE_QT5)
-  add_definitions(-DWITH_QT5)
-  set(CMAKE_AUTORCC ON)
-  find_package(Qt5 COMPONENTS Core REQUIRED)
-else()
-  find_package(Qt4 COMPONENTS QtCore REQUIRED)
-  include(${QT_USE_FILE})
-  include_directories(${QT_QTCORE_INCLUDE_DIR})
-endif(USE_QT5)
 
 set(engitsdatalib_HEADERS
 edl/bmap.h
@@ -171,13 +158,6 @@ set_target_properties(engitsdatalib PROPERTIES VERSION ${ENGITSDATALIB_VERSION})
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set_target_properties(engitsdatalib PROPERTIES COMPILE_FLAGS "-Wno-deprecated")
 endif()
-
-if(USE_QT5)
-  target_link_libraries(engitsdatalib Qt5::Core)
-else()
-  target_link_libraries(engitsdatalib ${QT_LIBRARIES})
-  target_link_libraries(engitsdatalib Qt4::QtCore)
-endif(USE_QT5)
 
 install(
   TARGETS engitsdatalib
