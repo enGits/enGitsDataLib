@@ -1,4 +1,4 @@
-// tests for removing QT library from EDL
+// tests for EDl geometrytools
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "edl/doctest.h"

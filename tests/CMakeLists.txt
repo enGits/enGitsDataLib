@@ -35,8 +35,8 @@
 # add_executable(interp_test interp_test.cpp)
 # target_link_libraries(interp_test engitsdatalib)
 
-add_executable(noQT_test noQT_test.cpp)
-target_link_libraries(noQT_test engitsdatalib)
+add_executable(geometrytools_test geometrytools_test.cpp)
+target_link_libraries(geometrytools_test engitsdatalib)
 
 # add_executable(doctest_test doctest_test.cpp)
 # target_link_libraries(doctest_test engitsdatalib)

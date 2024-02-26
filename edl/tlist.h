@@ -80,7 +80,7 @@ protected:
 
   virtual size_t dataLength() { return sizeof(T); }
 
-  // QT needs to be removed
+  // QT needs to be removed (implement edl::ByteArry)
   // virtual QByteArray partialBuffer(size_t);
   // virtual void       fromPartialBuffer(size_t, QByteArray);
 

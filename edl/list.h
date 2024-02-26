@@ -495,7 +495,7 @@ public:
    */
   void unlockLinking();
 
-  // QT needs to be removed
+  // QT needs to be removed (implement edl::ByteArry)
   // QStringList toBuffer(QByteArray& buffer);
   // void        fromBuffer(QByteArray buffer, QStringList names);
 
