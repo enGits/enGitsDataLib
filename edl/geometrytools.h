@@ -984,7 +984,7 @@ void findBoundingBox(const std::vector<VEC> & points, VEC & xyzmin, VEC &xyzmax)
 }
 
 template <class C>
-bool vectorsAreCoplanar(const C& vectors, typename C::value_type::value_type rel_tol=1e-3)
+bool pointsAreCoplanar(const C& vectors, typename C::value_type::value_type rel_tol=1e-3)
 {
   typedef typename C::value_type   vec;
   typedef typename vec::value_type real;
@@ -1014,15 +1014,13 @@ bool vectorsAreCoplanar(const C& vectors, typename C::value_type::value_type rel
   vec normal;
   bool normal_found = false;
   for (int i = 0; i < vectors.size(); ++i) {
-    for (int j = 0; j < vectors.size(); ++j) {
-      if (i != j) {
-        vec a = vectors[i] - centre;
-        vec b = vectors[j] - centre;
-        normal = a.cross(b);
-        if (normal.abs() > ave_dist*rel_tol) {
-          normal_found = true;
-          break;
-        }
+    for (int j = i+1; j < vectors.size(); ++j) {
+      vec a = vectors[i] - centre;
+      vec b = vectors[j] - centre;
+      normal = a.cross(b);
+      if (normal.abs() > ave_dist*ave_dist*rel_tol) {
+        normal_found = true;
+        break;
       }
     }
     if (normal_found) {
@@ -1047,7 +1045,7 @@ bool vectorsAreCoplanar(const C& vectors, typename C::value_type::value_type rel
 }
 
 template <class C>
-bool vectorsAreColinear(const C& vectors, typename C::value_type::value_type rel_tol=1e-3)
+bool pointsAreColinear(const C& vectors, typename C::value_type::value_type rel_tol=1e-3)
 {
   if (vectors.size() < 3) {
     return true;
@@ -1124,26 +1122,37 @@ TEST_CASE("findBoundingBox")
   CHECK(edl::almostEqual(xyzmax[2],float(17))==true);
 }
 
-TEST_CASE("vectorsAreCoplanar")
+TEST_CASE("pointsAreCoplanar")
 {
   using namespace edl;
   typedef MathVector<StaticVector<float,3> > vec3_t;
   std::vector<vec3_t> points;
+  points.push_back(vec3_t{0,0,0});
   points.push_back(vec3_t{1,0,0});
   points.push_back(vec3_t{0,1,0});
   points.push_back(vec3_t{2,0,0});
-  CHECK(edl::vectorsAreCoplanar(points)==true);
+  CHECK(edl::pointsAreCoplanar(points)==true);
   points.push_back(vec3_t{0,2,0});
-  CHECK(edl::vectorsAreCoplanar(points)==true);
+  CHECK(edl::pointsAreCoplanar(points)==true);
   points.push_back(vec3_t{0,0,1});
-  CHECK(edl::vectorsAreCoplanar(points)==false);
+  CHECK(edl::pointsAreCoplanar(points)==false);
   points.clear();
   points.push_back(vec3_t{1.0,0,0});
   points.push_back(vec3_t{1.1,0,0});
   points.push_back(vec3_t{1.2,0,0});
   points.push_back(vec3_t{1.3,0,0});
   points.push_back(vec3_t{1.4,0,0});
-  CHECK(edl::vectorsAreCoplanar(points)==true);
+  CHECK(edl::pointsAreCoplanar(points)==true);
+  //
+  // check with point distances in the order of the tolerance (0.01)
+  points.clear();
+  points.push_back(vec3_t{0, 0, 0});
+  points.push_back(vec3_t{0.01, 0, 0});
+  points.push_back(vec3_t{0.01, 0.01, 0});
+  points.push_back(vec3_t{0, 0.01, 0.0001});
+  CHECK(edl::pointsAreCoplanar(points, 0.01)==true);
+  points.push_back(vec3_t{0.01, 0, 0.001});
+  CHECK(edl::pointsAreCoplanar(points, 0.01)==false);
   //
   // create a regular triangle in the XY plane
   points.clear();
@@ -1152,9 +1161,9 @@ TEST_CASE("vectorsAreCoplanar")
   points.push_back(vec3_t{0.5, 0.8660254037844386, 0.0});
   // create a tetrahedron with the triangle as base and a point above it
   points.push_back(vec3_t{0.5, 0.2886751345948129, 0.002});
-  CHECK(edl::vectorsAreCoplanar(points)==false);
+  CHECK(edl::pointsAreCoplanar(points)==false);
   points.back()[2] = 0.0005;
-  CHECK(edl::vectorsAreCoplanar(points)==true);
+  CHECK(edl::pointsAreCoplanar(points)==true);
 }
 
 TEST_CASE("isPointInTetra")
@@ -1218,7 +1227,7 @@ TEST_CASE("isPointInTetra_speed")
   cout << "isPointInTetra: " << duration.count() << " microseconds" << endl;
 }
 
-TEST_CASE("vectorsAreColinear")
+TEST_CASE("pointsAreColinear")
 {
   using namespace edl;
   typedef MathVector<StaticVector<float, 3>> vec_t;
@@ -1226,23 +1235,23 @@ TEST_CASE("vectorsAreColinear")
   points.push_back(vec_t{0, 0, 0});
   points.push_back(vec_t{1, 0, 0});
   points.push_back(vec_t{10, 0, 0});
-  CHECK(edl::vectorsAreColinear(points)==true);
+  CHECK(edl::pointsAreColinear(points)==true);
   points.push_back(vec_t{0, 0.009, 0});
-  CHECK(edl::vectorsAreColinear(points)==true);
+  CHECK(edl::pointsAreColinear(points)==true);
   points.push_back(vec_t{0, 0.011, 0});
-  CHECK(edl::vectorsAreColinear(points)==false);
+  CHECK(edl::pointsAreColinear(points)==false);
   points.clear();
   points.push_back(vec_t{1.0, 0, 0});
   points.push_back(vec_t{1.1, 0, 0});
   points.push_back(vec_t{1.2, 0, 0});
   points.push_back(vec_t{1.3, 0, 0});
   points.push_back(vec_t{1.4, 0, 0});
-  CHECK(edl::vectorsAreColinear(points)==true);
+  CHECK(edl::pointsAreColinear(points)==true);
   points.clear();
   points.push_back(vec_t{1.0, 0, 0});
   points.push_back(vec_t{2.0, 0.00001, 0});
   points.push_back(vec_t{3.0, 0, 0});
-  CHECK(edl::vectorsAreColinear(points)==true);
+  CHECK(edl::pointsAreColinear(points)==true);
 }
 
 #endif
