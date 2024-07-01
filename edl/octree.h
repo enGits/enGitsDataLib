@@ -693,6 +693,16 @@ public:
     return -1;
   }
 
+    int findMatchingItem(vector_t x, std::vector<int> sorted_bucked) const
+  {
+    for (int item_index : sorted_bucked) {
+      if (check_t::match(x, m_Items[item_index])) {
+        return item_index;
+      }
+    }
+    return -1;
+  }
+
   void dbgPrint()
   {
     for (int i = 0; i < m_Nodes.size(); ++i) {
