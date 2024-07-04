@@ -32,6 +32,7 @@
 #include "edl/weightedset.h"
 #include "edl/octree.h"
 #include "edl/multidimvector.h"
+#include "edl/shortvector.h"
 
 int main(int argc, const char** argv)
 {
