@@ -105,6 +105,7 @@ edl/octree.h
 edl/pmap.h
 edl/pointcloudsurface.h
 edl/profile.h
+edl/shortvector.h
 edl/smallsquarematrix.h
 edl/sparsetwodimarray.h
 edl/stringtools.h
