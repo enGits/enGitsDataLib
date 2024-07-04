@@ -24,7 +24,9 @@
 #include "stringtools.h"
 #include "edlerror.h"
 
+#include <cstdint>
 #include <fstream>
+#include <iostream>
 
 namespace EDL_NAMESPACE
 {

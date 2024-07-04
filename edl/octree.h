@@ -527,14 +527,14 @@ public:
           }
         }
       }
+      vector_t x_centre = 0.50 * (m_X1 + m_X2);
+      vector_t Dx       = 0.55 * (m_X2 - m_X1);
+      for (int i = 0; i < x_centre.size(); ++i) {
+        Dx[i] = std::max(Dx[0], std::max(Dx[1], Dx[2]));
+      }
+      m_X1 = x_centre - Dx;
+      m_X2 = x_centre + Dx;
     }
-    vector_t x_centre = 0.50 * (m_X1 + m_X2);
-    vector_t Dx       = 0.55 * (m_X2 - m_X1);
-    for (int i = 0; i < x_centre.size(); ++i) {
-      Dx[i] = std::max(Dx[0], std::max(Dx[1], Dx[2]));
-    }
-    m_X1 = x_centre - Dx;
-    m_X2 = x_centre + Dx;
     vertex_t v1, v2;
     v2.m_Ix = 65535;
     v2.m_Iy = 65535;
