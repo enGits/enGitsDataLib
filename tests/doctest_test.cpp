@@ -33,6 +33,7 @@
 #include "edl/octree.h"
 #include "edl/multidimvector.h"
 #include "edl/shortvector.h"
+#include "edl/shortdeltavector.h"
 
 int main(int argc, const char** argv)
 {

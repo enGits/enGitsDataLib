@@ -20,13 +20,11 @@
 // +                                                                    +
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#include "csvreader.h"
-#include "stringtools.h"
-#include "edlerror.h"
+#include "edl/csvreader.h"
+#include "edl/stringtools.h"
+#include "edl/edlerror.h"
 
-#include <cstdint>
 #include <fstream>
-#include <iostream>
 
 namespace EDL_NAMESPACE
 {

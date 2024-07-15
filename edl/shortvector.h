@@ -130,7 +130,7 @@ public: // methods
     if (!sizeValid(initial_size)) {
       throw std::runtime_error("ShortVector: initial size exceeds maximum size");
     }
-    m_Data = new entry_type[initial_size*m_ItemSize  + m_HeaderSize];
+    m_Data = new entry_type[alloc_size*m_ItemSize  + m_HeaderSize];
     m_Data[0] = initial_size;
     m_Data[1] = alloc_size;
   }
@@ -246,56 +246,6 @@ public: // methods
 };
 
 
-
-template<class TValue, class TDelta=std::int32_t, class TEntry=std::uint32_t>
-class ShortDeltaVector
-{
-public: // data types
-
-  typedef TValue value_type;
-  typedef TDelta delta_type;
-
-
-private: // attributes
-
-  ShortVector<TDelta, TEntry> m_Delta;
-  value_type m_ReferenceValue;
-
-
-public:
-
-  ShortDeltaVector(size_t initial_size = 0) : m_Delta(initial_size), m_ReferenceValue()
-  {
-    std::cout << m_ReferenceValue << std::endl;
-  }
-
-  bool deltaValid(value_type value)
-  {
-    if (m_Delta.size() == 0) {
-      return true;
-    }
-    uint64_t delta;
-    if (value > m_ReferenceValue) {
-      delta = value - m_ReferenceValue;
-    } else {
-      delta = m_ReferenceValue - value;
-    }
-    if (delta > std::numeric_limits<delta_type>::max()) {
-      return false;
-    }
-    return true;
-  }
-
-  
-
-  void push_back(const TValue& value)
-  {
-  }
-
-};
-
-
-
 } // namespace EDL_NAMESPACE
 
 // ----------------------------------------------------------------------------
@@ -406,12 +356,4 @@ TEST_CASE("ShortVector_large_random")
   CHECK(sv.memoryUsage() == expected_memory);
 }
 
-TEST_CASE("ShortDeltaVector_simple")
-{
-  using namespace EDL_NAMESPACE;
-  using namespace std;
-  //
-  typedef ShortDeltaVector<uint64_t> deltavec_t;
-  deltavec_t dv;
-}
 #endif // SHORTVECTOR_H

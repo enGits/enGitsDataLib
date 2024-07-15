@@ -47,6 +47,28 @@ endif()
 
 option(CREATE_STATIC_LIBRARY "Create a static version of engitsdatalib." OFF)
 
+# Find Python interpreter
+find_package(PythonInterp 3 REQUIRED)
+
+# Run the Python script to check endianness
+execute_process(
+  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/test_endianness.py
+  OUTPUT_VARIABLE ENDIANNESS
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Output the result
+message(STATUS "System Endianness: ${ENDIANNESS}")
+
+# Set a definition based on the endianness
+if(ENDIANNESS STREQUAL "little")
+  add_definitions(-DPLATFORM_LITTLE_ENDIAN)
+elseif(ENDIANNESS STREQUAL "big")
+  add_definitions(-DPLATFORM_BIG_ENDIAN)
+else()
+  message(FATAL_ERROR "Endianness detection failed. The system endianness could not be determined.")
+endif()
+
 set(CMAKE_CXX_STANDARD 11)
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -105,7 +127,9 @@ edl/octree.h
 edl/pmap.h
 edl/pointcloudsurface.h
 edl/profile.h
+edl/quicktimer.h
 edl/shortvector.h
+edl/shortdeltavector.h
 edl/smallsquarematrix.h
 edl/sparsetwodimarray.h
 edl/stringtools.h
