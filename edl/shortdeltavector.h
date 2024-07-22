@@ -35,7 +35,7 @@
 /**
   * @brief ShortDeltaVector is a vector like container with very low memory overhead.
   * It is designed to store integer like data (e.g. pointers). Only the difference to
-  * a reference value is stored. The reference value will be autmoatically adapted
+  * a reference value is stored. The reference value will be automatically adapted
   * such that a smaller data type can be used than the target data type.
   * The maximal length of the vector is 65536 (16 bit)
   */
