@@ -175,7 +175,7 @@ public: // methods
   value_type& operator[](entry_type i)
   {
     if (vectorSize() != allocatedSize()) {
-      compress();
+      shrink_to_fit();
     }
     value_type* ptr = reinterpret_cast<value_type*>(&m_Data[entryIndex(i)]);
     return *ptr;
@@ -184,13 +184,13 @@ public: // methods
   value_type operator[](entry_type i) const
   {
     if (vectorSize() != allocatedSize()) {
-      compress();
+      shrink_to_fit();
     }
     value_type* ptr = reinterpret_cast<value_type*>(&m_Data[entryIndex(i)]);
     return *ptr;
   }
 
-  void compress()
+  void shrink_to_fit() 
   {
     entry_type new_size = vectorSize();
     entry_type* new_data = new entry_type[new_size*m_ItemSize + m_HeaderSize];

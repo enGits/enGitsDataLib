@@ -288,7 +288,7 @@ public: // methods
   value_type operator[](size_t i)
   {
     if (m_VectorSize != m_AllocatedSize) {
-      compress();
+      shrink_to_fit();
     }
     auto idx = entryIndex(i);
     return get(&m_Data[idx], m_DeltaSize) + m_Reference;
@@ -331,7 +331,7 @@ public: // methods
     return get(&m_Data[idx], m_DeltaSize) + m_Reference;
   }
 
-  void compress()
+  void shrink_to_fit() 
   {
     index_type new_size = m_VectorSize;
     uint8_t* new_data = new uint8_t[new_size*m_DeltaSize];
@@ -454,6 +454,8 @@ TEST_CASE("ShortDeltaVector_memory_overhead")
   CHECK(sizeof(ShortDeltaVector<uint64_t,uint16_t>) == 24);
   CHECK(sizeof(ShortDeltaVector<uint64_t,uint32_t>) == 32);
   CHECK(sizeof(ShortDeltaVector<uint64_t,uint64_t>) == 40);
+  //
+  CHECK(sizeof(ShortDeltaVector<uint32_t,uint8_t>)  == sizeof(vector<uint64_t>));
 }
 
 TEST_CASE("ShortDeltaVector_simple")
