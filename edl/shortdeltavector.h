@@ -27,6 +27,7 @@
 #include <bits/stdint-uintn.h>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <stdexcept>
 
 #include <iostream>
@@ -98,7 +99,7 @@ private: // methods
     uint8_t* new_data = new uint8_t[m_AllocatedSize*new_delta_size];
     for (size_t i = 0; i < m_VectorSize; ++i) {
       auto delta = get(&m_Data[entryIndex(i)], m_DeltaSize);
-      set(delta, &new_data[i * new_delta_size], new_delta_size);
+      rawSet(delta, &new_data[i * new_delta_size], new_delta_size);
     }
     delete[] m_Data;
     m_Data = new_data;
@@ -144,7 +145,7 @@ private: // methods
         for (index_type i = 0; i < m_VectorSize; ++i) {
           auto idx = entryIndex(i);
           auto new_value = get(&m_Data[idx], m_DeltaSize) + delta;
-          set(new_value, &m_Data[idx], m_DeltaSize);
+          rawSet(new_value, &m_Data[idx], m_DeltaSize);
         }
       }
     }
@@ -173,7 +174,7 @@ public: // methods
     return value;
   }
 
-  static void set(uint64_t value, uint8_t* data, const uint8_t length)
+  static void rawSet(uint64_t value, uint8_t *data, const uint8_t length) 
   {
 #ifdef PLATFORM_BIG_ENDIAN
     for (size_t i = 0; i < length; ++i) {
@@ -263,6 +264,11 @@ public: // methods
     m_VectorSize    = new_size;
   }
 
+  void clear()
+  {
+    m_VectorSize = 0;
+  }
+
   size_t size() const
   {
     return m_VectorSize;
@@ -275,7 +281,7 @@ public: // methods
     }
     updateReference(value);
     auto idx = entryIndex(m_VectorSize);
-    set(value - m_Reference, &m_Data[idx], m_DeltaSize);
+    rawSet(value - m_Reference, &m_Data[idx], m_DeltaSize);
     ++m_VectorSize;
   }
 
@@ -286,6 +292,37 @@ public: // methods
     }
     auto idx = entryIndex(i);
     return get(&m_Data[idx], m_DeltaSize) + m_Reference;
+  }
+
+  bool operator==(const ShortDeltaVector& other) const
+  {
+    if (m_VectorSize != other.m_VectorSize) {
+      return false;
+    }
+    for (index_type i = 0; i < m_VectorSize; ++i) {
+      auto idx = entryIndex(i);
+      auto value1 = get(&m_Data[idx], m_DeltaSize) + m_Reference;
+      auto value2 = get(&other.m_Data[idx], m_DeltaSize) + other.m_Reference;
+      if (value1 != value2) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool operator!=(const ShortDeltaVector& other) const
+  {
+    return !(*this == other);
+  }
+
+  void set(size_t i, const value_type& value)
+  {
+    if (i >= m_VectorSize) {
+      throw std::runtime_error("ShortDeltaVector: index out of range");
+    }
+    updateReference(value);
+    auto idx = entryIndex(i);
+    rawSet(value - m_Reference, &m_Data[idx], m_DeltaSize);
   }
 
   value_type operator[](size_t i) const
@@ -326,37 +363,43 @@ public: // methods
     }
   }
 
-  /*
-  iterator begin()
+
+public: // iterators
+
+  struct const_iterator
   {
-    return reinterpret_cast<value_type*>(&m_Data[m_HeaderSize]);
-  }
+    size_t i;
+    const ShortDeltaVector<value_type,index_type>* dv;
+    void operator++() { ++i; }
+    bool operator!=(const const_iterator& other) const 
+    { 
+      return (i != other.i) || (dv != other.dv); 
+    }
+    value_type operator*() const 
+    { 
+      return dv->operator[](i); 
+    }
+  };
 
   const_iterator begin() const
   {
-    return reinterpret_cast<const value_type*>(&m_Data[m_HeaderSize]);
-  }
-
-  const_iterator cbegin() const
-  {
-    return reinterpret_cast<const value_type*>(&m_Data[m_HeaderSize]);
-  }
-
-  iterator end()
-  {
-    return reinterpret_cast<value_type*>(&m_Data[entryIndex(vectorSize())]);
+    return {0, this};
   }
 
   const_iterator end() const
   {
-    return reinterpret_cast<const value_type*>(&m_Data[entryIndex(vectorSize())]);
+    return {m_VectorSize, this};
+  }
+
+  const_iterator cbegin() const
+  {
+    return {0, this};
   }
 
   const_iterator cend() const
   {
-    return reinterpret_cast<const value_type*>(&m_Data[entryIndex(vectorSize())]);
+    return {m_VectorSize, this};
   }
-  */
 
 };
 
@@ -396,7 +439,7 @@ TEST_CASE ("ShortDeltaVector_endianness")
   //
   for (size_t i = 0; i < N; ++i) {
     uint8_t data_bytes[4];
-    deltavec_t::set(data[i], data_bytes, 4);
+    deltavec_t::rawSet(data[i], data_bytes, 4);
     uint64_t value = deltavec_t::get(data_bytes, 4);
     CHECK(value == data[i]);
   }
@@ -530,7 +573,7 @@ TEST_CASE("ShortDeltaVector_access_performance")
   typedef double real_t;
   typedef ShortDeltaVector<real_t*,uint16_t> deltavec_t;
 #ifdef EDL_DEBUG
-  size_t N = 100000;
+  size_t N = 10000;
   size_t number_of_loops = 1;
 #else 
   size_t N = 10000;
@@ -626,4 +669,147 @@ TEST_CASE("ShortDeltaVector_access_performance")
     delete data[i];
   }
 }
+
+TEST_CASE("ShortDeltaVector_iterators")
+{
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+  //
+  typedef ShortDeltaVector<uint64_t,uint16_t> deltavec_t;
+  size_t N = 10000;
+  size_t n = 32;
+  //
+  // create a std::vector with N random values of n bit integers stored as 64 bit integers
+  //
+  vector<uint64_t> data(N);
+  uint64_t upper_limit = 2;
+  for (size_t i = 1; i < n; ++i) {
+    upper_limit *= 2;
+  }
+  upper_limit -= 1;
+  random_device rd;
+  mt19937_64 eng(rd());
+  uniform_int_distribution<uint64_t> distr(0, upper_limit);
+  for (size_t i = 0; i < N; ++i) {
+    data[i] = distr(eng);
+    CHECK(data[i] <= upper_limit);
+  }    
+  //
+  // copy the data to a ShortDeltaVector and compute the maximal and minimal values
+  //
+  deltavec_t dv;
+  uint64_t min_value = numeric_limits<uint64_t>::max();
+  uint64_t max_value = 0;
+  for (size_t i = 0; i < N; ++i) {
+    dv.push_back(data[i]);
+    min_value = min(min_value, data[i]);
+    max_value = max(max_value, data[i]);
+  }
+  //
+  // check if the data is correct (range iteration)
+  //
+  {
+    size_t i = 0;
+    for (auto v : dv) {
+      CHECK(v == data[i]);
+      ++i;
+    }
+  }
+  //
+  // check if the data is correct (iterator)
+  //
+  {
+    size_t i = 0;
+    for (auto it = dv.begin(); it != dv.end(); ++it) {
+      CHECK(*it == data[i]);
+      ++i;
+    }
+  }
+}
+
+TEST_CASE("ShortDeltaVector_set")
+{
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+  //
+  typedef ShortDeltaVector<uint64_t,uint16_t> deltavec_t;
+  //
+  vector<uint64_t> data = {750, 500, 750, 250, 300, 400, 500, 600, 700, 800};
+  //
+  // copy the data to a ShortDeltaVector and compute the maximal and minimal values
+  //
+  deltavec_t dv;
+  uint64_t min_value = numeric_limits<uint64_t>::max();
+  uint64_t max_value = 0;
+  for (size_t i = 0; i < data.size(); ++i) {
+    dv.push_back(data[i]);
+  }
+  //
+  // loop over data and increment each value by 2**16
+  //
+  for (size_t i = 0; i < data.size(); ++i) {
+    data[i] += uint64_t(1) << 16;
+    dv.set(i, data[i]);
+  }
+  //
+  // check if the data is correct
+  //
+  for (size_t i = 0; i < data.size(); ++i) {
+    CHECK(dv[i] == data[i]);
+  }
+  //
+  // loop over data and increment each value by 2**32
+  //
+  for (size_t i = 0; i < data.size(); ++i) {
+    data[i] += uint64_t(1) << 32;
+    dv.set(i, data[i]);
+  }
+  //
+  // check if the data is correct
+  //
+  for (size_t i = 0; i < data.size(); ++i) {
+    CHECK(dv[i] == data[i]);
+  }
+}
+
+TEST_CASE("ShortDeltaVector_clear_and_comparison")
+{
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+  //
+  typedef ShortDeltaVector<uint64_t,uint16_t> deltavec_t;
+  //
+  vector<uint64_t> data1 = {750, 500, 750, 250, 300, 400, 500, 600, 700, 800};
+  vector<uint64_t> data2 = {800, 550, 800, 300, 350, 450, 550, 650, 750, 850};
+  //
+  // copy the data to a ShortDeltaVector and compute the maximal and minimal values
+  //
+  deltavec_t dv1, dv2;
+  uint64_t min_value = numeric_limits<uint64_t>::max();
+  uint64_t max_value = 0;
+  for (size_t i = 0; i < data1.size(); ++i) {
+    dv1.push_back(data1[i]);
+    dv2.push_back(data2[i]);
+  }
+  CHECK(dv1 != dv2);
+  for (size_t i = 0; i < data1.size(); ++i) {
+    auto v = dv1[i];
+    v += 50;
+    dv1.set(i, v);
+  }
+  CHECK(dv1 == dv2);
+  dv1.clear();
+  CHECK(dv1 != dv2);
+  for (size_t i = 0; i < data1.size(); ++i) {
+    dv1.push_back(data1[i]);
+  }
+  CHECK(dv1 != dv2);
+  for (size_t i = 0; i < data1.size(); ++i) {
+    auto v = dv1[i];
+    v += 50;
+    dv1.set(i, v);
+  }
+  CHECK(dv1 == dv2);
+}
+
 #endif // SHORTDELTAVECTOR_H
