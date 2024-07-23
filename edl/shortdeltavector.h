@@ -56,7 +56,7 @@ private: // attributes
   index_type m_AllocatedSize = 0;
   uint8_t    m_DeltaSize     = 1;
   uint8_t*   m_Data          = nullptr;
-  value_type m_Reference     = 0;
+  uintptr_t  m_Reference     = 0;
 
 
 public: // attributes
@@ -108,24 +108,25 @@ private: // methods
 
   void updateReference(value_type value)
   {
+    uintptr_t value_ptr = reinterpret_cast<uintptr_t>(value);
     if (m_VectorSize == 0) {
-      m_Reference = value;
+      m_Reference = value_ptr;
     } else {
       uint64_t max_entry     = 0;
       uint64_t delta         = 0;
       bool     update_deltas = false;
       //
-      if (value < m_Reference) {
+      if (value_ptr < m_Reference) {
         update_deltas = true;
-        delta         = m_Reference - value;
-        m_Reference   = value;
+        delta         = m_Reference - value_ptr;
+        m_Reference   = value_ptr;
         //
         for (index_type i = 0; i < m_VectorSize; ++i) {
           auto idx = entryIndex(i);
           max_entry = std::max(get(&m_Data[idx], m_DeltaSize) + delta, max_entry);
         }
       } else {
-        max_entry = value - m_Reference;
+        max_entry = value_ptr - m_Reference;
       }
       //
       uint64_t max_delta = maxDelta(m_DeltaSize);
@@ -133,6 +134,13 @@ private: // methods
         uint8_t new_delta_size = m_DeltaSize;
         for (uint8_t i = m_DeltaSize + 1; i <= 8; ++i) {
           max_delta = maxDelta(i);
+          // if (i > 5) {
+          //   std::cout << "**** " << int(i) << " : " << value << ", " << m_Reference << ", " << max_entry << ", " << value - m_Reference << std::endl;
+          //   int dummy;
+          //   std::cin >> dummy;
+          //   std::cout << "**** " << int(i) << " : " << value << ", " << m_Reference << ", " << max_entry << ", " << value - m_Reference << std::endl;
+          //   std::cout << std::endl;
+          // }
           if (max_entry <= max_delta) {
             new_delta_size = i;
             break;
@@ -297,7 +305,9 @@ public: // methods
     }
     updateReference(value);
     auto idx = entryIndex(m_VectorSize);
-    rawSet(value - m_Reference, &m_Data[idx], m_DeltaSize);
+    uintptr_t value_ptr = reinterpret_cast<uintptr_t>(value);
+    uint64_t  delta = value_ptr - m_Reference;
+    rawSet(delta, &m_Data[idx], m_DeltaSize);
     ++m_VectorSize;
   }
 
@@ -307,7 +317,8 @@ public: // methods
       shrink_to_fit();
     }
     auto idx = entryIndex(i);
-    return get(&m_Data[idx], m_DeltaSize) + m_Reference;
+    uint64_t delta = get(&m_Data[idx], m_DeltaSize);
+    return reinterpret_cast<value_type>(m_Reference + delta);
   }
 
   bool operator==(const ShortDeltaVector& other) const
@@ -344,7 +355,8 @@ public: // methods
   value_type operator[](size_t i) const
   {
     auto idx = entryIndex(i);
-    return get(&m_Data[idx], m_DeltaSize) + m_Reference;
+    uint64_t delta = get(&m_Data[idx], m_DeltaSize);
+    return reinterpret_cast<value_type>(m_Reference + delta);
   }
 
   void shrink_to_fit() 
@@ -825,24 +837,5 @@ TEST_CASE("ShortDeltaVector_clear_and_comparison")
   }
   CHECK(dv1 == dv2);
 }
-
-TEST_CASE("ShortDeltaVector_funky_pointers")
-{
-  // 0 : 0/0x5555903b75a0
-  // 1 : 17361641481138401532/0x5555903b7b80  
-  using namespace EDL_NAMESPACE;
-  using namespace std;
-  //
-  typedef ShortDeltaVector<float*,uint8_t> deltavec_t;
-  float* a = (float*)0x5555903b75a0;
-  float* b = (float*)0x5555903b7b80;
-  deltavec_t dv;
-  dv.debugPrint();
-  dv.push_back(a);
-  dv.debugPrint();
-  dv.push_back(b);
-  dv.debugPrint();  
-}
-
 
 #endif // SHORTDELTAVECTOR_H
