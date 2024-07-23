@@ -368,8 +368,8 @@ public: // methods
   {
     using namespace std;
     cout << endl;
-    cout << "size           = " << m_VectorSize << endl;
-    cout << "allocated size = " << m_AllocatedSize << endl;
+    cout << "size           = " << int(m_VectorSize) << endl;
+    cout << "allocated size = " << int(m_AllocatedSize) << endl;
     cout << "reference      = " << m_Reference << endl;
     cout << "delta size     = " << int(m_DeltaSize) << endl;
     for (index_type i = 0; i < m_VectorSize; ++i) {
