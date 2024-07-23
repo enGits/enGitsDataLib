@@ -253,8 +253,8 @@ public: // methods
     if (!sizeValid(new_size)) {
       throw std::runtime_error("ShortDeltaVector: new size exceeds maximum size");
     }
-    index_type  loop_size = std::min(m_VectorSize, index_type(new_size));
-    uint8_t*  new_data  = new uint8_t[new_size*m_DeltaSize];
+    index_type loop_size = std::min(m_VectorSize, index_type(new_size));
+    uint8_t*   new_data  = new uint8_t[new_size*m_DeltaSize];
     for (size_t i = 0; i < loop_size*m_DeltaSize; ++i) {
       new_data[i] = m_Data[i];
     }
@@ -262,6 +262,22 @@ public: // methods
     m_Data = new_data;
     m_AllocatedSize = new_size;
     m_VectorSize    = new_size;
+  }
+
+  void reserve(size_t new_size)
+  {
+    if (!sizeValid(new_size)) {
+      throw std::runtime_error("ShortDeltaVector: new size exceeds maximum size");
+    }
+    index_type loop_size = std::min(m_VectorSize, index_type(new_size));
+    uint8_t*   new_data  = new uint8_t[new_size*m_DeltaSize];
+    for (size_t i = 0; i < loop_size*m_DeltaSize; ++i) {
+      new_data[i] = m_Data[i];
+    }
+    delete[] m_Data;
+    m_Data = new_data;
+    m_AllocatedSize = new_size;
+    m_VectorSize    = loop_size;
   }
 
   void clear()
