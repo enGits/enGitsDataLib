@@ -757,8 +757,6 @@ TEST_CASE("ShortDeltaVector_set")
   // copy the data to a ShortDeltaVector and compute the maximal and minimal values
   //
   deltavec_t dv;
-  uint64_t min_value = numeric_limits<uint64_t>::max();
-  uint64_t max_value = 0;
   for (size_t i = 0; i < data.size(); ++i) {
     dv.push_back(data[i]);
   }
@@ -803,8 +801,6 @@ TEST_CASE("ShortDeltaVector_clear_and_comparison")
   // copy the data to a ShortDeltaVector and compute the maximal and minimal values
   //
   deltavec_t dv1, dv2;
-  uint64_t min_value = numeric_limits<uint64_t>::max();
-  uint64_t max_value = 0;
   for (size_t i = 0; i < data1.size(); ++i) {
     dv1.push_back(data1[i]);
     dv2.push_back(data2[i]);
@@ -829,5 +825,24 @@ TEST_CASE("ShortDeltaVector_clear_and_comparison")
   }
   CHECK(dv1 == dv2);
 }
+
+TEST_CASE("ShortDeltaVector_funky_pointers")
+{
+  // 0 : 0/0x5555903b75a0
+  // 1 : 17361641481138401532/0x5555903b7b80  
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+  //
+  typedef ShortDeltaVector<float*,uint8_t> deltavec_t;
+  float* a = (float*)0x5555903b75a0;
+  float* b = (float*)0x5555903b7b80;
+  deltavec_t dv;
+  dv.debugPrint();
+  dv.push_back(a);
+  dv.debugPrint();
+  dv.push_back(b);
+  dv.debugPrint();  
+}
+
 
 #endif // SHORTDELTAVECTOR_H
