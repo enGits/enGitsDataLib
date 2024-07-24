@@ -29,7 +29,7 @@
 #include <cstdint>
 #include <iterator>
 #include <stdexcept>
-
+#include <utility> // for std::swap
 #include <iostream>
 
 /**
@@ -369,6 +369,18 @@ public: // methods
     delete[] m_Data;
     m_Data = new_data;
     m_AllocatedSize = new_size;
+  }
+  
+  void swap(index_type i1, index_type i2)
+  {
+    if (i1 < 0 || i1 >= m_VectorSize || i2 < 0 || i2 >= m_VectorSize) {
+      throw std::runtime_error("ShortDeltaVector: index out of range");
+    }
+    auto idx1 = entryIndex(i1);
+    auto idx2 = entryIndex(i2);
+    for (uint8_t i = 0; i < m_DeltaSize; ++i) {
+      std::swap(m_Data[idx1 + i], m_Data[idx2 + i]);
+    }
   }
 
   size_t memoryUsage() const
