@@ -850,4 +850,29 @@ TEST_CASE("ShortDeltaVector_clear_and_comparison")
   CHECK(dv1 == dv2);
 }
 
+TEST_CASE("ShortDeltaVector_swap")
+{
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+  //
+  typedef ShortDeltaVector<uint64_t,uint16_t> deltavec_t;
+  //
+  vector<uint64_t> data = {750, 500, 750, 250, 300, 400, 500, 600, 700, 800};
+  //
+  // copy the data to a ShortDeltaVector
+  //
+  deltavec_t dv;
+  for (size_t i = 0; i < data.size(); ++i) {
+    dv.push_back(data[i]);
+  }
+  //
+  // check swap
+  //
+  CHECK(dv[3] == 250);
+  CHECK(dv[3] != dv[4]);
+  dv.swap(3, 4);
+  CHECK(dv[3] == 300);
+  CHECK(dv[4] == 250);
+}
+
 #endif // SHORTDELTAVECTOR_H
