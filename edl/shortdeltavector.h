@@ -29,7 +29,7 @@
 #include <cstdint>
 #include <iterator>
 #include <stdexcept>
-
+#include <utility> // for std::swap
 #include <iostream>
 
 /**
@@ -369,6 +369,18 @@ public: // methods
     delete[] m_Data;
     m_Data = new_data;
     m_AllocatedSize = new_size;
+  }
+  
+  void swap(index_type i1, index_type i2)
+  {
+    if (i1 < 0 || i1 >= m_VectorSize || i2 < 0 || i2 >= m_VectorSize) {
+      throw std::runtime_error("ShortDeltaVector: index out of range");
+    }
+    auto idx1 = entryIndex(i1);
+    auto idx2 = entryIndex(i2);
+    for (uint8_t i = 0; i < m_DeltaSize; ++i) {
+      std::swap(m_Data[idx1 + i], m_Data[idx2 + i]);
+    }
   }
 
   size_t memoryUsage() const
@@ -862,5 +874,30 @@ TEST_CASE("ShortDeltaVector_find")
   CHECK(*it == 500);  
 }
 */
+
+TEST_CASE("ShortDeltaVector_swap")
+{
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+  //
+  typedef ShortDeltaVector<uint64_t,uint16_t> deltavec_t;
+  //
+  vector<uint64_t> data = {750, 500, 750, 250, 300, 400, 500, 600, 700, 800};
+  //
+  // copy the data to a ShortDeltaVector
+  //
+  deltavec_t dv;
+  for (size_t i = 0; i < data.size(); ++i) {
+    dv.push_back(data[i]);
+  }
+  //
+  // check swap
+  //
+  CHECK(dv[3] == 250);
+  CHECK(dv[3] != dv[4]);
+  dv.swap(3, 4);
+  CHECK(dv[3] == 300);
+  CHECK(dv[4] == 250);
+}
 
 #endif // SHORTDELTAVECTOR_H
