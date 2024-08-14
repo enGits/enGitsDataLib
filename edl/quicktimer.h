@@ -101,7 +101,7 @@ public:
   {
     stop();
     if (m_Name != "none") {
-      std::cout << "Timer " << m_Name << " : " << seconds() << " seconds" << std::endl;
+      std::cout << "Timer \"" << m_Name << "\" : " << seconds() << " seconds" << std::endl;
     } else {
       std::cout << "Timer : " << seconds() << " seconds" << std::endl;
     }

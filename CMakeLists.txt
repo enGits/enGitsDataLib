@@ -103,6 +103,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})  # This, according to the new CMake, shouldn't be needed...
 
 set(engitsdatalib_HEADERS
+edl/amr.h
 edl/bmap.h
 edl/containertricks.h
 edl/csvreader.h
