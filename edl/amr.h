@@ -414,6 +414,40 @@ public: // data types
     index_type     cell2;
     bool           is_boundary = false;
     //
+    face_t() {}
+    face_t(const face_t& other) : nodes(other.nodes), cell1(other.cell1), cell2(other.cell2), is_boundary(other.is_boundary) {}
+    face_t& operator=(const face_t& other)
+    {
+      nodes = other.nodes;
+      cell1 = other.cell1;
+      cell2 = other.cell2;
+      is_boundary = other.is_boundary;
+      return *this;
+    }
+    //
+    bool operator<(const face_t& other) const
+    {
+      if (!is_boundary && other.is_boundary) {
+        return true;
+      }
+      if (is_boundary && !other.is_boundary) {
+        return false;
+      }
+      if (cell1 < other.cell1) {
+        return true;
+      }
+      if (cell1 > other.cell1) {
+        return false;
+      }
+      if (cell2 < other.cell2) {
+        return true;
+      }
+      if (cell2 > other.cell2) {
+        return false;
+      }
+      return false;
+    }
+    //
     void reverse()
     {
         // Reverse the nodes vector
@@ -538,21 +572,47 @@ private: // methods
     face.nodes = all_nodes;
   }
 
+  size_t numPotentialFaces()
+  {
+    size_t num_faces = 0;
+    amr_index_type neighbours[6];
+    auto leaf_cells = getLeafCellIndices();
+    for (auto idx : leaf_cells) {
+      auto cell = m_Cells.at(idx);
+      neighbours[0] = cellNeighbourIM(idx);
+      neighbours[1] = cellNeighbourIP(idx);
+      neighbours[2] = cellNeighbourJM(idx);
+      neighbours[3] = cellNeighbourJP(idx);
+      neighbours[4] = cellNeighbourKM(idx);
+      neighbours[5] = cellNeighbourKP(idx);
+      //
+      for (int i = 0; i < 6; ++i) {
+        auto idx2 = neighbours[i];
+        if (idx2.valid() || idx2.outOfBounds()) {
+          bool use_face = true;
+          if (!idx2.outOfBounds()) {
+            auto cell2 = m_Cells.at(idx2);
+            if (idx.level() == idx2.level() && cell.linear_index > cell2.linear_index) {
+              use_face = false;
+            }
+          }
+          if (use_face) {
+            ++num_faces;
+          }
+        }
+      }
+    }
+    return num_faces;
+  }
+
   void extractFaces()
   {
     using namespace std;
     //
-    //auto cell_mapping = cellMapping();
     m_Faces.clear();
-    m_Faces.reserve(6 * m_Cells.size());
+    m_Faces.reserve(numPotentialFaces());
     amr_index_type neighbours[6];
     auto leaf_cells = getLeafCellIndices();
-    // for (auto it : m_Cells) {
-    //   auto idx  = it.first;
-    //   auto cell = it.second;
-    //   if (cell.first_child.valid()) {
-    //     continue;
-    //   }
     for (auto idx : leaf_cells) {
       auto cell = m_Cells.at(idx);
       neighbours[0] = cellNeighbourIM(idx);
@@ -568,26 +628,28 @@ private: // methods
           bool use_face = true;
           face_t face;
           face.nodes.resize(4);
-          //face.cell1 = cell_mapping[cell.linear_index];
-          //face.cell1 = cell_mapping[cell.linear_index];
           face.cell1 = cell.linear_index;          
           if (face.cell1 < 0) {
             throw std::runtime_error("AMRMesh: extractFaces: invalid cell mapping");
           }
           if (idx2.outOfBounds()) {
             face.cell2 = -1;
-            //face.is_boundary = true;
+            if (cell.is_outside) {
+              use_face = false;
+            }
           } else {
             auto cell2 = m_Cells.at(idx2);
             if (cell.is_outside != cell2.is_outside) {
               face.is_boundary = true;
             }
-            //face.cell2 = cell_mapping[cell2.linear_index];
             face.cell2 = cell2.linear_index;
             if (face.cell2 < 0) {
               throw std::runtime_error("AMRMesh: extractFaces: invalid cell mapping");
             }
             if (idx.level() == idx2.level() && cell.linear_index > cell2.linear_index) {
+              use_face = false;
+            }
+            if (cell.is_outside && cell2.is_outside) {
               use_face = false;
             }
           }
@@ -641,31 +703,34 @@ private: // methods
     }
     m_Faces.shrink_to_fit();
     //
-    vector<face_t> field_faces;
-    field_faces.reserve(m_Faces.size());
-    for (auto it : m_Faces) {
-      if (it.cell2 >= 0) {
-        field_faces.push_back(it);
-      }
-    }
-    vector<face_t> boundary_faces;
-    boundary_faces.reserve(m_Faces.size() - field_faces.size());
-    for (auto it : m_Faces) {
-      if (it.cell2 < 0) {
-        boundary_faces.push_back(it);
-      }
-    }
+    // vector<face_t> field_faces;
+    // field_faces.reserve(m_Faces.size());
+    // for (auto it : m_Faces) {
+    //   if (it.cell2 >= 0) {
+    //     field_faces.push_back(it);
+    //   }
+    // }
+    // vector<face_t> boundary_faces;
+    // boundary_faces.reserve(m_Faces.size() - field_faces.size());
+    // for (auto it : m_Faces) {
+    //   if (it.cell2 < 0) {
+    //     boundary_faces.push_back(it);
+    //   }
+    // }
+    // //
+    // size_t i = 0;
+    // for (const auto& face : field_faces) {
+    //   m_Faces[i] = face;
+    //   ++i;
+    // }
+    // for (const auto& face : boundary_faces) {
+    //   m_Faces[i] = face;
+    //   ++i;
+    // }
     //
-    size_t i = 0;
-    for (const auto& face : field_faces) {
-      m_Faces[i] = face;
-      ++i;
-    }
-    for (const auto& face : boundary_faces) {
-      m_Faces[i] = face;
-      ++i;
-    }
+    // sort m_Faces
     //
+    sort(m_Faces.begin(), m_Faces.end());
   }
 
 
@@ -1174,7 +1239,7 @@ public:
     writeFoamBoundaryFile(path + "/boundary");
   }
 
-  std::vector<face_t> faces()
+  std::vector<face_t>& faces()
   {
     if (m_Faces.size() == 0) {
       extractFaces();
