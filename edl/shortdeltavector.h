@@ -23,6 +23,8 @@
 #ifndef SHORTDELTAVECTOR_H
 #define SHORTDELTAVECTOR_H
 
+#ifndef APPLE
+
 #include "edl/edl.h"
 #include <cstddef>
 #include <cstdint>
@@ -899,4 +901,5 @@ TEST_CASE("ShortDeltaVector_swap")
   CHECK(dv[4] == 250);
 }
 
+#endif // APPLE
 #endif // SHORTDELTAVECTOR_H

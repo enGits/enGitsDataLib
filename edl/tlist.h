@@ -292,7 +292,7 @@ public:
 template<class T>
 inline typename TList<T>::iterator& TList<T>::iterator::operator++()
 { 
-  i_current = tlist->next_idx(i_current);
+  i_current = tlist->nextIdx(i_current);
   return *this;
 }
 
@@ -300,7 +300,7 @@ template<class T>
 inline typename TList<T>::iterator TList<T>::iterator::operator++(int)
 {
   size_t old_i_current;
-  i_current = tlist->next_idx(i_current);
+  i_current = tlist->nextIdx(i_current);
   return iterator(tlist, old_i_current); 
 }
 
@@ -323,7 +323,7 @@ inline T& TList<T>::iterator::operator*()
 template<class T>
 inline typename TList<T>::const_iterator& TList<T>::const_iterator::operator++()
 { 
-  i_current = tlist->next_idx(i_current);
+  i_current = tlist->nextIdx(i_current);
   return const_iterator(tlist, i_current); 
 };
 
@@ -331,7 +331,7 @@ template<class T>
 inline typename TList<T>::const_iterator TList<T>::const_iterator::operator++(int)
 {
   size_t old_i_current;
-  i_current = tlist->next_idx(i_current);
+  i_current = tlist->nextIdx(i_current);
   return const_iterator(tlist, old_i_current); 
 }
 
