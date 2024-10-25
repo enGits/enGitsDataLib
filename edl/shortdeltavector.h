@@ -24,7 +24,6 @@
 #define SHORTDELTAVECTOR_H
 
 #include "edl/edl.h"
-#include <bits/stdint-uintn.h>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
