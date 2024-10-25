@@ -98,6 +98,12 @@ if(WIN32)
   endif(MSVC)
 endif(WIN32)
 
+# Check if this is a Mac OS X system
+if(APPLE)
+  add_definitions(-DAPPLE)
+  message(STATUS "Building for Mac OS X")
+endif(APPLE)
+
 # set include directory, add src directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})  # This, according to the new CMake, shouldn't be needed...
