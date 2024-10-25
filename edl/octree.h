@@ -23,7 +23,6 @@
 #ifndef OCTREE_H
 #define OCTREE_H
 
-//#include <bits/stdint-uintn.h>
 #include <stdint.h>
 #include <cstdint>
 #include <fstream>
@@ -42,7 +41,7 @@
 #include "edl/geometrytools.h"
 #include "edl/mathvector.h"
 
-namespace EDL_NAMESPACE
+namespace edl
 {
 
 /*
@@ -183,15 +182,23 @@ protected: // data types
       return s;
     };
     //
-    uint64_t hash() const
+    size_t hash() const
     {
-      return (uint64_t(m_Ix) << 32) + (uint64_t(m_Iy) << 16) + uint64_t(m_Iz);
+      return (size_t(m_Ix) << 32) + (size_t(m_Iy) << 16) + size_t(m_Iz);
     };
     //
     bool operator<(const vertex_t& v) const
     {
       return hash() < v.hash();
     };
+  };
+
+  struct vertex_hash_t
+  {
+    size_t operator()(const vertex_t& v) const
+    {
+      return v.hash();
+    }
   };
 
   friend class vertex_t;
@@ -423,7 +430,7 @@ protected: // methods
 
   std::vector<vertex_t> getUniqueVertices(int node_index) const
   {
-    std::set<vertex_t> vertices;
+    std::unordered_set<vertex_t, vertex_hash_t> vertices;
     scalar_t radius = 1.5*m_Nodes[node_index].m_Diagonal;
     vector_t x_node = m_Nodes[node_index].m_Centre;
     for (auto vertex : m_Nodes[node_index].m_Vertices) {
@@ -630,14 +637,13 @@ public:
     potential_children[6] = node_t(*this, vertex_t(vertices[0], vertices[6]), vertex_t(vertices[6], vertices[7]), node_index);
     potential_children[7] = node_t(*this, vc, vertices[7], node_index);
     //
+    for (int i = 0; i < 8; ++i) {
+      potential_children[i].m_ItemIndices.reserve(m_Nodes[node_index].m_ItemIndices.size()/8);
+    }
     for (int item_index : m_Nodes[node_index].m_ItemIndices) {
       item_t p = m_Items[item_index];
       for (int i = 0; i < 8; ++i) {
         if (check_t::isInsideCartesianBox(p,potential_children[i].m_X1, potential_children[i].m_X2)) {
-          if (item_index == 12762 && node_index == 2329) {
-            std::cout << potential_children[i].m_X1 << " " << potential_children[i].m_X2 << std::endl;
-            int dummy=0;
-          }
           potential_children[i].m_ItemIndices.push_back(item_index);
         }
       }

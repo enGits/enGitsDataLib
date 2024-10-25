@@ -23,8 +23,6 @@
 #ifndef AMRINDEX_H
 #define AMRINDEX_H
 
-#include <bits/stdint-intn.h>
-#include <bits/stdint-uintn.h>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
@@ -1231,7 +1229,39 @@ public:
   
   void writeFoamMesh(const std::string& path, std::vector<vector_type> X=std::vector<vector_type>())
   {
+    using namespace std;
+    //
     extractFaces();
+    //
+    // sort faces to match OpenFOAM requirements
+    //
+    std::vector<face_t> field_faces;
+    field_faces.reserve(m_Faces.size());
+    for (auto it : m_Faces) {
+      if (it.cell2 >= 0) {
+        field_faces.push_back(it);
+      }
+    }
+    {
+      std::vector<face_t> boundary_faces;
+      boundary_faces.reserve(m_Faces.size() - field_faces.size());
+      for (auto it : m_Faces) {
+        if (it.cell2 < 0) {
+          boundary_faces.push_back(it);
+        }
+      }
+      //
+      size_t i = 0;
+      for (const auto& face : field_faces) {
+        m_Faces[i] = face;
+        ++i;
+      }
+      for (const auto& face : boundary_faces) {
+        m_Faces[i] = face;
+        ++i;
+      }
+    }
+    //
     writeFoamPointsFile(path + "/points", X);
     writeFoamFacesFile(path + "/faces");
     writeFoamOwnerFile(path + "/owner");
@@ -1247,7 +1277,27 @@ public:
     return m_Faces;
   }
 
-  void ensureSmoothTransition()
+  std::vector<amr_index_type> cellNeighbourIndices(amr_index_type idx) const
+  {
+    std::vector<amr_index_type> indices, neigh(6);
+    neigh[0] = cellNeighbourIM(idx);
+    neigh[1] = cellNeighbourIP(idx);
+    neigh[2] = cellNeighbourJM(idx);
+    neigh[3] = cellNeighbourJP(idx);
+    neigh[4] = cellNeighbourKM(idx);
+    neigh[5] = cellNeighbourKP(idx);
+    indices.reserve(6);
+    //
+    for (auto _idx : neigh) {
+      if (_idx.valid() && !_idx.outOfBounds()) {
+        indices.push_back(_idx);
+      }
+    }
+    //
+    return indices;
+  }
+
+  void ensureSmoothTransition(int num_layers=1)
   {
     using namespace std;
     //    
@@ -1318,10 +1368,12 @@ public:
     //
     // mark all nodes which belong to a cell of the maximal refinement level
     //
-    unordered_map<amr_index_type,bool> nodes_on_max_level;
-    while (!done) {
-      done = true;
-      int N = 0;
+    for (int level = m_MaxLevel; level >= 0; --level) {
+      unordered_map<amr_index_type,bool> nodes_on_level;
+      while (!done) {
+        done = true;
+        int N = 0;
+      }
     }
   }
 
@@ -1556,16 +1608,6 @@ TEST_CASE("AMRMesh_extract_faces")
     }
     cout << endl;
   }
-  //
-  // create folder "constant/polyMesh" if it does not exist
-  //
-  system("mkdir -p constant/polyMesh");
-  mesh.writeFoamMesh("constant/polyMesh");
-  //
-  // create empty "test.foam" file
-  //
-  ofstream file("test.foam");
-  file.close();
 }
 
 TEST_CASE("AMRMesh_sphere_example")
@@ -1601,17 +1643,54 @@ TEST_CASE("AMRMesh_sphere_example")
     }
   }
   mesh.ensureSmoothTransition();
-  //auto faces = mesh.faces();
+}
+
+TEST_CASE("AMRMesh_cell_neighbours_for_layers") 
+{
+  using namespace std;
+  using namespace edl;
   //
-  // create folder "constant/polyMesh" if it does not exist
+  typedef MathVector<StaticVector<float,3> > vec3_t;
+  typedef AMRMesh<int32_t, uint16_t, vec3_t> mesh_t;
+  typedef mesh_t::amr_index_type idx_t;
+  //
+  int N = 5;
+  mesh_t mesh(N, N, N, vec3_t(0,0,0), vec3_t(1,1,1));
+  //
+  mesh.refineCell(idx_t(2,2,2,0));
   //
   system("mkdir -p constant/polyMesh");
   mesh.writeFoamMesh("constant/polyMesh");
-  //
-  // create empty "test.foam" file
-  //
   ofstream file("test.foam");
   file.close();
+  //
+  idx_t I_212_0(2,1,2, 0);
+  idx_t I_222_0(2,2,2, 0);
+  idx_t I_444_1(4,4,4, 1);
+  //
+  CHECK(I_444_1.indexOnLevel(0) == I_222_0);
+  //
+  auto I_212_0_nyp = mesh.cellNeighbourJP(I_212_0);
+  auto I_212_0_nym = mesh.cellNeighbourJM(I_212_0);
+  auto I_222_0_nyp = mesh.cellNeighbourJP(I_222_0);
+  auto I_222_0_nym = mesh.cellNeighbourJM(I_222_0);
+  auto I_444_1_nyp = mesh.cellNeighbourJP(I_444_1);
+  auto I_444_1_nym = mesh.cellNeighbourJM(I_444_1);
+  //
+  CHECK(!I_212_0_nyp.valid());
+  CHECK(I_212_0_nym == idx_t(2,0,2,0));
+  CHECK(I_222_0_nyp == idx_t(2,3,2,0));
+  CHECK(I_222_0_nym == idx_t(2,1,2,0));
+  CHECK(I_444_1_nyp == idx_t(4,5,4,1));
+  CHECK(I_444_1_nym == idx_t(2,1,2,0));
+  //
+  mesh.refineCell(I_444_1);
+  auto I_888_2 = I_444_1.indexOnLevel(2);
+  auto I_888_2_nyp = mesh.cellNeighbourJP(I_888_2);
+  auto I_888_2_nym = mesh.cellNeighbourJM(I_888_2);
+  CHECK(I_888_2 == idx_t(8,8,8,2));
+  CHECK(I_888_2_nyp == idx_t(8,9,8,2));
+  CHECK(I_888_2_nym == idx_t(2,1,2,0));
 }
 
 

@@ -25,7 +25,6 @@
 
 #include "edl/edl.h"
 #include "edl/mathvector.h"
-#include <bits/stdint-uintn.h>
 #include <cstddef>
 #include <cstdint>
 
