@@ -27,8 +27,6 @@
 #include "edl/mathvector.h"
 
 #include <cmath>
-#include <string>
-#include <utility>
 #include <vector>
 
 #include "doctest.h"
@@ -57,6 +55,46 @@ T interpolate3(T x, T x1, T x2, T x3, T x4, T y1, T y2, T y3, T y4)
   return a*w + b*w*w + c*w*w*w + y2;
 }
 
+template <class T, class C1, class C2>
+T interpolate1D(T x, const C1& x_values, const C2& y_values) {
+  // Check that x_values and y_values have the same size
+  if (x_values.size() != y_values.size()) {
+    throw std::invalid_argument("x_values and y_values must have the same size");
+  }
+
+  // Check that there are at least two points for interpolation
+  if (x_values.size() < 2) {
+    throw std::invalid_argument("At least two points are required for interpolation");
+  }
+
+  // Find the interval [x0, x1] that contains x
+  auto it = std::lower_bound(x_values.begin(), x_values.end(), x);
+
+  if (it == x_values.begin()) {
+    // x is before the first element, use the first interval
+    auto x0 = *it;
+    auto x1 = *(it + 1);
+    auto y0 = y_values[0];
+    auto y1 = y_values[1];
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+  } else if (it == x_values.end()) {
+    // x is beyond the last element, use the last interval
+    auto x0 = *(it - 2);
+    auto x1 = *(it - 1);
+    auto y0 = y_values[y_values.size() - 2];
+    auto y1 = y_values[y_values.size() - 1];
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+  } else {
+    // x is between two elements, use the found interval
+    auto idx = std::distance(x_values.begin(), it);
+    auto x0 = x_values[idx - 1];
+    auto x1 = x_values[idx];
+    auto y0 = y_values[idx - 1];
+    auto y1 = y_values[idx];
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+  }
+}
+
 template <typename C>
 edl::StaticVector<typename C::value_type, 4> statistics(const C& container)
 {
@@ -82,6 +120,8 @@ edl::StaticVector<typename C::value_type, 4> statistics(const C& container)
   return result;
 }
 
+
+
 TEST_CASE("simple sine wave statistics")
 {
   std::vector<double> sine_wave;
@@ -94,6 +134,19 @@ TEST_CASE("simple sine wave statistics")
   CHECK(stats[1] == doctest::Approx(1.0/std::sqrt(2.0)));
   CHECK(stats[2] == doctest::Approx(-1.0));
   CHECK(stats[3] == doctest::Approx(1.0));
+}
+
+TEST_CASE("1D_interpolation")
+{
+  std::vector<double> x_values = {1.0, 2.0, 3.0, 4.0};
+  std::vector<double> y_values = {2.0, 3.0, 5.0, 4.0};
+
+  CHECK(interpolate1D(0.0, x_values, y_values) == doctest::Approx(1.0));
+  CHECK(interpolate1D(1.0, x_values, y_values) == doctest::Approx(2.0));
+  CHECK(interpolate1D(2.5, x_values, y_values) == doctest::Approx(4.0));
+  CHECK(interpolate1D(1.5, x_values, y_values) == doctest::Approx(2.5));
+  CHECK(interpolate1D(5.0, x_values, y_values) == doctest::Approx(3.0));
+
 }
 
 
