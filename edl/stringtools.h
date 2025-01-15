@@ -189,13 +189,15 @@ namespace StringTools
     return s_new;
   }
 
-  inline std::string replace(const std::string& str, const std::string& old_sub, const std::string& new_sub) 
+  inline std::string replace(const std::string& str, const std::string& old_sub, const std::string& new_sub)
   {
-    size_t pos = str.rfind(old_sub);
+    std::string result = str;
+    size_t pos = result.find(old_sub); // Find the first occurrence of old_sub
     if (pos != std::string::npos) {
-      return str.substr(0, pos) + new_sub;
+      // Replace old_sub with new_sub
+      result.replace(pos, old_sub.length(), new_sub);
     }
-    return str; // Return the original string if the substring isn't found
+    return result;
   }
 
   inline std::string remove(std::string s, char c)
