@@ -27,6 +27,7 @@
 #include "edl/mathvector.h"
 
 #include <cmath>
+#include <cstddef>
 #include <vector>
 
 #include "doctest.h"
@@ -120,10 +121,45 @@ edl::StaticVector<typename C::value_type, 4> statistics(const C& container)
   return result;
 }
 
+template <typename C> 
+std::tuple<std::vector<typename C::value_type>, std::vector<typename C::value_type>> runningStatistics(const C& container, size_t ws)
+{
+  typedef typename C::value_type scalar_t;
+  using namespace std;
+  //
+  size_t N = container.size();
+  size_t n = N - ws + 1;
+  if (n > N) {
+    throw std::invalid_argument("runningStatistics: n must be less than the size of the container");
+  }
+  vector<scalar_t> mean(n, 0);
+  vector<scalar_t> std_dev(n, 0);
+  scalar_t sum    = 0;
+  scalar_t sum_sq = 0;
+  //
+  for (size_t i = 0; i < N; ++i) {
+    sum    += container[i];
+    sum_sq += sqr(container[i]);
+    if (i >= ws-1) {
+      size_t j = i - ws + 1;
+      mean[j]    = sum/ws;
+      std_dev[j] = sqrt(max(scalar_t(0), sum_sq/ws - sqr(mean[j])));
+      sum    -= container[j];
+      sum_sq -= sqr(container[j]);
+    }
+  }
+  //
+  return make_tuple(mean, std_dev);
+}
+
+} // namespace
+
 
 
 TEST_CASE("simple sine wave statistics")
 {
+  using namespace EDL_NAMESPACE;
+  //
   std::vector<double> sine_wave;
   int N = 1000;
   for (int i = 0; i < N; ++i) {
@@ -138,6 +174,8 @@ TEST_CASE("simple sine wave statistics")
 
 TEST_CASE("1D_interpolation")
 {
+  using namespace EDL_NAMESPACE;
+  //
   std::vector<double> x_values = {1.0, 2.0, 3.0, 4.0};
   std::vector<double> y_values = {2.0, 3.0, 5.0, 4.0};
 
@@ -146,10 +184,23 @@ TEST_CASE("1D_interpolation")
   CHECK(interpolate1D(2.5, x_values, y_values) == doctest::Approx(4.0));
   CHECK(interpolate1D(1.5, x_values, y_values) == doctest::Approx(2.5));
   CHECK(interpolate1D(5.0, x_values, y_values) == doctest::Approx(3.0));
-
 }
 
+TEST_CASE("simple running statistics")
+{
+  using namespace EDL_NAMESPACE;
+  //
+  std::vector<double> f;
+  int N = 10;
+  for (int i = 0; i < N; ++i) {
+    f.push_back(1.0*i/(N-1));
+  }
+  auto [mean, std_dev] = runningStatistics(f, 3);
+  for (size_t i = 0; i < mean.size(); ++i) {
+    CHECK(mean[i]    == doctest::Approx(f[i+1]));
+    CHECK(std_dev[i] == doctest::Approx(std_dev[0]));
+  }
+}
 
-} // namespace
 
 #endif // TOOLS_H
