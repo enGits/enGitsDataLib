@@ -20,7 +20,13 @@
 // +                                                                    +
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+#include "edl/edl.h"
 #define DOCTEST_CONFIG_IMPLEMENT
 #include "edl/doctest.h"
 
+namespace EDL_NAMESPACE
+{
 
+std::map<std::string, uint64_t> edl::smartBreakPoint::all_hits;
+
+} // namespace

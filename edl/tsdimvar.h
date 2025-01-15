@@ -24,6 +24,7 @@
 #define TSDIMVAR_H
 
 #include "edl/edl.h"
+#include "edl/edlerror.h"
 
 namespace EDL_NAMESPACE
 {
@@ -48,30 +49,66 @@ public:
 
   typedef TValue value_type;
 
-  TSDimVar(TMDimList<TValue, TIndex, DIM, MAP> *a_mdim_list, 
-		  TMDimIndex<TIndex> an_index);
+  struct proxy_t
+  {
+    value_type& value;
+    bool validated = false;
+
+    proxy_t(value_type* v) : value(*v) 
+    {
+      validate();
+    }
+
+    void validate() 
+    {
+      if (isnan(value)) {
+        throw EdlError("NaN detected");
+      }
+      if (isinf(value)) {
+        throw EdlError("Inf detected");
+      }
+      validated = true;
+    }
+
+    proxy_t& operator=(const value_type& v) 
+    { 
+      value = v;
+      validate();
+      return *this; 
+    }
+
+    operator value_type&() 
+    {
+      return value;
+    }
+
+    ~proxy_t() 
+    { 
+      if (!validated) {
+        validate();
+      }
+    }
+  };
+
+
+  TSDimVar(TMDimList<TValue, TIndex, DIM, MAP> *a_mdim_list, TMDimIndex<TIndex> an_index);
   TSDimVar() : TMappedVar<TValue, TIndex, DIM, MAP>() {}
   TSDimVar(const TSDimVar<TValue, TIndex, DIM, MAP> &other);
   virtual ~TSDimVar() {}
   virtual void update();
 
-  TValue& operator[](size_t i) const {
 #ifdef EDL_DEBUG
-    if (!TMappedVar<TValue, TIndex, DIM, MAP>::initialized) {
-      std::cerr << "trying to use [] on an uninitialized variable" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-    if ((i < 0) || (i >= TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumEntries())) {
-      std::cerr << "index " << i << "out of bounds" << std::endl;
-      throw InvalidIndex_error(i);
-    }
-    if (!m_MDimList->IsActive(i)) {
-      std::cerr << "the entry number " << i << "is inactive" << std::endl;
-      throw InvalidIndex_error(i);
-    }
-#endif
+
+  TValue& operator[](size_t i) const {
+    //return m_Value[MAP::relativeIndex(TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList, i)];
+    return proxy_t(&m_Value[MAP::relativeIndex(TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList, i)]);
+  }
+#else
+  TValue& operator[](size_t i) const {
     return m_Value[MAP::relativeIndex(TMappedVar<TValue, TIndex, DIM, MAP>::m_MDimList, i)];
   }
+#endif
+
   virtual void operator=(const TSDimVar<TValue, TIndex, DIM, MAP> &other);
   virtual void print();
 };

@@ -40,6 +40,7 @@ template <class T, unsigned int DIM> class StaticVector;
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <map>
 
 #include "edl/doctest.h"
 
@@ -148,7 +149,28 @@ namespace EDL_NAMESPACE
     return false_value;
   }
 
-  inline void breakPoint() {}
+  struct smartBreakPoint
+  {
+    static std::map<std::string,uint64_t> all_hits;
+    std::string name;
+    uint64_t hits;
+    smartBreakPoint(std::string name, int64_t min_count=std::numeric_limits<uint64_t>::max()) : name(name)
+    {
+      if (all_hits.find(name) == all_hits.end()) {
+        all_hits[name] = 0;
+      }
+      all_hits[name]++;
+      hits = all_hits[name];
+      if (all_hits[name] >= min_count) {
+        conditionalBreak();
+      }
+    }
+    void conditionalBreak()
+    {
+      // Put a debugger breakpoint here!
+      int dummy = 0;
+    }
+  };
 
   template<typename T>
   bool almostEqual(T x, T y, int ulp=1000)

@@ -24,6 +24,7 @@
 #define TMDIMVAR_H
 
 #include "edl/edl.h"
+#include "edl/edlerror.h"
 
 namespace EDL_NAMESPACE
 {
@@ -50,24 +51,11 @@ public:
   TMDimVar();
   virtual ~TMDimVar() { delete [] m_Value; }
   virtual void update();
-#ifdef EDL_DEBUG
-  const MAPVALUE& operator[](size_t i) const {
-    if (!TMappedVar<TValue, TIndex, DIM, MAP>::initialized) {
-      std::cerr << "trying to use [] on an uninitialized variable" << std::endl;
-      throw InvalidIndex_error(i);
-    }
-    //    if ((i < 0) || (i >= TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumSubIndices(TMappedVar<TValue, TIndex, DIM, MAP>::index.Dim()))) {
-    if (i >= TMappedVar<TValue, TIndex, DIM, MAP>::mdim_list->NumSubIndices(TMappedVar<TValue, TIndex, DIM, MAP>::index.Dim())) {
-      std::cerr << "index " << i << "out of bounds" << std::endl;
-      throw InvalidIndex_error(i);
-    }
-    return m_Value[i];
-  }
-#else
+
   const MAPVALUE& operator[](size_t i) const {
     return m_Value[i];
   }
-#endif
+
   virtual void operator=(const TMDimVar<TValue, TIndex, DIM, MAP, MAPVALUE> &other);
   virtual void print();
 };
