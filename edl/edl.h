@@ -41,6 +41,7 @@ template <class T, unsigned int DIM> class StaticVector;
 #include <cmath>
 #include <limits>
 #include <map>
+#include <string>
 
 #include "edl/doctest.h"
 
