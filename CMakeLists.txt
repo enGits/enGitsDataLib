@@ -69,7 +69,7 @@ else()
   message(FATAL_ERROR "Endianness detection failed. The system endianness could not be determined.")
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX $ENV{HOME}/local CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
