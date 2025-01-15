@@ -189,6 +189,15 @@ namespace StringTools
     return s_new;
   }
 
+  inline std::string replace(const std::string& str, const std::string& old_sub, const std::string& new_sub) 
+  {
+    size_t pos = str.rfind(old_sub);
+    if (pos != std::string::npos) {
+      return str.substr(0, pos) + new_sub;
+    }
+    return str; // Return the original string if the substring isn't found
+  }
+
   inline std::string remove(std::string s, char c)
   {
     std::string s_new = "";
