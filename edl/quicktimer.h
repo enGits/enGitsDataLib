@@ -61,6 +61,12 @@ public:
     }
   }
 
+  inline void restart()
+  {
+    reset();
+    start();
+  }
+
   inline void stop()
   {
     if (m_Running) {

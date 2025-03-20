@@ -2,7 +2,7 @@
 // +                                                                    +
 // + This file is part of enGitsDataLib.                                +
 // +                                                                    +
-// + Copyright 2024 enGits GmbH                                         +
+// + Copyright 2024-2025 enGits GmbH                                    +
 // +                                                                    +
 // + enGitsDataLib is free software: you can redistribute it and/or     +
 // + modify it under the terms of the GNU Lesser General Public License +
@@ -700,34 +700,6 @@ private: // methods
       }
     }
     m_Faces.shrink_to_fit();
-    //
-    // vector<face_t> field_faces;
-    // field_faces.reserve(m_Faces.size());
-    // for (auto it : m_Faces) {
-    //   if (it.cell2 >= 0) {
-    //     field_faces.push_back(it);
-    //   }
-    // }
-    // vector<face_t> boundary_faces;
-    // boundary_faces.reserve(m_Faces.size() - field_faces.size());
-    // for (auto it : m_Faces) {
-    //   if (it.cell2 < 0) {
-    //     boundary_faces.push_back(it);
-    //   }
-    // }
-    // //
-    // size_t i = 0;
-    // for (const auto& face : field_faces) {
-    //   m_Faces[i] = face;
-    //   ++i;
-    // }
-    // for (const auto& face : boundary_faces) {
-    //   m_Faces[i] = face;
-    //   ++i;
-    // }
-    //
-    // sort m_Faces
-    //
     sort(m_Faces.begin(), m_Faces.end());
   }
 
@@ -775,6 +747,15 @@ public:
   void refineCell(index_type i, index_type j, index_type k, index_type level)
   {
     refineCell(amr_index_type(i, j, k, level));
+  }
+
+  bool isLeafCell(const amr_index_type& idx) const
+  {
+    auto it = m_Cells.find(idx);
+    if (it == m_Cells.end()) {
+      return false;
+    }
+    return !it->second.first_child.valid();
   }
 
   index_type nodeLinearIndex(amr_index_type idx)  const
@@ -1088,6 +1069,15 @@ public:
     coords.push_back(getNodeCoordinates(node6));
     coords.push_back(getNodeCoordinates(node7));
     return coords;
+  }
+
+  std::pair<vector_type, vector_type> getCellBoundingBox(const amr_index_type& idx) const
+  {
+    auto node1 = idx;
+    auto node2 = node1.incrementedI().incrementedJ().incrementedK();
+    auto x1 = getNodeCoordinates(node1);
+    auto x2 = getNodeCoordinates(node2);
+    return std::make_pair(x1, x2);
   }
 
   void writeFoamPointsFile(const std::string& file_name, std::vector<vector_type> X=std::vector<vector_type>()) const
@@ -1692,6 +1682,27 @@ TEST_CASE("AMRMesh_cell_neighbours_for_layers")
   CHECK(I_888_2_nyp == idx_t(8,9,8,2));
   CHECK(I_888_2_nym == idx_t(2,1,2,0));
 }
+
+TEST_CASE("AMRMesh_single_cell_AMR_mesh") 
+{
+  using namespace std;
+  using namespace edl;
+  //
+  typedef MathVector<StaticVector<float,3> > vec3_t;
+  typedef AMRMesh<int32_t, uint16_t, vec3_t> mesh_t;
+  typedef mesh_t::amr_index_type idx_t;
+  //
+  int N = 1;
+  int n = 5;
+  mesh_t mesh(N, N, N, vec3_t(0,0,0), vec3_t(1,1,1));
+  //
+  for (int i = 0; i < n; ++i) {
+    mesh.refineCell(idx_t(0,0,0,i));
+  }
+  //
+  CHECK(mesh.numCells() == 1 + n*8);
+}
+
 
 
 #endif // AMRINDEX_H

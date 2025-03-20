@@ -23,6 +23,8 @@
 #ifndef OCTREE_H
 #define OCTREE_H
 
+#include <algorithm>
+#include <cmath>
 #include <stdint.h>
 #include <cstdint>
 #include <fstream>
@@ -40,6 +42,7 @@
 #include "edl/edlerror.h"
 #include "edl/geometrytools.h"
 #include "edl/mathvector.h"
+#include "edl/quicktimer.h"
 
 namespace edl
 {
@@ -832,16 +835,14 @@ public:
 // TESTS
 // ----------------------------------------------------------------------------
 
-#ifdef EDL_DOCTEST
-
 #include <random>
-
+#include "edl/geometrytools.h"
 
 TEST_CASE("Octree__regularly_spaced_items")
 {
   //
   // This doesn't test much...
-  // Success is defined as it doesn't crash and finds a item.
+  // Success is defined as it doesn't crash and finds an item.
   // If the item is correct or not is not checked.
   // It is mainly intended to check things during development
   //
@@ -896,36 +897,48 @@ TEST_CASE("Octree__random_Items_search")
   typedef MathVector<StaticVector<real,3>> vec_t;
   typedef Octree<vec_t, vec_t, OctreeVectorCheck<vec_t>> octree_t;
   //
-  const int  num_Items  = 1000;
-  const int  num_tests   = 100;
-  const real range       = 3;
+  const int  num_Items = 2000;
+  const int  num_tests = 100;
+  const real range     = 3;
+  QuickTimer timer;
   //
-  // create a set of random items
+  // create a set of random items on a sphere with radius range/3
   //
-  //random_device rd;
   mt19937 gen(42);
-  uniform_real_distribution<real> dist1(-range/2, range/2);
+  uniform_real_distribution<real> dist1(-M_PI, M_PI);
   vector<vec_t> items(num_Items);
+  vec_t y_axis(0,1,0);
+  vec_t z_axis(0,0,1);
   for (int i = 0; i < num_Items; ++i) {
-    items[i] = vec_t(dist1(gen), dist1(gen), dist1(gen));
+    items[i] = vec_t(range/3,0,0);
+    items[i] = rotate(items[i], y_axis, dist1(gen));
+    items[i] = rotate(items[i], z_axis, dist1(gen));
   }
   //
   // create the octree
   //
+  timer.start();
   octree_t octree(10);
-  octree.setItems(items);
+  octree.setBoundingBox(vec_t(-range/2,-range/2,-range/2), vec_t(range/2,range/2,range/2));
+  octree.setItems(items);  
+  timer.stop();
+  cout << "Octree construction time : " << timer.milliseconds() << " ms" << endl;
   //
   // create a set of test items
   //
+  uniform_real_distribution<real> dist2(-range/2, range/2);
   vector<vec_t> test_items(num_tests);
   for (int i = 0; i < num_tests; ++i) {
-    test_items[i] = vec_t(dist1(gen), dist1(gen), dist1(gen));
+    test_items[i] = vec_t(dist2(gen), dist2(gen), dist2(gen));
   }
+  test_items.push_back(vec_t(-range/2,-range/2,-range/2));
+  test_items.push_back(vec_t( range/2, range/2, range/2));
   //
   // brute force loop to find the reference solution
   //
+  timer.restart();
   vector<int> nearest_item(num_tests);
-  for (int i = 0; i < num_tests; ++i) {
+  for (int i = 0; i < test_items.size(); ++i) {
     vec_t p = test_items[i];
     real  d_min = 1e10;
     for (int j = 0; j < num_Items; ++j) {
@@ -937,15 +950,19 @@ TEST_CASE("Octree__random_Items_search")
       }
     }
   }
+  timer.stop();
+  cout << "Brute force search time  : " << timer.milliseconds() << " ms" << endl;
   //
   // perform the tests
   //
-  //octree.dbgPrint();
-  for (int i = 0; i < num_tests; ++i) {
+  timer.restart();
+  for (int i = 0; i < test_items.size(); ++i) {
     vec_t p = test_items[i];
     int   j = octree.nearestItemIndex(p);
     CHECK(j == nearest_item[i]);
   }
+  timer.stop();
+  cout << "Octree search time       : " << timer.milliseconds() << " ms" << endl;
 }
 
 TEST_CASE("Octree__random_Items_search_approximate")
@@ -1194,7 +1211,5 @@ TEST_CASE("Octree_tetra_search")
     }
   }
 }
-
-#endif // EDL_DOCTEST
 
 #endif // OCTREE_H

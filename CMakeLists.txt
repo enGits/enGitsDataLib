@@ -129,6 +129,7 @@ edl/pmap.h
 edl/pointcloudsurface.h
 edl/profile.h
 edl/quicktimer.h
+edl/searchtree.h
 edl/shortvector.h
 edl/smallsquarematrix.h
 edl/sparsetwodimarray.h

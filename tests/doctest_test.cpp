@@ -34,6 +34,7 @@
 #include "edl/multidimvector.h"
 #include "edl/shortvector.h"
 #include "edl/amr.h"
+#include "edl/searchtree.h"
 
 int main(int argc, const char** argv)
 {
