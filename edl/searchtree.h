@@ -99,6 +99,11 @@ public: // methods
     }
   }
 
+  void setMaximalBucketSize(int max_bucket_size)
+  {
+    m_MaxBucketSize = max_bucket_size;
+  }
+
   void setMaxSearchDist(real max_search_dist)
   {
     m_MaxSearchDist = max_search_dist;
