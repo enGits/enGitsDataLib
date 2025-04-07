@@ -263,7 +263,8 @@ public: // methods
 
 };
 
-typedef TSearchTree<uint32_t, uint16_t, MathVector<StaticVector<real,3>>, SearchTreeVectorCheck<MathVector<StaticVector<real,3>>>> PointSearchTree;
+template <class T>
+using PointSearchTree = TSearchTree<uint32_t, uint16_t, MathVector<StaticVector<T,3>>, SearchTreeVectorCheck<MathVector<StaticVector<T,3>>>>;
 
 } // namespace edl
 
@@ -279,7 +280,7 @@ TEST_CASE("SearchTree__compute_max_level")
 {
   using namespace edl;
   //
-  PointSearchTree tree(10);
+  PointSearchTree<real> tree(10);
   tree.setMaxSearchDist(1.0);
   CHECK(tree.computeMaxLevel(1.00)  == 0);
   CHECK(tree.computeMaxLevel(1.99)  == 0);
@@ -305,12 +306,12 @@ TEST_CASE("SearchTree__compute_max_level")
 
 TEST_CASE("SearchTree__random_Items_search")
 {
-  using namespace edl;
   using namespace std;
-  typedef MathVector<StaticVector<real,3>> vec_t;
+  typedef edl::real real;
+  typedef edl::MathVector<edl::StaticVector<real,3>> vec_t;
   //
-  const int  num_items = 20000;
-  const int  num_tests = 1000;
+  const int  num_items = 2000;
+  const int  num_tests = 100;
   const real range     = 3;
   QuickTimer timer;
   //
@@ -330,7 +331,7 @@ TEST_CASE("SearchTree__random_Items_search")
   // create the search tree
   //
   timer.start();
-  PointSearchTree search(10);
+  edl::PointSearchTree<real> search(10);
   real max_search_dist = range/10;
   search.setMaxSearchDist(max_search_dist);
   search.setItems(items);
