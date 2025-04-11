@@ -1112,7 +1112,7 @@ TEST_CASE("Octree_tetra_search")
   file >> N;
   tetras.resize(N);
   tetra_vertices.resize(N);
-  uint32_t i_min = -1;
+  uint32_t i_min = std::numeric_limits<uint32_t>::max();
   uint32_t i_max = 0;
   for (int i = 0; i < N; ++i) {
     tetra_vertices[i].resize(4);

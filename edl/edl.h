@@ -155,7 +155,7 @@ namespace EDL_NAMESPACE
     static std::map<std::string,uint64_t> all_hits;
     std::string name;
     uint64_t hits;
-    smartBreakPoint(std::string name, int64_t min_count=std::numeric_limits<uint64_t>::max()) : name(name)
+    smartBreakPoint(std::string name, int64_t min_count=std::numeric_limits<int64_t>::max()) : name(name)
     {
       if (all_hits.find(name) == all_hits.end()) {
         all_hits[name] = 0;
@@ -169,7 +169,7 @@ namespace EDL_NAMESPACE
     void conditionalBreak()
     {
       // Put a debugger breakpoint here!
-      int dummy = 0;
+      [[maybe_unused]] int dummy = 0; // [[maybe_unused]] tells the compiler to not warn about unused variable
     }
   };
 
