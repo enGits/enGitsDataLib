@@ -1,28 +1,13 @@
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// +                                                                         +
-// + ENGITS AND NUMRAX CONFIDENTIAL                                          +
-// + ==============================                                          +
-// +                                                                         +
-// + Copyright 2013-2015                                                     +
-// +   - enGits GmbH, Todtnau, Germany                                       +
-// +   - numrax GmbH, Muelheim, Germany                                      +
-// +                                                                         +
-// + All Rights Reserved.                                                    +
-// +                                                                         +
-// + DrNUM is proprietary software: you must not redistribute it and/or      +
-// + modify, unless prior written permission has been obtained from either   +
-// + numrax GmbH or enGits GmbH.                                             +
-// +                                                                         +
-// + NOTICE: All information contained herein is, and remains the property   +
-// +         of enGits GmbH and numrax GmbH and their suppliers, if any.     +
-// +         The intellectual and technical concepts contained herein are    +
-// +         proprietary to enGits GmbH and numrax GmbH and are protected by +
-// +         trade secret or copyright law. Dissemination of this            +
-// +         information or reproduction of this material is strictly        +
-// +         forbidden unless prior written permission is obtained from      +
-// +         enGits GmbH or numrax GmbH.                                     +
-// +                                                                         +
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +                                                                    +
+// + This file is part of enGitsDataLib.                                +
+// + Copyright 2015-2025 enGits GmbH                                    +
+// +                                                                    +
+// + enGitsDataLib is released under the MIT License.                   +
+// + See LICENSE file for details.                                      +
+// +                                                                    +
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 #include "edl/edlerror.h"
 #include <cstdint>
 #if !defined(WEIGHTEDSET_HH)
