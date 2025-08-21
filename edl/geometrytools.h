@@ -222,7 +222,7 @@ bool isInsideTriangle(VEC r, typename VEC::value_type tol=1e-4)
 template <class VEC, class T = float>
 bool isInsideCartesianBox(VEC x, VEC x1, VEC x2, T tol = 1e-4)
 {
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < x.size(); ++i) {
     if (x[i] < (x1[i]-tol) || x[i] >= (x2[i]+tol)) {
       return false;
     }
