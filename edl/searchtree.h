@@ -24,9 +24,11 @@
 #define SEARCHTREE_H
 
 #include <cstdint>
+#include <fstream>
 #include <type_traits>
 #include <limits>
 #include <vector>
+#include <filesystem>
 
 #include "edl/amr.h"
 #include "edl/edl.h"
@@ -99,7 +101,7 @@ public: // methods
     }
   }
 
-  void setMaximalBucketSize(int max_bucket_size)
+  void setMaxBucketSize(int max_bucket_size)
   {
     m_MaxBucketSize = max_bucket_size;
   }
@@ -145,8 +147,8 @@ public: // methods
         m_X2[i] = std::max(m_X2[i], x2[i]);
       }
     }
-    auto xc = 0.5 * (m_X1 + m_X2);
-    auto d  = 0.5 * (m_X2 - m_X1);
+    vector_type xc = 0.5 * (m_X1 + m_X2);
+    vector_type d  = 0.5 * (m_X2 - m_X1);
     m_H  = std::max(d[0], std::max(d[1], d[2]));
     m_X1 = xc - vector_type(m_H);
     m_X2 = xc + vector_type(m_H);
@@ -229,10 +231,13 @@ public: // methods
   amr_index_type getCellContainingPointOnLevel(const vector_type& x, int level) const
   {
     using namespace std;
-    auto h = m_H/ipow(2, level);
-    int  i = (x[0] - m_X1[0])/h;
-    int  j = (x[1] - m_X1[1])/h;
-    int  k = (x[2] - m_X1[2])/h;
+    auto        h = m_H/ipow(2, level);
+    vector_type x0 = (x[0] - m_X1[0])/h;
+    vector_type x1 = (x[1] - m_X1[1])/h;
+    vector_type x2 = (x[2] - m_X1[2])/h;
+    int         i  = (x[0] - m_X1[0])/h;
+    int         j  = (x[1] - m_X1[1])/h;
+    int         k  = (x[2] - m_X1[2])/h;
     return amr_index_type(i, j, k, level);
   }
 
@@ -250,7 +255,7 @@ public: // methods
       for (auto i : m_Buckets.at(ijk)) {
         vector_type x1, x2;
         check_type::boundingBox(m_Items[i], x1, x2);
-        auto xc = 0.5*(x1 + x2);
+        vector_type xc = 0.5*(x1 + x2);
         auto d  = (x - xc).abs();
         if (d < min_dist) {
           min_dist = d;
@@ -264,6 +269,109 @@ public: // methods
   int findMatchingItem(const vector_type& x) const
   {
     return -1;
+  }
+
+  const item_type& getItem(int index) const
+  {
+    return m_Items[index];
+  }
+
+  void writeFoamDebugMesh(std::string path)
+  {
+    //
+    // make sure the path exists
+    //    
+    namespace fs = std::filesystem;
+    fs::path root_dir  = path;
+    fs::path const_dir = root_dir / "constant";
+    fs::path poly_dir  = const_dir / "polyMesh";
+    if (!fs::exists(root_dir)) {
+      fs::create_directories(root_dir);
+    }
+    if (!fs::exists(const_dir)) {
+      fs::create_directories(const_dir);      
+    }
+    if (!fs::exists(poly_dir)) {
+      fs::create_directories(poly_dir);      
+    }
+    //
+    // write the mesh
+    //
+    m_AMR->writeFoamMesh(poly_dir.string());
+    //
+    // create .foam file
+    std::ofstream ofs(path + "/search_tree.foam");
+    ofs << "\n" << std::endl;
+  }
+
+  void writeVtkDebugMesh(std::string file_name)
+  {
+    using namespace std;
+    //
+    auto leaf_cells = m_AMR->getLeafCellIndices();
+    auto points     = m_AMR->extractPoints();
+    //
+    vector<vector<int>> cells;
+    cells.reserve(leaf_cells.size());
+    //
+    for (auto ijk : leaf_cells) {
+      vector<amr_index_type> nodes;
+      nodes.reserve(8);
+      nodes.push_back(ijk);
+      nodes.push_back(ijk.incrementedI());
+      nodes.push_back(ijk.incrementedI().incrementedJ());
+      nodes.push_back(ijk.incrementedJ());
+      nodes.push_back(ijk.incrementedK());
+      nodes.push_back(ijk.incrementedI().incrementedK());
+      nodes.push_back(ijk.incrementedI().incrementedJ().incrementedK());
+      nodes.push_back(ijk.incrementedJ().incrementedK());
+      vector<int> cell;
+      cell.reserve(8);
+      for (auto node : nodes) {
+        cell.push_back(m_AMR->nodeLinearIndex(node));
+      }
+      cells.push_back(cell);
+    }
+    //
+    ofstream ofs(file_name);
+    if (!ofs) {
+      std::cerr << "Error opening file: " << file_name << std::endl;
+      return;
+    }
+  
+    // Header
+    ofs << "# vtk DataFile Version 3.0\n";
+    ofs << "Hex mesh\n";
+    ofs << "ASCII\n";
+    ofs << "DATASET UNSTRUCTURED_GRID\n";
+  
+    // Points
+    ofs << "POINTS " << points.size() << " float\n";
+    for (const auto& p : points)
+      ofs << p[0] << " " << p[1] << " " << p[2] << "\n";
+  
+    // Cells
+    const int num_cells = cells.size();
+    const int entries_per_cell = 9; // 1 count + 8 point indices
+    ofs << "CELLS " << num_cells << " " << num_cells * entries_per_cell << "\n";
+    for (const auto& cell : cells) {
+      if (cell.size() != 8) {
+        std::cerr << "Error: Hex cell must have 8 points.\n";
+        return;
+      }
+      ofs << "8 ";
+      for (int idx : cell)
+        ofs << idx << " ";
+      ofs << "\n";
+    }
+  
+    // Cell types (VTK_HEXAHEDRON = 12)
+    ofs << "CELL_TYPES " << num_cells << "\n";
+    for (int i = 0; i < num_cells; ++i)
+      ofs << "12\n";
+  
+    ofs.close();
+    cout << "Wrote " << file_name << " successfully.\n";
   }
 
 };
@@ -391,6 +499,47 @@ TEST_CASE("SearchTree__random_Items_search")
   }
   timer.stop();
   cout << "SearchTree search time       : " << timer.milliseconds() << " ms" << endl;
+}
+
+
+TEST_CASE("SearchTree__points_on_a_line_search")
+{
+  using namespace std;
+  typedef float real;
+  typedef edl::MathVector<edl::StaticVector<real,3>> vec_t;
+  //
+  const int  num_items = 64;
+  vec_t x1(-0.5,-0.5,0.5);
+  vec_t x2( 0.5,-0.5,0.5);
+  real search_dist = 2*0.03125;
+  //
+  vector<vec_t> items(num_items);
+  vec_t x_to_snap(0.015625, -0.499222696, 0.499226183);
+  real min_dist;
+  int  item_index = -1;
+  //
+  for (int i = 0; i < num_items; ++i) {
+    real x = x1[0] + (x2[0] - x1[0])*i/(num_items-1);
+    real y = x1[1] + (x2[1] - x1[1])*i/(num_items-1);
+    real z = x1[2] + (x2[2] - x1[2])*i/(num_items-1);
+    items[i] = vec_t(x,y,z);
+    //
+    real d = (x_to_snap - items[i]).abs();
+    if (d < min_dist || item_index < 0) {
+      min_dist   = d;
+      item_index = i;
+    }
+  }
+  //
+  // create the search tree
+  //
+  edl::PointSearchTree<real> search(20);
+  search.setMaxSearchDist(search_dist);
+  search.setItems(items);
+  search.writeVtkDebugMesh("search_tree.vtk");
+  //
+  int   j = search.nearestItemIndex(x_to_snap);
+  CHECK(j == item_index);
 }
 
 
