@@ -175,6 +175,11 @@ public:
    */ 
   static SmallSquareMatrix<T,N> identity();
   
+  /** get a zero matrix
+   *  @return a matrix of the dimension N with all elements set to zero
+   */ 
+  static SmallSquareMatrix<T,N> zero();
+  
   /** get the determinant of the matrix
    *  @return the determinant
    */
@@ -591,6 +596,18 @@ SmallSquareMatrix<T, N> SmallSquareMatrix<T, N>::identity()
     for (uint_t j = 0; j < N; j++) {
       if (i==j) I[i][j] = 1;
       else I[i][j] = 0;
+    }
+  }
+  return I;
+}
+
+template <class T, uint_t N>
+SmallSquareMatrix<T, N> SmallSquareMatrix<T, N>::zero()
+{
+  SmallSquareMatrix<T, N> I;
+  for (uint_t i = 0; i < N; i++) {
+    for (uint_t j = 0; j < N; j++) {
+      I[i][j] = 0;
     }
   }
   return I;

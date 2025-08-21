@@ -35,6 +35,7 @@
 #include "edl/shortvector.h"
 #include "edl/amr.h"
 #include "edl/searchtree.h"
+#include "edl/optimise.h"
 
 int main(int argc, const char** argv)
 {

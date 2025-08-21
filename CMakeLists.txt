@@ -125,6 +125,7 @@ edl/mathvector_operators.h
 edl/mathvector_structs.h
 edl/multidimvector.h
 edl/octree.h
+edl/optimise.h
 edl/pmap.h
 edl/pointcloudsurface.h
 edl/profile.h
