@@ -897,8 +897,8 @@ TEST_CASE("Octree__random_Items_search")
   typedef MathVector<StaticVector<real,3>> vec_t;
   typedef Octree<vec_t, vec_t, OctreeVectorCheck<vec_t>> octree_t;
   //
-  const int  num_Items = 2000;
-  const int  num_tests = 100;
+  const int  num_Items = 20000;
+  const int  num_tests = 1000;
   const real range     = 3;
   QuickTimer timer;
   //
@@ -918,7 +918,7 @@ TEST_CASE("Octree__random_Items_search")
   // create the octree
   //
   timer.start();
-  octree_t octree(10);
+  octree_t octree(100);
   octree.setBoundingBox(vec_t(-range/2,-range/2,-range/2), vec_t(range/2,range/2,range/2));
   octree.setItems(items);  
   timer.stop();
@@ -973,7 +973,7 @@ TEST_CASE("Octree__random_Items_search_approximate")
   typedef MathVector<StaticVector<real,3>> vec_t;
   typedef Octree<vec_t, vec_t, OctreeVectorCheck<vec_t>> octree_t;
   //
-  const int  num_Items  = 1000;
+  const int  num_Items  = 2000;
   const int  num_tests   = 100;
   const real range       = 3;
   //
