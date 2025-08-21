@@ -1,20 +1,13 @@
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# +                                                                         +
-# + ENGITS CONFIDENTIAL                                                     +
-# + ===================                                                     +
-# +                                                                         +
-# + Copyright 2013-2014 enGits GmbH, Todtnau, Germany                       +
-# + All Rights Reserved.                                                    +
-# +                                                                         +
-# + NOTICE: All information contained herein is, and remains the property   +
-# +         of enGits GmbH and its suppliers, if any. The intellectual and  +
-# +         technical concepts contained herein are proprietary to          +
-# +         enGits GmbH and are protected by trade secret or copyright law. +
-# +         Dissemination of this information or reproduction of this       +
-# +         material is strictly forbidden unless prior written permission  +
-# +         is obtained from enGits GmbH.                                   +
-# +                                                                         +
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# +                                                                    +
+# + This file is part of enGitsDataLib.                                +
+# + Copyright 2015-2025 enGits GmbH                                    +
+# +                                                                    +
+# + enGitsDataLib is released under the MIT License.                   +
+# + See LICENSE file for details.                                      +
+# +                                                                    +
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 cmake_minimum_required(VERSION 3.10.0)
 
 # limit configuration types (must be done before project() statement)

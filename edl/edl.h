@@ -1,24 +1,13 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // +                                                                    +
 // + This file is part of enGitsDataLib.                                +
+// + Copyright 2015-2025 enGits GmbH                                    +
 // +                                                                    +
-// + Copyright 2015 enGits GmbH                                         +
-// +                                                                    +
-// + enGitsDataLib is free software: you can redistribute it and/or     +
-// + modify it under the terms of the GNU Lesser General Public License +
-// + as published by the Free Software Foundation, either version 3 of  +
-// + the License, or (at your option) any later version.                +
-// +                                                                    +
-// + enGitsDataLib is distributed in the hope that it will be useful,   +
-// + but WITHOUT ANY WARRANTY; without even the implied warranty of     +
-// + MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the      +
-// + GNU Lesser General Public License for more details.                +
-// +                                                                    +
-// + You should have received a copy of the GNU Lesser General Public   +
-// + License along with enGitsDataLib.                                  +
-// + If not, see <http://www.gnu.org/licenses/>.                        +
+// + enGitsDataLib is released under the MIT License.                   +
+// + See LICENSE file for details.                                      +
 // +                                                                    +
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 #ifndef EDL_H
 #define EDL_H
 
@@ -155,7 +144,7 @@ namespace EDL_NAMESPACE
     static std::map<std::string,uint64_t> all_hits;
     std::string name;
     uint64_t hits;
-    smartBreakPoint(std::string name, int64_t min_count=std::numeric_limits<uint64_t>::max()) : name(name)
+    smartBreakPoint(std::string name, int64_t min_count=std::numeric_limits<int64_t>::max()) : name(name)
     {
       if (all_hits.find(name) == all_hits.end()) {
         all_hits[name] = 0;
@@ -169,7 +158,7 @@ namespace EDL_NAMESPACE
     void conditionalBreak()
     {
       // Put a debugger breakpoint here!
-      int dummy = 0;
+      [[maybe_unused]] int dummy = 0; // [[maybe_unused]] tells the compiler to not warn about unused variable
     }
   };
 

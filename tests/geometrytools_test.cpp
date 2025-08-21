@@ -1,4 +1,12 @@
-// tests for EDl geometrytools
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +                                                                    +
+// + This file is part of enGitsDataLib.                                +
+// + Copyright 2015-2025 enGits GmbH                                    +
+// +                                                                    +
+// + enGitsDataLib is released under the MIT License.                   +
+// + See LICENSE file for details.                                      +
+// +                                                                    +
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "edl/doctest.h"
