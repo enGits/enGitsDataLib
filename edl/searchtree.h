@@ -19,6 +19,7 @@
 #include "edl/amr.h"
 #include "edl/edl.h"
 #include "edl/mathvector.h"
+#include "edl/geometrytools.h"
 
 
 namespace edl
@@ -222,36 +223,54 @@ public: // methods
     return amr_index_type(i, j, k, level);
   }
 
-  int nearestItemIndex(const vector_type& x) const
+  std::vector<int> getBucketContents(const vector_type& x) const
   {
-    int  idx = -1;
-    auto ijk = amr_index_type(0,0,0,0);
-    if (check_type::isInsideCartesianBox(x, m_X1, m_X2)) {
+    std::vector<int> items;
+    amr_index_type ijk(0,0,0,0);
+    if (isInsideCartesianBox(x, m_X1, m_X2)) {
       while (!m_AMR->isLeafCell(ijk)) {
         ijk = getCellContainingPointOnLevel(x, ijk.level() + 1);
       }
     }
-    real min_dist = max_real;
     if (m_Buckets.find(ijk) != m_Buckets.end()) {
-      for (auto i : m_Buckets.at(ijk)) {
-        vector_type x1, x2;
-        check_type::boundingBox(m_Items[i], x1, x2);
-        auto xc = 0.5*(x1 + x2);
-        auto d  = (x - xc).abs();
-        if (d < min_dist) {
-          min_dist = d;
-          idx = i;
-        }
+      items = m_Buckets.at(ijk);
+    }
+    return items;
+  }
+
+  int nearestItemIndex(const vector_type& x) const
+  {
+    int  idx = -1;
+    real min_dist = max_real;
+    for (int i : getBucketContents(x)) {
+      vector_type x1, x2;
+      check_type::boundingBox(m_Items[i], x1, x2);
+      vector_type xc = 0.5*(x1 + x2);
+      real        d  = (x - xc).abs();
+      if (d < min_dist) {
+        min_dist = d;
+        idx = i;
       }
     }
     return idx;
   }
 
-  int findMatchingItem(const vector_type& x) const
+  int findMatchingItem(const vector_type& x, std::vector<int> items = {}) const
   {
+    if (items.empty()) {
+      items = getBucketContents(x);
+    }
+    for (int item_index : items) {
+      if (check_type::match(x, m_Items[item_index])) {
+        return item_index;
+      }
+    }
     return -1;
   }
 
+  void writeVtkFile(std::string file_name)
+  {
+  }
 };
 
 template <class T>
