@@ -634,7 +634,7 @@ public:
     for (int item_index : m_Nodes[node_index].m_ItemIndices) {
       item_t p = m_Items[item_index];
       for (int i = 0; i < 8; ++i) {
-        if (check_t::isInsideCartesianBox(p,potential_children[i].m_X1, potential_children[i].m_X2)) {
+        if (check_t::isInsideCartesianBox(p, potential_children[i].m_X1, potential_children[i].m_X2)) {
           potential_children[i].m_ItemIndices.push_back(item_index);
         }
       }
@@ -679,20 +679,12 @@ public:
     return items;
   }
 
-  int findMatchingItem(vector_t x) const
+  int findMatchingItem(const vector_t& x, std::vector<int> items = {}) const
   {
-    auto items = getBucketContents(x);
-    for (int item_index : items) {
-      if (check_t::match(x, m_Items[item_index])) {
-        return item_index;
-      }
+    if (items.empty()) {
+      items = getBucketContents(x);
     }
-    return -1;
-  }
-
-    int findMatchingItem(vector_t x, std::vector<int> sorted_bucked) const
-  {
-    for (int item_index : sorted_bucked) {
+    for (int item_index : items) {
       if (check_t::match(x, m_Items[item_index])) {
         return item_index;
       }

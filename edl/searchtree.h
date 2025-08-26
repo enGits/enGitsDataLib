@@ -21,6 +21,7 @@
 #include "edl/amr.h"
 #include "edl/edl.h"
 #include "edl/mathvector.h"
+#include "edl/geometrytools.h"
 
 
 namespace edl
@@ -127,7 +128,7 @@ public: // methods
     //
     m_X1 = vector_type( std::numeric_limits<typename vector_type::value_type>::max());
     m_X2 = vector_type(-std::numeric_limits<typename vector_type::value_type>::max());
-    for (auto item : items) {
+    for (item_type item : items) {
       vector_type x1, x2;
       check_type::boundingBox(item, x1, x2);
       for (int i = 0; i < 3; ++i) {
@@ -141,8 +142,6 @@ public: // methods
     m_X1 = xc - vector_type(m_H);
     m_X2 = xc + vector_type(m_H);
     //
-    vector_type delta = (m_X2 - m_X1);
-    delta.normalise();
     static real eps = 1e-6;
     m_X1 -= eps*m_H + m_MaxSearchDist;
     m_X2 += eps*m_H + m_MaxSearchDist;
@@ -168,15 +167,15 @@ public: // methods
       for (int level = 1; level <= m_MaxLevel; ++level) {
         auto leaf_cells = m_AMR->getLeafCellIndices();
         bool refined    = false;
-        for (auto ijk : leaf_cells) {
+        for (amr_index_type ijk : leaf_cells) {
           if (ijk.level() == level) {
-            auto h  = m_H/ipow(2, level);
+            real h  = m_H/ipow(2, level);
             auto bb = m_AMR->getCellBoundingBox(ijk);
-            auto x1 = bb.first;
-            auto x2 = bb.second;
+            vector_type x1 = bb.first;
+            vector_type x2 = bb.second;
             x1 -= eps*h + m_MaxSearchDist; 
             x2 += eps*h + m_MaxSearchDist;
-            for (auto i : m_Buckets[ijk.parent()]) {
+            for (int i : m_Buckets[ijk.parent()]) {
               if (check_type::isInsideCartesianBox(m_Items[i], x1, x2)) {
                 m_Buckets[ijk].push_back(i);
               }
@@ -229,33 +228,48 @@ public: // methods
     return amr_index_type(i, j, k, level);
   }
 
-  int nearestItemIndex(const vector_type& x) const
+  std::vector<int> getBucketContents(const vector_type& x) const
   {
-    int  idx = -1;
-    auto ijk = amr_index_type(0,0,0,0);
-    if (check_type::isInsideCartesianBox(x, m_X1, m_X2)) {
+    std::vector<int> items;
+    amr_index_type ijk(0,0,0,0);
+    if (isInsideCartesianBox(x, m_X1, m_X2)) {
       while (!m_AMR->isLeafCell(ijk)) {
         ijk = getCellContainingPointOnLevel(x, ijk.level() + 1);
       }
     }
-    real min_dist = max_real;
     if (m_Buckets.find(ijk) != m_Buckets.end()) {
-      for (auto i : m_Buckets.at(ijk)) {
-        vector_type x1, x2;
-        check_type::boundingBox(m_Items[i], x1, x2);
-        vector_type xc = 0.5*(x1 + x2);
-        auto d  = (x - xc).abs();
-        if (d < min_dist) {
-          min_dist = d;
-          idx = i;
-        }
+      items = m_Buckets.at(ijk);
+    }
+    return items;
+  }
+
+  int nearestItemIndex(const vector_type& x) const
+  {
+    int  idx = -1;
+    real min_dist = max_real;
+    for (int i : getBucketContents(x)) {
+      vector_type x1, x2;
+      check_type::boundingBox(m_Items[i], x1, x2);
+      vector_type xc = 0.5*(x1 + x2);
+      real        d  = (x - xc).abs();
+      if (d < min_dist) {
+        min_dist = d;
+        idx = i;
       }
     }
     return idx;
   }
 
-  int findMatchingItem(const vector_type& x) const
+  int findMatchingItem(const vector_type& x, std::vector<int> items = {}) const
   {
+    if (items.empty()) {
+      items = getBucketContents(x);
+    }
+    for (int item_index : items) {
+      if (check_type::match(x, m_Items[item_index])) {
+        return item_index;
+      }
+    }
     return -1;
   }
 
