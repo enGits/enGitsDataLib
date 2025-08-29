@@ -113,7 +113,7 @@ template <typename C>
 std::tuple<std::vector<typename C::value_type>, std::vector<typename C::value_type>> runningStatistics(const C& container, size_t ws)
 {
   typedef typename C::value_type scalar_t;
-  using namespace std;
+  using std::vector;
   //
   size_t N = container.size();
   size_t n = N - ws + 1;
@@ -131,13 +131,13 @@ std::tuple<std::vector<typename C::value_type>, std::vector<typename C::value_ty
     if (i >= ws-1) {
       size_t j = i - ws + 1;
       mean[j]    = sum/ws;
-      std_dev[j] = sqrt(max(scalar_t(0), sum_sq/ws - sqr(mean[j])));
+      std_dev[j] = std::sqrt(std::max(scalar_t(0), sum_sq/ws - sqr(mean[j])));
       sum    -= container[j];
       sum_sq -= sqr(container[j]);
     }
   }
   //
-  return make_tuple(mean, std_dev);
+  return std::make_tuple(mean, std_dev);
 }
 
 } // namespace

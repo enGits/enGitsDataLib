@@ -1182,7 +1182,9 @@ TEST_CASE("isPointInTetra")
 TEST_CASE("isPointInTetra_speed")
 {
   using namespace edl;
-  using namespace std;
+  #include <chrono>
+  using namespace std::chrono; 
+  using std::vector; 
   typedef float real;
   typedef MathVector<StaticVector<real,3>> vec_t;
   //
@@ -1198,8 +1200,8 @@ TEST_CASE("isPointInTetra_speed")
   //
   // create a set of random points
   //
-  mt19937 gen(42);
-  uniform_real_distribution<real> dist1(-range/2, range/2);
+  std::mt19937 gen(42);
+  std::uniform_real_distribution<real> dist1(-range/2, range/2);
   vector<vec_t> points(num_points);
   for (int i = 0; i < num_points; ++i) {
     points[i] = vec_t(dist1(gen), dist1(gen), dist1(gen));
@@ -1207,13 +1209,13 @@ TEST_CASE("isPointInTetra_speed")
   //
   // check the time it takes to check if the points are inside the tetrahedron
   //
-  auto start = chrono::high_resolution_clock::now();
+  auto start = high_resolution_clock::now();
   for (int i = 0; i < num_points; ++i) {
     isPointInTetra(x0,x1,x2,x3,points[i]);
   }
-  auto end = chrono::high_resolution_clock::now();
-  auto duration = chrono::duration_cast<chrono::microseconds>(end - start);
-  cout << "isPointInTetra: " << duration.count() << " microseconds" << endl;
+  auto end = high_resolution_clock::now();
+  auto duration = duration_cast<microseconds>(end - start);
+  std::cout << "isPointInTetra: " << duration.count() << " microseconds" << std::endl;
 }
 
 TEST_CASE("pointsAreColinear")

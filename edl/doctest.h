@@ -911,6 +911,16 @@ namespace detail {
     namespace types {
 #ifdef DOCTEST_CONFIG_INCLUDE_TYPE_TRAITS
         using namespace std;
+        using std::enable_if;
+        using std::true_type;
+        using std::false_type;
+        using std::remove_reference;
+        using std::is_rvalue_reference;
+        using std::remove_const;
+        using std::is_enum;
+        using std::underlying_type;
+        using std::is_pointer;
+        using std::is_array;
 #else
         template <bool COND, typename T = void>
         struct enable_if { };
