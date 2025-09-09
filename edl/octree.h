@@ -827,7 +827,7 @@ TEST_CASE("Octree__regularly_spaced_items")
   // It is mainly intended to check things during development
   //
   using namespace edl;
-  using namespace std;
+  using std::vector;
   typedef float real;
   typedef MathVector<StaticVector<real,3>> vec_t;
   typedef Octree<vec_t, vec_t, OctreeVectorCheck<vec_t>> octree_t;
@@ -872,7 +872,7 @@ TEST_CASE("Octree__regularly_spaced_items")
 TEST_CASE("Octree__random_Items_search")
 {
   using namespace edl;
-  using namespace std;
+  using std::vector; 
   typedef float real;
   typedef MathVector<StaticVector<real,3>> vec_t;
   typedef Octree<vec_t, vec_t, OctreeVectorCheck<vec_t>> octree_t;
@@ -884,8 +884,8 @@ TEST_CASE("Octree__random_Items_search")
   //
   // create a set of random items on a sphere with radius range/3
   //
-  mt19937 gen(42);
-  uniform_real_distribution<real> dist1(-M_PI, M_PI);
+  std::mt19937 gen(42);
+  std::uniform_real_distribution<real> dist1(-M_PI, M_PI);
   vector<vec_t> items(num_Items);
   vec_t y_axis(0,1,0);
   vec_t z_axis(0,0,1);
@@ -902,11 +902,11 @@ TEST_CASE("Octree__random_Items_search")
   octree.setBoundingBox(vec_t(-range/2,-range/2,-range/2), vec_t(range/2,range/2,range/2));
   octree.setItems(items);  
   timer.stop();
-  cout << "Octree construction time : " << timer.milliseconds() << " ms" << endl;
+  std::cout << "Octree construction time : " << timer.milliseconds() << " ms" << std::endl;
   //
   // create a set of test items
   //
-  uniform_real_distribution<real> dist2(-range/2, range/2);
+  std::uniform_real_distribution<real> dist2(-range/2, range/2);
   vector<vec_t> test_items(num_tests);
   for (int i = 0; i < num_tests; ++i) {
     test_items[i] = vec_t(dist2(gen), dist2(gen), dist2(gen));
@@ -931,7 +931,7 @@ TEST_CASE("Octree__random_Items_search")
     }
   }
   timer.stop();
-  cout << "Brute force search time  : " << timer.milliseconds() << " ms" << endl;
+  std::cout << "Brute force search time  : " << timer.milliseconds() << " ms" << std::endl;
   //
   // perform the tests
   //
@@ -942,13 +942,13 @@ TEST_CASE("Octree__random_Items_search")
     CHECK(j == nearest_item[i]);
   }
   timer.stop();
-  cout << "Octree search time       : " << timer.milliseconds() << " ms" << endl;
+  std::cout << "Octree search time       : " << timer.milliseconds() << " ms" << std::endl;
 }
 
 TEST_CASE("Octree__random_Items_search_approximate")
 {
   using namespace edl;
-  using namespace std;
+  using std::vector;
   typedef float real;
   typedef MathVector<StaticVector<real,3>> vec_t;
   typedef Octree<vec_t, vec_t, OctreeVectorCheck<vec_t>> octree_t;
@@ -960,8 +960,8 @@ TEST_CASE("Octree__random_Items_search_approximate")
   // create a set of random items
   //
   //random_device rd;
-  mt19937 gen(42);
-  uniform_real_distribution<real> dist1(-range/2, range/2);
+  std::mt19937 gen(42);
+  std::uniform_real_distribution<real> dist1(-range/2, range/2);
   vector<vec_t> items(num_Items);
   for (int i = 0; i < num_Items; ++i) {
     items[i] = vec_t(dist1(gen), dist1(gen), dist1(gen));
@@ -999,7 +999,7 @@ namespace OctreeTetraSearch
 {
 
   using namespace edl;
-  using namespace std;
+  using std::vector;
   typedef float real;
   typedef MathVector<StaticVector<real,3>> vec_t;
 
@@ -1065,12 +1065,12 @@ TEST_CASE("Octree_tetra_box_check")
 
 TEST_CASE("Octree_tetra_search")
 {
-  using namespace std;
+  using std::vector; using std::uint32_t;
   using namespace edl;
   using namespace OctreeTetraSearch;
   using OctreeTetraSearch::real;
   //
-  string file_name = "../../tests/sphere_test.mesh";
+  std::string file_name = "../../tests/sphere_test.mesh";
   //string file_name = "../../tests/test_box.mesh";
   vector<vec_t>       points;
   vector<tetra_t>     tetras;
@@ -1078,8 +1078,8 @@ TEST_CASE("Octree_tetra_search")
   //
   // read points and tetras from file
   //
-  cout << file_name << endl;
-  ifstream file(file_name);
+  std::cout << file_name << std::endl;
+  std::ifstream file(file_name);
   CHECK(file.is_open());
   //
   int N;

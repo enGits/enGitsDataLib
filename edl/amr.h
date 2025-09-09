@@ -541,7 +541,7 @@ private: // methods
 
   void completeFace(face_t& face) const
   {
-    using namespace std;
+    using std::vector;
     //
     vector<amr_index_type> all_nodes;
     all_nodes.reserve(8);
@@ -593,7 +593,7 @@ private: // methods
 
   void extractFaces()
   {
-    using namespace std;
+    #include <algorithm>
     //
     m_Faces.clear();
     m_Faces.reserve(numPotentialFaces());
@@ -688,7 +688,7 @@ private: // methods
       }
     }
     m_Faces.shrink_to_fit();
-    sort(m_Faces.begin(), m_Faces.end());
+    std::sort(m_Faces.begin(), m_Faces.end());
   }
 
 
@@ -836,12 +836,12 @@ public:
 
   std::vector<amr_index_type> nodesInBetween(amr_index_type idx0, amr_index_type idx1) const
   {
-    using namespace std;
+    using std::vector;
     //
     int di = idx1.i() - idx0.i();
     int dj = idx1.j() - idx0.j();
     int dk = idx1.k() - idx0.k();
-    if (abs(di) + abs(dj) + abs(dk) != 1) {
+    if (std::abs(di) + std::abs(dj) + std::abs(dk) != 1) {
       throw std::runtime_error("AMRMesh: nodesInBetween: nodes need to be aligned in one direction");
     }
     //
@@ -943,7 +943,7 @@ public:
 
   std::vector<vector_type> extractPoints() const
   {
-    using namespace std;
+    using std::vector;
     //
     vector<vector_type> points(m_Nodes.size());
     for (auto it : m_Nodes) {
@@ -1070,14 +1070,12 @@ public:
 
   void writeFoamPointsFile(const std::string& file_name, std::vector<vector_type> X=std::vector<vector_type>()) const
   {
-    using namespace std;
-    //
     if (X.size() == 0) {
       X = extractPoints();
     }
-    cout << "writing " << X.size() << " points to file " << file_name << endl;
+    std::cout << "writing " << X.size() << " points to file " << file_name << std::endl;
     //
-    ofstream file(file_name);
+    std::ofstream file(file_name);
     file << "FoamFile\n";
     file << "{\n";
     file << "    version     2.0;\n";
@@ -1096,11 +1094,9 @@ public:
 
   void writeFoamFacesFile(const std::string& file_name) const
   {
-    using namespace std;
+    std::cout << "writing " << m_Faces.size() << " faces to file " << file_name << std::endl;
     //
-    cout << "writing " << m_Faces.size() << " faces to file " << file_name << endl;
-    //
-    ofstream file(file_name);
+    std::ofstream file(file_name);
     file << "FoamFile\n";
     file << "{\n";
     file << "    version     2.0;\n";
@@ -1124,9 +1120,7 @@ public:
 
   void writeFoamOwnerFile(const std::string& file_name) const
   {
-    using namespace std;
-    //
-    ofstream file(file_name);
+    std::ofstream file(file_name);
     file << "FoamFile\n";
     file << "{\n";
     file << "    version     2.0;\n";
@@ -1145,9 +1139,7 @@ public:
 
   void writeFoamNeighbourFile(const std::string& file_name) const
   {
-    using namespace std;
-    //
-    ofstream file(file_name);
+    std::ofstream file(file_name);
     file << "FoamFile\n";
     file << "{\n";
     file << "    version     2.0;\n";
@@ -1174,8 +1166,6 @@ public:
 
   void writeFoamBoundaryFile(const std::string& file_name) const
   {
-    using namespace std;
-    //
     int n_faces    = 0;
     int start_face = 0;
     for (const auto &face : m_Faces) {
@@ -1185,7 +1175,7 @@ public:
         ++n_faces;
       }
     }
-    ofstream file(file_name);
+    std::ofstream file(file_name);
     file << "FoamFile\n";
     file << "{\n";
     file << "    version     2.0;\n";
@@ -1207,8 +1197,6 @@ public:
   
   void writeFoamMesh(const std::string& path, std::vector<vector_type> X=std::vector<vector_type>())
   {
-    using namespace std;
-    //
     extractFaces();
     //
     // sort faces to match OpenFOAM requirements
@@ -1277,8 +1265,6 @@ public:
 
   void ensureSmoothTransition(int num_layers=1)
   {
-    using namespace std;
-    //    
     bool done = false;
     //
     // count leaf cells
@@ -1291,7 +1277,7 @@ public:
         ++num_leaf_cells;
       }
     }
-    cout << "AMRMesh: ensureSmoothTransition: starting with " << num_leaf_cells << " cells" << endl;
+    std::cout << "AMRMesh: ensureSmoothTransition: starting with " << num_leaf_cells << " cells" << std::endl;
     amr_index_type neigh[6];
     while (!done) {
       done = true;
@@ -1320,16 +1306,14 @@ public:
           }
         }
       }
-      cout << "AMRMesh: ensureSmoothTransition: added " << N << " cells" << endl;
+      std::cout << "AMRMesh: ensureSmoothTransition: added " << N << " cells" << std::endl;
     }
     //
-    cout << "AMRMesh: ensureSmoothTransition: done" << endl;
+    std::cout << "AMRMesh: ensureSmoothTransition: done" << std::endl;
   }
 
   void ensureSmoothTransition2()
   {
-    using namespace std;
-    //    
     bool done = false;
     //
     // count leaf cells
@@ -1342,12 +1326,12 @@ public:
         ++num_leaf_cells;
       }
     }
-    cout << "AMRMesh: ensureSmoothTransition: starting with " << num_leaf_cells << " cells" << endl;
+    std::cout << "AMRMesh: ensureSmoothTransition: starting with " << num_leaf_cells << " cells" << std::endl;
     //
     // mark all nodes which belong to a cell of the maximal refinement level
     //
     for (int level = m_MaxLevel; level >= 0; --level) {
-      unordered_map<amr_index_type,bool> nodes_on_level;
+      std::unordered_map<amr_index_type,bool> nodes_on_level;
       while (!done) {
         done = true;
         int N = 0;
@@ -1431,7 +1415,6 @@ namespace std {
 
 TEST_CASE("AMRIndex") 
 {
-  using namespace std;
   using namespace edl;
   //
   typedef AMRIndex<int32_t> idx_t;
@@ -1457,11 +1440,10 @@ TEST_CASE("AMRIndex")
 
 TEST_CASE("AMRMesh_basics") 
 {
-  using namespace std;
   using namespace edl;
   //
   typedef MathVector<StaticVector<float,3> > vec3_t;
-  typedef AMRMesh<int32_t, uint16_t, vec3_t> mesh_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
   //
   int N = 10;
   mesh_t mesh(N, N, N, vec3_t(0,0,0), vec3_t(1,1,1));
@@ -1487,11 +1469,10 @@ TEST_CASE("AMRMesh_basics")
 
 TEST_CASE("AMRMesh_cell_neighbours") 
 {
-  using namespace std;
   using namespace edl;
   //
   typedef MathVector<StaticVector<float,3> > vec3_t;
-  typedef AMRMesh<int32_t, uint16_t, vec3_t> mesh_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
   typedef mesh_t::amr_index_type idx_t;
   //
   int N = 10;
@@ -1565,11 +1546,10 @@ TEST_CASE("AMRMesh_cell_neighbours")
 
 TEST_CASE("AMRMesh_extract_faces")
 {
-  using namespace std;
   using namespace edl;
   //
   typedef MathVector<StaticVector<float,3> > vec3_t;
-  typedef AMRMesh<int32_t, uint16_t, vec3_t> mesh_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
   typedef mesh_t::amr_index_type idx_t;
   //
   int N = 2;
@@ -1577,24 +1557,23 @@ TEST_CASE("AMRMesh_extract_faces")
   mesh.refineCell(0,0,0,0);
   auto faces = mesh.faces();
   for (int i = 0; i < faces.size(); ++i) {
-    cout << "face " << i << endl;
-    cout << "  - cell1 : " << faces[i].cell1 << endl;
-    cout << "  - cell2 : " << faces[i].cell2 << endl;
-    cout << "  - nodes  : ";
+    std::cout << "face " << i << std::endl;
+    std::cout << "  - cell1 : " << faces[i].cell1 << std::endl;
+    std::cout << "  - cell2 : " << faces[i].cell2 << std::endl;
+    std::cout << "  - nodes  : ";
     for (int j = 0; j < 4; ++j) {
-      cout << faces[i].nodes[j] << " ";
+      std::cout << faces[i].nodes[j] << " ";
     }
-    cout << endl;
+    std::cout << std::endl;
   }
 }
 
 TEST_CASE("AMRMesh_sphere_example")
 {
-  using namespace std;
   using namespace edl;
   //
   typedef MathVector<StaticVector<float,3> > vec3_t;
-  typedef AMRMesh<int32_t, uint16_t, vec3_t> mesh_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
   typedef mesh_t::amr_index_type idx_t;
   //
   int N = 10;
@@ -1625,11 +1604,10 @@ TEST_CASE("AMRMesh_sphere_example")
 
 TEST_CASE("AMRMesh_cell_neighbours_for_layers") 
 {
-  using namespace std;
   using namespace edl;
   //
   typedef MathVector<StaticVector<float,3> > vec3_t;
-  typedef AMRMesh<int32_t, uint16_t, vec3_t> mesh_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
   typedef mesh_t::amr_index_type idx_t;
   //
   int N = 5;
@@ -1637,9 +1615,9 @@ TEST_CASE("AMRMesh_cell_neighbours_for_layers")
   //
   mesh.refineCell(idx_t(2,2,2,0));
   //
-  system("mkdir -p constant/polyMesh");
+  std::system("mkdir -p constant/polyMesh");
   mesh.writeFoamMesh("constant/polyMesh");
-  ofstream file("test.foam");
+  std::ofstream file("test.foam");
   file.close();
   //
   idx_t I_212_0(2,1,2, 0);
@@ -1673,11 +1651,10 @@ TEST_CASE("AMRMesh_cell_neighbours_for_layers")
 
 TEST_CASE("AMRMesh_single_cell_AMR_mesh") 
 {
-  using namespace std;
   using namespace edl;
   //
   typedef MathVector<StaticVector<float,3> > vec3_t;
-  typedef AMRMesh<int32_t, uint16_t, vec3_t> mesh_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
   typedef mesh_t::amr_index_type idx_t;
   //
   int N = 1;

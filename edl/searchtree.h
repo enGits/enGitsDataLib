@@ -102,8 +102,6 @@ public: // methods
 
   int computeMaxLevel(real H)
   {
-    using namespace std;
-    //
     auto n = H/m_MaxSearchDist;
     int  max_level = 0;
     while (max_level < m_MaxAllowedLevel) {
@@ -217,7 +215,6 @@ public: // methods
 
   amr_index_type getCellContainingPointOnLevel(const vector_type& x, int level) const
   {
-    using namespace std;
     auto        h = m_H/ipow(2, level);
     vector_type x0 = (x[0] - m_X1[0])/h;
     vector_type x1 = (x[1] - m_X1[1])/h;
@@ -308,7 +305,7 @@ public: // methods
 
   void writeVtkDebugMesh(std::string file_name)
   {
-    using namespace std;
+    using std::vector;
     //
     auto leaf_cells = m_AMR->getLeafCellIndices();
     auto points     = m_AMR->extractPoints();
@@ -335,7 +332,7 @@ public: // methods
       cells.push_back(cell);
     }
     //
-    ofstream ofs(file_name);
+    std::ofstream ofs(file_name);
     if (!ofs) {
       std::cerr << "Error opening file: " << file_name << std::endl;
       return;
@@ -373,7 +370,7 @@ public: // methods
       ofs << "12\n";
   
     ofs.close();
-    cout << "Wrote " << file_name << " successfully.\n";
+    std::cout << "Wrote " << file_name << " successfully.\n";
   }
 
 };
@@ -421,7 +418,7 @@ TEST_CASE("SearchTree__compute_max_level")
 
 TEST_CASE("SearchTree__random_Items_search")
 {
-  using namespace std;
+  using std::vector;
   typedef edl::real real;
   typedef edl::MathVector<edl::StaticVector<real,3>> vec_t;
   //
@@ -432,8 +429,8 @@ TEST_CASE("SearchTree__random_Items_search")
   //
   // create a set of random items on a sphere with radius range/3
   //
-  mt19937 gen(42);
-  uniform_real_distribution<real> dist1(-M_PI, M_PI);
+  std::mt19937 gen(42);
+  std::uniform_real_distribution<real> dist1(-M_PI, M_PI);
   vector<vec_t> items(num_items);
   vec_t y_axis(0,1,0);
   vec_t z_axis(0,0,1);
@@ -451,11 +448,11 @@ TEST_CASE("SearchTree__random_Items_search")
   search.setMaxSearchDist(max_search_dist);
   search.setItems(items);
   timer.stop();
-  cout << "SearchTree construction time : " << timer.milliseconds() << " ms" << endl;
+  std::cout << "SearchTree construction time : " << timer.milliseconds() << " ms" << std::endl;
   //
   // create a set of test items
   //
-  uniform_real_distribution<real> dist2(-range/2, range/2);
+  std::uniform_real_distribution<real> dist2(-range/2, range/2);
   vector<vec_t> test_items(num_tests);
   for (int i = 0; i < num_tests; ++i) {
     test_items[i] = vec_t(dist2(gen), dist2(gen), dist2(gen));
@@ -485,9 +482,9 @@ TEST_CASE("SearchTree__random_Items_search")
     }
   }
   timer.stop();
-  cout << "Brute force search time      : " << timer.milliseconds() << " ms" << endl;
-  cout << "Number of found items        : " << N_found << " of " << num_tests << endl;
-  //
+  std::cout << "Brute force search time      : " << timer.milliseconds() << " ms" << std::endl;
+  std::cout << "Number of found items        : " << N_found << " of " << num_tests << std::endl;
+ //
   // perform the tests
   //
   timer.restart();
@@ -500,13 +497,13 @@ TEST_CASE("SearchTree__random_Items_search")
     }
   }
   timer.stop();
-  cout << "SearchTree search time       : " << timer.milliseconds() << " ms" << endl;
+  std::cout << "SearchTree search time       : " << timer.milliseconds() << " ms" << std::endl;
 }
 
 
 TEST_CASE("SearchTree__points_on_a_line_search")
 {
-  using namespace std;
+  using std::vector;
   typedef float real;
   typedef edl::MathVector<edl::StaticVector<real,3>> vec_t;
   //

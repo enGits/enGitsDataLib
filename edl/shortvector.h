@@ -245,7 +245,6 @@ public: // methods
 TEST_CASE("ShortVector_simple")
 {
   using namespace EDL_NAMESPACE;
-  using namespace std;
   //
   CHECK(sizeof(ShortVector<int>) == 8);
   //
@@ -267,18 +266,18 @@ TEST_CASE("ShortVector_simple")
 TEST_CASE("ShortVector_item_loop")
 {
   using namespace EDL_NAMESPACE;
-  using namespace std;
+  using std::vector;
   //
   // random data
   //
-  typedef ShortVector<pair<double,int>, uint16_t> shortvec_t;
+  typedef ShortVector<std::pair<double,int>, std::uint16_t> shortvec_t;
   int N = 100;
-  random_device rd;
-  mt19937 gen(rd());
-  uniform_real_distribution<> dist(-1.0, 1.0);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> dist(-1.0, 1.0);
   vector<shortvec_t::value_type> data(N);
   for (int i = 0; i < N; ++i) {
-    data[i] = make_pair(dist(gen), i);
+    data[i] = std::make_pair(dist(gen), i);
   }
   //
   shortvec_t sv(N);
@@ -305,14 +304,14 @@ TEST_CASE("ShortVector_item_loop")
 TEST_CASE("ShortVector_large_random")
 {
   using namespace EDL_NAMESPACE;
-  using namespace std;
+  using std::vector;
   //
   typedef double real;
   typedef MathVector<StaticVector<real,3>> vec_t;
   int N = 50000;
-  random_device rd;
-  mt19937 gen(rd());
-  uniform_real_distribution<> dist(-1.0, 1.0);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> dist(-1.0, 1.0);
   //
   // random test data
   //
@@ -327,7 +326,7 @@ TEST_CASE("ShortVector_large_random")
   //
   // populate not so short ShortVector with random data
   //
-  typedef ShortVector<vec_t, uint32_t> shortvec_t;
+  typedef ShortVector<vec_t, std::uint32_t> shortvec_t;
   shortvec_t sv;
   sv.resize(N);
   for (int i = 0; i < N; ++i) {

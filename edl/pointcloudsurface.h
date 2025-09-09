@@ -93,7 +93,7 @@ public:
   
   void computeWeights()
   {
-    using namespace std;
+    using std::vector;
     m_Weights.clear();
     m_Weights.resize(m_InterpolationPoints.size());
     //
@@ -114,14 +114,14 @@ public:
       //
       // find the NUM_WEIGHTS closest points
       //
-      vector<pair<T,size_t>> dists;
+      vector<std::pair<T,size_t>> dists;
       dists.reserve(m_Points.size());
       for (size_t j = 0; j < m_Points.size(); ++j) {
         vec_t xj = m_Points[j];
         T dist = (x0-xj).abs();
-        dists.push_back(make_pair(dist, j));
+        dists.push_back(std::make_pair(dist, j));
       }
-      sort(dists.begin(), dists.end());
+      std::sort(dists.begin(), dists.end());
       //
       LsqInterpolationCoPlanar<T> lsq;
       //

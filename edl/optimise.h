@@ -188,6 +188,9 @@ public: // methods
     if (m_UseNewton) {
       return optimiseNewton(x0, tol, max_iter);
     }
+    else {
+      return x0;
+    }
   }
 };
 
