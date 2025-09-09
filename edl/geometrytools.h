@@ -15,6 +15,7 @@
 #include <vector>
 #include <utility> // for std::pair
 #include <algorithm>
+#include <limits>  // for std::numeric_limits
 
 #include "edlerror.h"
 #include "edl.h"
@@ -1081,6 +1082,96 @@ bool pointsAreColinear(const C& vectors, typename C::value_type::value_type rel_
   return true;
 }
 
+
+// Map +/-n to a single canonical representative (lexicographic hemisphere)
+template <class VEC3>
+inline void canonicalizeAntipodal(VEC3& n) 
+{
+  typedef typename VEC3::value_type real;
+  if (n[2] < 0) { 
+    n *= real(-1); return; 
+  }
+  if (n[2] > 0) {
+    return; 
+  }
+  if (n[1] < 0) {
+    n *= real(-1); return;
+  }
+  if (n[1] > 0) {
+    return;
+  }
+  if (n[0] < 0) {
+    n *= real(-1); return;
+  }
+}
+
+// Returns a subset of unit directions with pairwise angular separation >= threshold_angle_rad.
+// If treat_antipodal_as_same == true, +/-n are considered equivalent (|dot| is used).
+// add near the other standard headers:
+
+// ...
+
+template <class VEC3>
+inline std::vector<VEC3> makeAngularlySeparatedDirections(const std::vector<VEC3>& input_dirs,
+                                                          typename VEC3::value_type threshold_angle_rad,
+                                                          bool treat_antipodal_as_same = true)
+{
+  typedef typename VEC3::value_type real;
+  std::vector<VEC3> cand;
+  cand.reserve(input_dirs.size());
+
+  // 1) normalize, skip near-zero, optionally canonicalize ±n
+  for (auto v : input_dirs) {
+    if (v.abs2() < std::numeric_limits<real>::epsilon()) continue;   // skip zero vectors
+    v.normalise();                                                   // <-- normalize
+    if (treat_antipodal_as_same) canonicalizeAntipodal(v);
+    cand.push_back(v);
+  }
+  if (cand.empty()) return {};
+
+  if (threshold_angle_rad <= real(0)) return cand;
+  if (threshold_angle_rad >= real(M_PI)) return { cand.front() };
+
+  // 2) cosine threshold (robust)
+  const real cos_thr = std::cos(threshold_angle_rad);
+  const real eps = real(10) * std::numeric_limits<real>::epsilon();
+  const real cos_thr_relaxed = std::min(real(1), cos_thr + eps);
+
+  // 3) deterministic order; use VEC3 (not vec3_t)
+  std::sort(cand.begin(), cand.end(), [](const VEC3& a, const VEC3& b){
+    if (a[2] != b[2]) return a[2] > b[2];
+    if (a[1] != b[1]) return a[1] > b[1];
+    return a[0] > b[0];
+  });
+
+  // 4) greedy selection; use VEC3 (not vec3_t)
+  std::vector<VEC3> selected;
+  selected.reserve(cand.size());
+  for (const auto& u : cand) {
+    bool ok = true;
+    for (const auto& s : selected) {
+      real d = u * s;
+      if (treat_antipodal_as_same) d = std::abs(d);
+      if (d > cos_thr_relaxed) { ok = false; break; }
+    }
+    if (ok) selected.push_back(u);
+  }
+  return selected;
+}
+
+// Convenience for degrees
+template <class VEC3>
+inline std::vector<VEC3> makeAngularlySeparatedDirectionsDeg(const std::vector<VEC3>& input_dirs,
+                                                             typename VEC3::value_type threshold_angle_deg,
+                                                             bool treat_antipodal_as_same = true)
+{
+  const typename VEC3::value_type pi = typename VEC3::value_type(3.141592653589793238462643383279502884L);
+  return makeAngularlySeparatedDirections(input_dirs,
+                                          threshold_angle_deg * (pi / typename VEC3::value_type(180)),
+                                          treat_antipodal_as_same);
+}
+
+
 } // end namespace edl
 
 // ----------------------------------------------------------------------------
@@ -1242,5 +1333,79 @@ TEST_CASE("pointsAreColinear")
   points.push_back(vec_t{3.0, 0, 0});
   CHECK(edl::pointsAreColinear(points)==true);
 }
+
+TEST_CASE("makeAngularlySeparatedDirections_antipodal_true_90deg")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> V3;
+
+  std::vector<V3> dirs = {
+    V3(1,0,0), V3(-1,0,0),
+    V3(0,1,0), V3(0,-1,0),
+    V3(0,0,1), V3(0,0,-1)
+  };
+
+  auto out = makeAngularlySeparatedDirections(dirs, deg2rad(90.0), /*antipodal*/true);
+
+  // With antipodal equivalence and 90°, result should be 3 orthogonal unit directions
+  CHECK(out.size() == 3);
+  for (auto& v : out) CHECK(edl::almostEqual(v.abs(), 1.0));
+  // pairwise separation >= 90°
+  for (size_t i=0;i<out.size();++i)
+    for (size_t j=i+1;j<out.size();++j)
+      CHECK(std::abs(out[i]*out[j]) <= 1e-12);
+}
+
+TEST_CASE("makeAngularlySeparatedDirections_antipodal_false_small_angle")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> V3;
+
+  std::vector<V3> dirs = { V3(1,0,0), V3(-1,0,0) };
+
+  auto out_true  = makeAngularlySeparatedDirections(dirs, deg2rad(1.0),  true);
+  auto out_false = makeAngularlySeparatedDirections(dirs, deg2rad(1.0), false);
+
+  CHECK(out_true.size()  == 1);  // +/-X considered same
+  CHECK(out_false.size() == 2);  // distinct when antipodal not merged
+}
+
+TEST_CASE("makeAngularlySeparatedDirections_nonunit_and_near_duplicates")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> V3;
+
+  // Non-unit inputs and a near-duplicate within 5 degrees
+  std::vector<V3> dirs = {
+    V3( 2, 0, 0),
+    V3(-3, 0, 0),
+    V3( 0,10, 0),
+    V3( 0.9961947, 0.0871557, 0) // ~5° from +X
+  };
+
+  // 5° threshold: near-duplicate of +X should be filtered out
+  auto out = makeAngularlySeparatedDirections(dirs, edl::deg2rad(5.0), true);
+  // Should keep something equivalent to +X, +Y (antipodal collapsed)
+  CHECK(out.size() == 2);
+  for (auto& v : out) CHECK(edl::almostEqual(v.abs(), 1.0));
+  // validate pairwise angular separation >= 5°
+  const double cos_thr = std::cos(edl::deg2rad(5.0));
+  for (size_t i=0;i<out.size();++i)
+    for (size_t j=i+1;j<out.size();++j)
+      CHECK(std::abs(out[i]*out[j]) <= cos_thr + 1e-12);
+}
+
+TEST_CASE("makeAngularlySeparatedDirections_theta_ge_pi")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> V3;
+
+  std::vector<V3> dirs = { V3(1,0,0), V3(0,1,0), V3(0,0,1) };
+  auto out = makeAngularlySeparatedDirections(dirs, edl::deg2rad(180.0), true);
+
+  CHECK(out.size() == 1);
+  CHECK(edl::almostEqual(out.front().abs(), 1.0));
+}
+
 
 #endif
