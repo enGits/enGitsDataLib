@@ -140,6 +140,24 @@ std::tuple<std::vector<typename C::value_type>, std::vector<typename C::value_ty
   return std::make_tuple(mean, std_dev);
 }
 
+template <class C>
+int countSmallerThan(const C& container, typename C::value_type threshold)
+{
+  return std::count_if(container.begin(), container.end(),
+                       [threshold](const auto& value) {
+                         return value < threshold;
+                       });
+}
+
+template <class C>
+int countGreaterThan(const C& container, typename C::value_type threshold)
+{
+  return std::count_if(container.begin(), container.end(),
+                       [threshold](const auto& value) {
+                         return value > threshold;
+                       });
+}
+
 } // namespace
 
 
