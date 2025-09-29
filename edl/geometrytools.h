@@ -1121,9 +1121,12 @@ inline std::vector<VEC3> makeAngularlySeparatedDirections(const std::vector<VEC3
   cand.reserve(input_dirs.size());
 
   // 1) normalize, skip near-zero, optionally canonicalize ±n
+  const real tol = std::numeric_limits<real>::epsilon();
   for (auto v : input_dirs) {
-    if (v.abs2() < std::numeric_limits<real>::epsilon()) continue;   // skip zero vectors
-    v.normalise();                                                   // <-- normalize
+    if (v.abs() < tol) {
+      continue; // skip zero vectors
+    }
+    v.normalise();
     if (treat_antipodal_as_same) canonicalizeAntipodal(v);
     cand.push_back(v);
   }
@@ -1134,7 +1137,7 @@ inline std::vector<VEC3> makeAngularlySeparatedDirections(const std::vector<VEC3
 
   // 2) cosine threshold (robust)
   const real cos_thr = std::cos(threshold_angle_rad);
-  const real eps = real(10) * std::numeric_limits<real>::epsilon();
+  const real eps = real(10) * tol;
   const real cos_thr_relaxed = std::min(real(1), cos_thr + eps);
 
   // 3) deterministic order; use VEC3 (not vec3_t)
@@ -1409,5 +1412,31 @@ TEST_CASE("makeAngularlySeparatedDirections_theta_ge_pi")
   CHECK(edl::almostEqual(out.front().abs(), 1.0));
 }
 
+// face normal: [-2.38708e-06,-1.84131e-05,-0.0014494]
+// face normal: [-2.38708e-06,-0.0014494,-1.84131e-05]
+// face normal: [9.236e-05,8.78647e-08,8.78647e-08]
+// face normal: [2.59338e-06,0.00144728,2.04849e-05]
+// face normal: [-9.27726e-05,-3.60874e-08,-3.60874e-08]
+// face normal: [2.59338e-06,2.04849e-05,0.00144728]
+
+TEST_CASE("makeAngularlySeparatedDirections_real_life_example")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<float,3>> V3;
+
+  std::vector<V3> dirs = {
+    V3(-2.38708e-06,-1.84131e-05,-0.0014494),
+    V3(-2.38708e-06,-0.0014494,-1.84131e-05),
+    V3(9.236e-05,8.78647e-08,8.78647e-08),
+    V3(2.59338e-06,0.00144728,2.04849e-05),
+    V3(-9.27726e-05,-3.60874e-08,-3.60874e-08),
+    V3(2.59338e-06,2.04849e-05,0.00144728)
+  };
+
+  auto out = makeAngularlySeparatedDirections(dirs, edl::deg2rad(5.0), true);
+
+  // All inputs are within ~0.1° of each other; with 5° threshold only one should remain
+  CHECK(out.size() == 3);
+}
 
 #endif
