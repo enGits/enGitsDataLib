@@ -114,22 +114,41 @@ namespace StringTools
   std::string left(std::string s, size_t n);
 
   /**
-   * split a std::string into several strings.
-   * @param s the std::string to be split
-   * @param sub the list which the sub strings will be appeneded to
-   * @param c the dividing character
-   * @return the number of sub strings
-   */
+    * split a std::string into several strings.
+    * @param s the std::string to be split
+    * @param sub the list which the sub strings will be appeneded to
+    * @param c the dividing character
+    * @return the number of sub strings
+    */
   int split(std::string s, std::list<std::string> &sub, char c = ' ');
 
   /**
-   * split a std::string into several strings.
-   * @param s the std::string to be split
-   * @param sub the vector which will contain the sub strings
-   * @param c the dividing character
-   * @return the number of sub strings
-   */
+    * split a std::string into several strings.
+    * @param s the std::string to be split
+    * @param sub the vector which will contain the sub strings
+    * @param c the dividing character
+    * @return the number of sub strings
+    */
   int split(std::string s, std::vector<std::string> &sub, char c = ' ');
+
+  /**
+    * split a std::string into several strings.
+    * @param s the std::string to be split
+    * @param delimiter the dividing string
+    * @param trim_result if true, leading and trailing spaces of the sub-strings will be removed
+    * @return a vector containing the sub strings    
+    */
+  std::vector<std::string> split(std::string s, std::string delimiter, bool trim_result=true);
+
+  /**
+    * split a std::string into several strings, taking care of quoted parts.
+    * @param s the std::string to be split
+    * @param delimiter the dividing string
+    * @param quote_char the character used for quoting
+    * @param trim_result if true, leading and trailing spaces of the sub-strings will be removed
+    * @return a vector containing the sub strings    
+    */
+  std::vector<std::string> split(std::string s, char c = ' ', bool trim_result=true);
 
   template <class T>
   inline bool stringTo(std::string s, T &t)
@@ -272,7 +291,7 @@ namespace StringTools
     return result;
   }
 
-  inline std::vector<std::string> split(std::string s, std::string delimiter, bool trim_result=true)
+  inline std::vector<std::string> split(std::string s, std::string delimiter, bool trim_result)
   {
     size_t pos_start = 0;
     size_t pos_end;
@@ -297,6 +316,11 @@ namespace StringTools
       result.push_back(s.substr(pos_start));
     }
     return result;
+  }
+
+  inline std::vector<std::string> split(std::string s, char c, bool trim_result)
+  {
+    return split(s, std::string("") + c, trim_result);
   }
 
   inline int countChar(std::string s, char count_char)
