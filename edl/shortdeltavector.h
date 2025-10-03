@@ -23,8 +23,6 @@
 #ifndef SHORTDELTAVECTOR_H
 #define SHORTDELTAVECTOR_H
 
-#ifndef APPLE
-
 #include "edl/edl.h"
 #include <cstddef>
 #include <cstdint>
@@ -885,7 +883,6 @@ TEST_CASE("ShortDeltaVector_clear_and_comparison")
   CHECK(dv1 == dv2);
 }
 
-/*
 TEST_CASE("ShortDeltaVector_find")
 {
   using namespace EDL_NAMESPACE;
@@ -908,7 +905,6 @@ TEST_CASE("ShortDeltaVector_find")
   CHECK(it != dv.end());
   CHECK(*it == 500);  
 }
-*/
 
 TEST_CASE("ShortDeltaVector_swap")
 {
@@ -935,5 +931,19 @@ TEST_CASE("ShortDeltaVector_swap")
   CHECK(dv[4] == 250);
 }
 
-#endif // APPLE
+TEST_CASE("ShortDeltaVector_memory_overhead")
+{
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+  //
+  cout << " 8 bit index / 64 bit value : " << sizeof(ShortDeltaVector<real*,uint8_t>) << endl;
+  cout << "16 bit index / 64 bit value : " << sizeof(ShortDeltaVector<real*,uint16_t>) << endl;
+  cout << "32 bit index / 64 bit value : " << sizeof(ShortDeltaVector<real*,uint32_t>) << endl;
+  cout << "64 bit index / 64 bit value : " << sizeof(ShortDeltaVector<real*,uint64_t>) << endl;
+  cout << " 8 bit index / 32 bit value : " << sizeof(ShortDeltaVector<uint32_t,uint8_t>) << endl;
+  cout << "16 bit index / 32 bit value : " << sizeof(ShortDeltaVector<uint32_t,uint16_t>) << endl;
+  cout << "32 bit index / 32 bit value : " << sizeof(ShortDeltaVector<uint32_t,uint32_t>) << endl;
+  cout << "64 bit index / 32 bit value : " << sizeof(ShortDeltaVector<uint32_t,uint64_t>) << endl;
+}
+
 #endif // SHORTDELTAVECTOR_H
