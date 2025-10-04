@@ -23,6 +23,7 @@
 #include "edl/multidimvector.h"
 #include "edl/shortdeltavector.h"
 #include "edl/shortvector.h"
+#include "edl/shortptrvector.h"
 #include "edl/amr.h"
 #include "edl/searchtree.h"
 #include "edl/optimise.h"

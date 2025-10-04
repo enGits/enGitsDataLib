@@ -7,7 +7,6 @@
 // + See LICENSE file for details.                                      +
 // +                                                                    +
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 #pragma once
 
 #include "edl/edl.h"
@@ -23,15 +22,7 @@
 #include <stdexcept>
 #include <type_traits>
 
-/**
-  * @brief ShortVector is a vector like container with very low memory overhead.
-  *
-  * entry 0 : current size of the vector
-  * entry 1 : current size of the allocated array
-  * entry 2 : first element
-  * entry 3 : second element
-  * ...
-  */
+
 namespace EDL_NAMESPACE
 {
 
@@ -362,4 +353,40 @@ TEST_CASE("ShortVector_u32_u16_memoryUsageBytes[sv][u32][idx16]") {
   v.reserve(10);
   auto after = v.memoryUsageBytes();
   CHECK(after >= base + sizeof(std::uint32_t) * 10);
+}
+
+#include <random>
+
+TEST_CASE("ShortVector_u32_u16_item_loop[sv][u32][idx16]") 
+{
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+  //
+  typedef ShortVector<uint32_t,uint16_t> shortvec_t;
+  const size_t N = 10000;
+  //
+  // create a std::vector with N random values of 32 bit integers
+  //
+  vector<uint32_t> data(N);
+  random_device rd;
+  mt19937_64 eng(rd());
+  uniform_int_distribution<uint32_t> distr(0, numeric_limits<uint32_t>::max());
+  for (size_t i = 0; i < N; ++i) {
+    data[i] = distr(eng);
+  }    
+  //
+  // copy the data to a ShortVector
+  //
+  shortvec_t sv;
+  for (size_t i = 0; i < N; ++i) {
+    sv.push_back(data[i]);
+  }
+  //
+  // check if the data is correct (index access)
+  //
+  int i = 0;
+  for (auto v : sv) {
+    CHECK(v == data[i]);
+    ++i;
+  }
 }

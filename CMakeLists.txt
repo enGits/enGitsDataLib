@@ -125,6 +125,7 @@ edl/profile.h
 edl/quicktimer.h
 edl/searchtree.h
 edl/shortdeltavector.h
+edl/shortptrvector.h
 edl/shortvector.h
 edl/smallsquarematrix.h
 edl/sparsetwodimarray.h
