@@ -24,6 +24,8 @@
 #define SHORTDELTAVECTOR_H
 
 #include "edl/edl.h"
+#include "edl/edlerror.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -397,6 +399,11 @@ public: // methods
   size_t size() const
   {
     return m_VectorSize;
+  }
+  
+  size_t capacity() const
+  {
+    return m_AllocatedSize;
   }
 
   void push_back(const value_type& value)
