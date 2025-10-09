@@ -17,6 +17,10 @@
 #include <limits>
 #include <vector>
 #include <filesystem>
+#include <unordered_map>
+#include <algorithm>
+#include <iostream>
+#include <string>
 
 #include "edl/amr.h"
 #include "edl/edl.h"
@@ -115,7 +119,8 @@ public: // methods
   }
 
   template <typename C>
-  void setItems(const C items)
+  // void setItems(const C items)
+  void setItems(const C& items)
   {
     //
     // check that C::value_type is item_type
@@ -216,9 +221,11 @@ public: // methods
   amr_index_type getCellContainingPointOnLevel(const vector_type& x, int level) const
   {
     auto        h = m_H/ipow(2, level);
+    // Unused locals ? "x0, x1, x2" (fatal under -Werror) 
     vector_type x0 = (x[0] - m_X1[0])/h;
     vector_type x1 = (x[1] - m_X1[1])/h;
     vector_type x2 = (x[2] - m_X1[2])/h;
+
     int         i  = (x[0] - m_X1[0])/h;
     int         j  = (x[1] - m_X1[1])/h;
     int         k  = (x[2] - m_X1[2])/h;
@@ -229,7 +236,7 @@ public: // methods
   {
     std::vector<int> items;
     amr_index_type ijk(0,0,0,0);
-    if (isInsideCartesianBox(x, m_X1, m_X2)) {
+    if (check_type::isInsideCartesianBox(x, m_X1, m_X2)) {
       while (!m_AMR->isLeafCell(ijk)) {
         ijk = getCellContainingPointOnLevel(x, ijk.level() + 1);
       }
