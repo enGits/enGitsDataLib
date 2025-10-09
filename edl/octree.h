@@ -25,6 +25,7 @@
 #include <unordered_set>
 #include <set>
 #include <map>
+#include <filesystem>
 
 #include "edl/edl.h"
 #include "edl/edlerror.h"
@@ -1069,8 +1070,14 @@ TEST_CASE("Octree_tetra_search")
   using namespace edl;
   using namespace OctreeTetraSearch;
   using OctreeTetraSearch::real;
+  namespace fs = std::filesystem;
   //
-  std::string file_name = "../../tests/sphere_test.mesh";
+  fs::path candidates[] = {
+      fs::path("../../tests/sphere_test.mesh"),
+      fs::path("../tests/sphere_test.mesh"),
+      fs::path("sphere_test.mesh"),
+      fs::path(__FILE__).parent_path().parent_path().parent_path() / "tests" / "sphere_test.mesh"
+  };
   //string file_name = "../../tests/test_box.mesh";
   vector<vec_t>       points;
   vector<tetra_t>     tetras;
@@ -1078,9 +1085,15 @@ TEST_CASE("Octree_tetra_search")
   //
   // read points and tetras from file
   //
-  std::cout << file_name << std::endl;
-  std::ifstream file(file_name);
-  CHECK(file.is_open());
+  std::ifstream file;
+  std::string file_name;
+  for (const auto& p : candidates) {
+    file = std::ifstream(p);
+    if (file.is_open()) { file_name = p.string(); break; }
+  }
+  CHECK_MESSAGE(file.is_open(), "Could not open sphere_test.mesh; tried: "
+                                << (candidates[0]) << ", " << (candidates[1]) << ", "
+                                << (candidates[2]) << ", " << (candidates[3]));
   //
   int N;
   file >> N;
