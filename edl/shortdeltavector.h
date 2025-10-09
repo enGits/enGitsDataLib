@@ -30,6 +30,7 @@
 #include <stdexcept>
 #include <utility> // for std::swap
 #include <iostream>
+#include <vector>
 
 #include <type_traits>
 #if __has_include(<bit>)
@@ -258,6 +259,15 @@ public: // methods
     delete[] m_Data;
   }
 
+  // Assign from std::vector
+  ShortDeltaVector& operator=(const std::vector<value_type>& src) {
+    clear();
+    reserve(src.size());
+    for (const value_type& v : src)
+        push_back(v);
+    return *this;
+  }
+
   uint16_t deltaSize() const
   {
     return m_DeltaSize;
@@ -433,42 +443,61 @@ public: // methods
     }
   }
 
-
+  
 public: // iterators
 
-  struct const_iterator
-  {
-    size_t i;
-    const ShortDeltaVector<value_type,index_type>* dv;
-    void operator++() { ++i; }
-    bool operator!=(const const_iterator& other) const 
-    { 
-      return (i != other.i) || (dv != other.dv); 
+  struct const_iterator {
+    // --- standard iterator associated types ---
+    using iterator_category = std::input_iterator_tag;
+    using value_type        = typename ShortDeltaVector::value_type;
+    using difference_type   = std::ptrdiff_t;
+    using pointer           = void;                           // no operator->; deref returns by value
+    using reference         = value_type;                     // by-value is OK for input iterators
+
+    // --- state ---
+    const ShortDeltaVector<value_type, index_type>* dv = nullptr;
+    size_t i = 0;
+
+    // --- ctors ---
+    const_iterator() = default;
+    const_iterator(const ShortDeltaVector* d, size_t idx) : dv(d), i(idx) {}
+
+    // --- core ops ---
+    reference operator*() const { return (*dv)[i]; }
+
+    const_iterator& operator++() { ++i; return *this; }       // pre-increment
+    const_iterator operator++(int) {                          // post-increment
+      const_iterator tmp(*this);
+      ++(*this);
+      return tmp;
     }
-    value_type operator*() const 
-    { 
-      return dv->operator[](i); 
+
+    friend bool operator==(const const_iterator& a, const const_iterator& b) {
+      return a.dv == b.dv && a.i == b.i;
+    }
+    friend bool operator!=(const const_iterator& a, const const_iterator& b) {
+      return !(a == b);
     }
   };
 
   const_iterator begin() const
   {
-    return {0, this};
+    return const_iterator(this, 0);
   }
 
   const_iterator end() const
   {
-    return {m_VectorSize, this};
+    return const_iterator(this, m_VectorSize);
   }
 
   const_iterator cbegin() const
   {
-    return {0, this};
+    return const_iterator(this, 0);
   }
-
+  
   const_iterator cend() const
   {
-    return {m_VectorSize, this};
+    return const_iterator(this, m_VectorSize);
   }
 
 };
