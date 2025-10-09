@@ -322,7 +322,7 @@ inline typename TList<T>::const_iterator TList<T>::const_iterator::operator++(in
 template<class T>
 inline bool TList<T>::const_iterator::operator==(const const_iterator &iter) const
 {
-  return ((iter->tlist == tlist) && (iter.i_current == i_current));
+  return ((iter.tlist == tlist) && (iter.i_current == i_current));
 }
 
 template<class T>
