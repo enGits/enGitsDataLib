@@ -24,12 +24,16 @@
 #define SHORTDELTAVECTOR_H
 
 #include "edl/edl.h"
+#include "edl/edlerror.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <stdexcept>
 #include <utility> // for std::swap
 #include <iostream>
+#include <vector>
+#include <cstring>
 
 #include <type_traits>
 #if __has_include(<bit>)
@@ -51,6 +55,63 @@ public: // data types
 
   typedef TValue value_type;
   typedef TIndex index_type;
+
+
+public: // iterators
+
+  struct const_iterator {
+    // --- standard iterator associated types ---
+    using iterator_category = std::input_iterator_tag;
+    using value_type        = typename ShortDeltaVector::value_type;
+    using difference_type   = std::ptrdiff_t;
+    using pointer           = void;                           // no operator->; deref returns by value
+    using reference         = value_type;                     // by-value is OK for input iterators
+
+    // --- state ---
+    const ShortDeltaVector<value_type, index_type>* dv = nullptr;
+    size_t i = 0;
+
+    // --- ctors ---
+    const_iterator() = default;
+    const_iterator(const ShortDeltaVector* d, size_t idx) : dv(d), i(idx) {}
+
+    // --- core ops ---
+    reference operator*() const { return (*dv)[i]; }
+
+    const_iterator& operator++() { ++i; return *this; }       // pre-increment
+    const_iterator operator++(int) {                          // post-increment
+      const_iterator tmp(*this);
+      ++(*this);
+      return tmp;
+    }
+
+    friend bool operator==(const const_iterator& a, const const_iterator& b) {
+      return a.dv == b.dv && a.i == b.i;
+    }
+    friend bool operator!=(const const_iterator& a, const const_iterator& b) {
+      return !(a == b);
+    }
+  };
+
+  const_iterator begin() const
+  {
+    return const_iterator(this, 0);
+  }
+
+  const_iterator end() const
+  {
+    return const_iterator(this, m_VectorSize);
+  }
+
+  const_iterator cbegin() const
+  {
+    return const_iterator(this, 0);
+  }
+  
+  const_iterator cend() const
+  {
+    return const_iterator(this, m_VectorSize);
+  }
 
 
 private: // attributes
@@ -258,6 +319,15 @@ public: // methods
     delete[] m_Data;
   }
 
+  // Assign from std::vector
+  ShortDeltaVector& operator=(const std::vector<value_type>& src) {
+    clear();
+    reserve(src.size());
+    for (const value_type& v : src)
+        push_back(v);
+    return *this;
+  }
+
   uint16_t deltaSize() const
   {
     return m_DeltaSize;
@@ -330,6 +400,11 @@ public: // methods
   {
     return m_VectorSize;
   }
+  
+  size_t capacity() const
+  {
+    return m_AllocatedSize;
+  }
 
   void push_back(const value_type& value)
   {
@@ -389,6 +464,33 @@ public: // methods
     rawSet(delta, &m_Data[idx], m_DeltaSize);
   }
 
+  // Erase a single element at position 'pos'
+  const_iterator erase(const_iterator pos)
+  {
+    throw edl::EdlError("ShortDeltaVector::erase() not yet working");
+    if (pos.dv != this) {
+      throw std::runtime_error("ShortDeltaVector::erase: iterator does not belong to this container");
+    }
+    if (pos.i >= m_VectorSize) {
+      throw std::runtime_error("ShortDeltaVector::erase: iterator out of range");
+    }
+
+    const index_type idx = static_cast<index_type>(pos.i);
+
+    // Shift the raw bytes to close the gap
+    if (idx < m_VectorSize - 1) {
+      const size_t start = entryIndex(idx);
+      const size_t next  = entryIndex(idx + 1);
+      const size_t tail_bytes = (m_VectorSize - idx - 1) * m_DeltaSize;
+      std::memmove(&m_Data[start], &m_Data[next], tail_bytes);
+    }
+
+    --m_VectorSize;
+
+    // Return iterator to the element that followed the erased one
+    return const_iterator(this, idx);
+  }
+
   void shrink_to_fit() 
   {
     index_type new_size = m_VectorSize;
@@ -413,6 +515,17 @@ public: // methods
     }
   }
 
+  void reverse_inplace() {
+    if (m_VectorSize <= 1) return;
+    index_type i = 0;
+    index_type j = static_cast<index_type>(m_VectorSize - 1);
+    while (i < j) {
+      swap(i, j);
+      ++i;
+      --j;
+    }
+  }
+
   size_t memoryUsage() const
   {
     return m_AllocatedSize*m_DeltaSize + sizeof(*this);
@@ -431,44 +544,6 @@ public: // methods
       auto delta = get(&m_Data[idx], m_DeltaSize);
       cout << "  " << i << " : " << delta << "/" << delta + m_Reference << endl;
     }
-  }
-
-
-public: // iterators
-
-  struct const_iterator
-  {
-    size_t i;
-    const ShortDeltaVector<value_type,index_type>* dv;
-    void operator++() { ++i; }
-    bool operator!=(const const_iterator& other) const 
-    { 
-      return (i != other.i) || (dv != other.dv); 
-    }
-    value_type operator*() const 
-    { 
-      return dv->operator[](i); 
-    }
-  };
-
-  const_iterator begin() const
-  {
-    return {0, this};
-  }
-
-  const_iterator end() const
-  {
-    return {m_VectorSize, this};
-  }
-
-  const_iterator cbegin() const
-  {
-    return {0, this};
-  }
-
-  const_iterator cend() const
-  {
-    return {m_VectorSize, this};
   }
 
 };
@@ -929,6 +1004,51 @@ TEST_CASE("ShortDeltaVector_swap")
   dv.swap(3, 4);
   CHECK(dv[3] == 300);
   CHECK(dv[4] == 250);
+}
+
+TEST_CASE("ShortDeltaVector_reverse_inplace")
+{
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+
+  typedef ShortDeltaVector<uint64_t, uint8_t> deltavec_t;
+
+  // Test case 1: Reverse a vector with multiple elements
+  {
+    vector<uint64_t> data = {1, 2, 3, 4, 5};
+    deltavec_t dv;
+    dv = data;
+
+    dv.reverse_inplace();
+
+    vector<uint64_t> expected = {5, 4, 3, 2, 1};
+    for (size_t i = 0; i < dv.size(); ++i) {
+      CHECK(dv[i] == expected[i]);
+    }
+  }
+
+  // Test case 2: Reverse a vector with a single element
+  {
+    vector<uint64_t> data = {42};
+    deltavec_t dv;
+    dv = data;
+
+    dv.reverse_inplace();
+
+    vector<uint64_t> expected = {42};
+    for (size_t i = 0; i < dv.size(); ++i) {
+      CHECK(dv[i] == expected[i]);
+    }
+  }
+
+  // Test case 3: Reverse an empty vector
+  {
+    deltavec_t dv;
+
+    dv.reverse_inplace();
+
+    CHECK(dv.size() == 0);
+  }
 }
 
 TEST_CASE("ShortDeltaVector_memory_overhead")
