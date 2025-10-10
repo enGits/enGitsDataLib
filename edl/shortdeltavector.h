@@ -24,7 +24,6 @@
 #define SHORTDELTAVECTOR_H
 
 #include "edl/edl.h"
-#include "edl/edlerror.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -406,6 +405,11 @@ public: // methods
     return m_AllocatedSize;
   }
 
+  bool empty() const
+  {
+    return m_VectorSize == 0;
+  }
+
   void push_back(const value_type& value)
   {
     if (m_VectorSize == m_AllocatedSize) {
@@ -416,6 +420,11 @@ public: // methods
     uint64_t delta = toAddr(value) - m_Reference;
     rawSet(delta, &m_Data[idx], m_DeltaSize);
     ++m_VectorSize;
+  }
+
+  value_type front() const
+  {
+    return *begin();
   }
 
   value_type operator[](size_t i)
@@ -467,7 +476,6 @@ public: // methods
   // Erase a single element at position 'pos'
   const_iterator erase(const_iterator pos)
   {
-    throw edl::EdlError("ShortDeltaVector::erase() not yet working");
     if (pos.dv != this) {
       throw std::runtime_error("ShortDeltaVector::erase: iterator does not belong to this container");
     }
@@ -979,6 +987,94 @@ TEST_CASE("ShortDeltaVector_find")
   auto it = find(dv.begin(), dv.end(), 500);
   CHECK(it != dv.end());
   CHECK(*it == 500);  
+}
+
+TEST_CASE("ShortDeltaVector_erase")
+{
+  using namespace EDL_NAMESPACE;
+  using namespace std;
+
+  typedef ShortDeltaVector<uint64_t, uint16_t> deltavec_t;
+
+  // Test case 1: Erase a single element from the middle
+  {
+    vector<uint64_t> data = {10, 20, 30, 40, 50};
+    deltavec_t dv;
+    dv = data;
+
+    auto it = dv.erase(std::next(dv.begin(), 2)); // Erase the element at index 2 (value 30)
+
+    vector<uint64_t> expected = {10, 20, 40, 50};
+    CHECK(dv.size() == expected.size());
+    for (size_t i = 0; i < dv.size(); ++i) {
+      CHECK(dv[i] == expected[i]);
+    }
+    CHECK(it == std::next(dv.begin(), 2)); // Iterator should point to the next element (value 40)
+    CHECK(*dv.end() == 50);
+    CHECK(dv[2] == 40);
+  }
+
+  // Test case 2: Erase the first element
+  {
+    vector<uint64_t> data = {100, 200, 300, 400};
+    deltavec_t dv;
+    dv = data;
+
+    auto it = dv.erase(dv.begin()); // Erase the first element (value 100)
+
+    vector<uint64_t> expected = {200, 300, 400};
+    CHECK(dv.size() == expected.size());
+    for (size_t i = 0; i < dv.size(); ++i) {
+      CHECK(dv[i] == expected[i]);
+    }
+    CHECK(it == dv.begin()); // Iterator should point to the new first element (value 200)
+  }
+
+  // Test case 3: Erase the last element
+  {
+    vector<uint64_t> data = {5, 10, 15, 20};
+    deltavec_t dv;
+    dv = data;
+
+    auto it = dv.erase(std::prev(dv.end())); // Erase the last element (value 20)
+
+    vector<uint64_t> expected = {5, 10, 15};
+    CHECK(dv.size() == expected.size());
+    for (size_t i = 0; i < dv.size(); ++i) {
+      CHECK(dv[i] == expected[i]);
+    }
+    CHECK(it == dv.end()); // Iterator should point to the end
+  }
+
+  // Test case 4: Erase all elements one by one
+  {
+    vector<uint64_t> data = {1, 2, 3, 4, 5};
+    deltavec_t dv;
+    dv = data;
+
+    while (!dv.empty()) {
+      dv.erase(dv.begin());
+    }
+
+    CHECK(dv.size() == 0); // Vector should be empty
+  }
+
+  // Test case 5: Erase from an empty vector
+  {
+    deltavec_t dv;
+
+    CHECK_THROWS_AS(dv.erase(dv.begin()), std::runtime_error); // Should throw an error
+  }
+
+  // Test case 6: Erase with an invalid iterator
+  {
+    vector<uint64_t> data = {10, 20, 30};
+    deltavec_t dv;
+    dv = data;
+
+    deltavec_t::const_iterator invalid_it;
+    CHECK_THROWS_AS(dv.erase(invalid_it), std::runtime_error); // Should throw an error
+  }
 }
 
 TEST_CASE("ShortDeltaVector_swap")
