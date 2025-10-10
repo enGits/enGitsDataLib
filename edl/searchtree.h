@@ -432,7 +432,7 @@ TEST_CASE("SearchTree__random_Items_search")
   const int  num_items = 2000;
   const int  num_tests = 100;
   const real range     = 3;
-  QuickTimer timer;
+  edl::QuickTimer timer;
   //
   // create a set of random items on a sphere with radius range/3
   //

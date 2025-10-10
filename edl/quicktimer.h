@@ -16,6 +16,9 @@
 #include <iostream>
 #include <string>
 
+namespace edl
+{
+
 class QuickTimer
 {
 
@@ -73,22 +76,26 @@ public:
 
   inline uint64_t nanoseconds()
   {
+    if (m_Running) {
+      stop();
+      start();
+    }
     return m_TotalNanoSecs;
   }
 
   inline double microseconds()
   {
-    return 1e-3*m_TotalNanoSecs;
+    return 1e-3*nanoseconds();
   }
 
   inline double milliseconds()
   {
-    return 1e-6*m_TotalNanoSecs;
+    return 1e-6*nanoseconds();
   }
 
   inline double seconds()
   {
-    return 1e-9*m_TotalNanoSecs;
+    return 1e-9*nanoseconds();
   }
 
   inline void print()
@@ -103,5 +110,7 @@ public:
   }
 
 };
+
+} // namespace EDL_NAMESPACE
 
 #endif // QUICKTIMER_H
