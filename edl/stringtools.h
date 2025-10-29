@@ -52,7 +52,7 @@ namespace StringTools
    * @param t the variable to convert
    * @return the resulting string
    */
-  template <class T> std::string toString(T t, int fill = 0);
+  template <class T> std::string toString(T t, int fill = 0, char fill_char=' ');
 
   /**
    * replace a character with a different one.
@@ -144,7 +144,6 @@ namespace StringTools
     * split a std::string into several strings, taking care of quoted parts.
     * @param s the std::string to be split
     * @param delimiter the dividing string
-    * @param quote_char the character used for quoting
     * @param trim_result if true, leading and trailing spaces of the sub-strings will be removed
     * @return a vector containing the sub strings    
     */
@@ -175,13 +174,13 @@ namespace StringTools
   }
 
   template <class T>
-  std::string toString(T t, int fill)
+  std::string toString(T t, int fill, char fill_char)
   {
     std::ostringstream stream;
     stream << t;
     std::string s = stream.str();
-    if      (fill < 0) s = leftFill(s,' ',-fill);
-    else if (fill > 0) s = rightFill(s,' ',fill);
+    if      (fill < 0) s =  leftFill(s, fill_char, -fill);
+    else if (fill > 0) s = rightFill(s, fill_char,  fill);
     return s;
   }
 
