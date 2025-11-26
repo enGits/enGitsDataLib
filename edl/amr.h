@@ -19,6 +19,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <algorithm>
 
 #include "edl/mathvector.h"
 
@@ -390,6 +391,7 @@ public: // data types
   struct node_t
   {
     index_type linear_index;
+    bool       is_boundary = false;
   };
 
   struct face_t
@@ -445,7 +447,7 @@ public: // data types
   };
 
 
-private:; // attributes
+private: // attributes
 
   ijk_type    m_SizeI;
   ijk_type    m_SizeJ;
@@ -558,7 +560,7 @@ private: // methods
     face.nodes = all_nodes;
   }
 
-  size_t numPotentialFaces()
+  size_t numPotentialFaces(bool keep_outside)
   {
     size_t num_faces = 0;
     amr_index_type neighbours[6];
@@ -582,6 +584,16 @@ private: // methods
               use_face = false;
             }
           }
+          if (!keep_outside && cell.is_outside) {
+            if (idx2.outOfBounds()) {
+              use_face = false;
+            } else {
+              auto cell2 = m_Cells.at(idx2);
+              if (cell2.is_outside) {
+                use_face = false;
+              }
+            }
+          }
           if (use_face) {
             ++num_faces;
           }
@@ -591,12 +603,11 @@ private: // methods
     return num_faces;
   }
 
-  void extractFaces()
+  void extractFaces(bool keep_outside=false)
   {
-    #include <algorithm>
     //
     m_Faces.clear();
-    m_Faces.reserve(numPotentialFaces());
+    m_Faces.reserve(numPotentialFaces(keep_outside));
     amr_index_type neighbours[6];
     auto leaf_cells = getLeafCellIndices();
     for (auto idx : leaf_cells) {
@@ -620,7 +631,7 @@ private: // methods
           }
           if (idx2.outOfBounds()) {
             face.cell2 = -1;
-            if (cell.is_outside) {
+            if (cell.is_outside && !keep_outside) {
               use_face = false;
             }
           } else {
@@ -635,7 +646,7 @@ private: // methods
             if (idx.level() == idx2.level() && cell.linear_index > cell2.linear_index) {
               use_face = false;
             }
-            if (cell.is_outside && cell2.is_outside) {
+            if (cell.is_outside && cell2.is_outside && !keep_outside) {
               use_face = false;
             }
           }
@@ -788,15 +799,6 @@ public:
     if ((idx0.i() == idx1.i()) || (idx0.j() != idx1.j()) || (idx0.k() != idx1.k())) {
       throw std::runtime_error("AMRMesh: nodesInBetween: invalid index");
     }
-    // std::vector<amr_index_type> nodes;
-    // auto idx = idx0.indexOnLevel(m_MaxLevel).incrementedI();
-    // while (idx.reduced() != idx1.reduced()) {
-    //   if (m_Nodes.find(idx.reduced()) != m_Nodes.end()) { // if node idx exists
-    //     nodes.push_back(idx);
-    //   }
-    //   idx.incrI();
-    // }
-    // return nodes;
     return nodesInBetween(idx0, idx1);
   }
 
@@ -805,15 +807,6 @@ public:
     if ((idx0.j() == idx1.j()) || (idx0.i() != idx1.i()) || (idx0.k() != idx1.k())) {
       throw std::runtime_error("AMRMesh: nodesInBetween: invalid index");
     }
-    // std::vector<amr_index_type> nodes;
-    // auto idx = idx0.indexOnLevel(m_MaxLevel).incrementedJ();
-    // while (idx.reduced() != idx1.reduced()) {
-    //   if (m_Nodes.find(idx.reduced()) != m_Nodes.end()) { // if node idx exists
-    //     nodes.push_back(idx);
-    //   }
-    //   idx.incrJ();
-    // }
-    // return nodes;
     return nodesInBetween(idx0, idx1);
   }
 
@@ -822,15 +815,6 @@ public:
     if ((idx0.k() == idx1.k()) || (idx0.i() != idx1.i()) || (idx0.j() != idx1.j())) {
       throw std::runtime_error("AMRMesh: nodesInBetween: invalid index");
     }
-    // std::vector<amr_index_type> nodes;
-    // auto idx = idx0.indexOnLevel(m_MaxLevel).incrementedK();
-    // while (idx.reduced() != idx1.reduced()) {
-    //   if (m_Nodes.find(idx.reduced()) != m_Nodes.end()) { // if node idx exists
-    //     nodes.push_back(idx);
-    //   }
-    //   idx.incrK();
-    // }
-    // return nodes;
     return nodesInBetween(idx0, idx1);
   }
 
@@ -1066,6 +1050,336 @@ public:
     auto x1 = getNodeCoordinates(node1);
     auto x2 = getNodeCoordinates(node2);
     return std::make_pair(x1, x2);
+  }
+
+  std::vector<amr_index_type> cellCornerIndices(const amr_index_type& idx) const
+  {
+    std::vector<amr_index_type> corners;
+    corners.reserve(8);
+    auto node0 = idx;
+    auto node1 = node0.incrementedI();
+    auto node2 = node1.incrementedJ();
+    auto node3 = node0.incrementedJ();
+    auto node4 = node0.incrementedK();
+    auto node5 = node1.incrementedK();
+    auto node6 = node2.incrementedK();
+    auto node7 = node3.incrementedK();
+    corners.push_back(node0);
+    corners.push_back(node1);
+    corners.push_back(node2);
+    corners.push_back(node3);
+    corners.push_back(node4);
+    corners.push_back(node5);
+    corners.push_back(node6);
+    corners.push_back(node7);
+    return corners;
+  }
+
+  void markOutsideNodesFromCells()
+  {
+    // reset all boundary flags
+    for (auto it : m_Nodes) {
+      auto idx  = it.first;
+      auto node = it.second;
+      node.is_boundary = false;
+      m_Nodes[idx] = node;
+    }
+    //
+    for (auto it : m_Cells) {
+      auto idx  = it.first;
+      auto cell = it.second;
+      if (cell.is_outside) {
+        auto neigbours = cellNeighbourIndices(idx);
+        for (const auto& nidx : neigbours) {
+          auto neigh_cell = m_Cells[nidx];
+          if (!neigh_cell.is_outside) {
+            auto corners1 = cellCornerIndices(idx);
+            auto corners2 = cellCornerIndices(nidx);
+            for (const auto& cidx1 : corners1) {
+              auto ridx1 = cidx1.reduced();
+              for (const auto& cidx2 : corners2) {
+                auto ridx2 = cidx2.reduced();
+                if (ridx1 == ridx2) {
+                  m_Nodes[ridx1].is_boundary = true;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void markOutsideCellsFromNodes()
+  {
+    // NOTE:
+    // This iteration relies on markOutsideNodesFromCells tagging every corner
+    // shared with outside cells. It does not tag against out-of-bounds neighbours
+    // and only considers the coarse cell's 8 corners at a refinement interface,
+    // so fine cells adjacent to outside/coarse or domain boundary regions may
+    // never see all their corners marked and therefore stay inside.
+    //
+    bool done = false;
+    while (!done) {
+      markOutsideNodesFromCells();
+      done = true;
+      for (auto it : m_Cells) {
+        auto idx  = it.first;
+        auto cell = it.second;
+        if (!cell.is_outside) {
+          auto corners = cellCornerIndices(idx);
+          bool is_outside = true;
+          for (const auto& cidx : corners) {
+            auto ridx = cidx.reduced();
+            auto node = m_Nodes.at(ridx);
+            if (!node.is_boundary) {
+              is_outside = false;
+              break;
+            }
+          }
+          if (is_outside) {
+            cell.is_outside = true;
+            m_Cells[idx] = cell;
+            done = false;
+          }
+        }
+      }
+    }
+  }
+
+  void writeVtkMesh(const std::string& file_name)
+  {
+    using std::vector;
+    //
+    extractFaces(true);
+    //
+    // collect leaf cells (including outside) in order of their linear index to
+    // stay consistent with the face bookkeeping
+    //
+    vector<amr_index_type> leaf_cells;
+    leaf_cells.reserve(m_Cells.size());
+    for (auto it : m_Cells) {
+      if (!it.second.first_child.valid()) {
+        leaf_cells.push_back(it.first);
+      }
+    }
+    std::sort(
+      leaf_cells.begin(), leaf_cells.end(),
+      [&](const amr_index_type& a, const amr_index_type& b)
+      {
+        auto la = m_Cells.at(a).linear_index;
+        auto lb = m_Cells.at(b).linear_index;
+        if (la != lb) return la < lb;
+        if (a.level() != b.level()) return a.level() < b.level();
+        if (a.i() != b.i()) return a.i() < b.i();
+        if (a.j() != b.j()) return a.j() < b.j();
+        return a.k() < b.k();
+      });
+    //
+    std::unordered_map<index_type, size_t> cell_index_to_pos;
+    for (size_t i = 0; i < leaf_cells.size(); ++i) {
+      cell_index_to_pos[m_Cells.at(leaf_cells[i]).linear_index] = i;
+    }
+    //
+    auto points = extractPoints();
+    vector<int> cell_levels;
+    vector<int> cell_outside;
+    vector<int> cell_i;
+    vector<int> cell_j;
+    vector<int> cell_k;
+    cell_levels.reserve(leaf_cells.size());
+    cell_outside.reserve(leaf_cells.size());
+    cell_i.reserve(leaf_cells.size());
+    cell_j.reserve(leaf_cells.size());
+    cell_k.reserve(leaf_cells.size());
+    for (const auto& cell_idx : leaf_cells) {
+      const auto& cell = m_Cells.at(cell_idx);
+      cell_levels.push_back(static_cast<int>(cell_idx.level()));
+      cell_outside.push_back(cell.is_outside ? 1 : 0);
+      cell_i.push_back(static_cast<int>(cell_idx.i()));
+      cell_j.push_back(static_cast<int>(cell_idx.j()));
+      cell_k.push_back(static_cast<int>(cell_idx.k()));
+    }
+    //
+    // gather faces per cell with potentially many nodes (watertight polyhedra)
+    //
+    vector<vector<vector<index_type>>> cell_faces(leaf_cells.size());
+    for (const auto& face : m_Faces) {
+      vector<index_type> nodes;
+      nodes.reserve(face.nodes.size());
+      for (const auto& node : face.nodes) {
+        nodes.push_back(nodeLinearIndex(node));
+      }
+      if (face.cell1 >= 0) {
+        auto it = cell_index_to_pos.find(face.cell1);
+        if (it != cell_index_to_pos.end()) {
+          cell_faces[it->second].push_back(nodes);
+        }
+      }
+      if (face.cell2 >= 0) {
+        auto it = cell_index_to_pos.find(face.cell2);
+        if (it != cell_index_to_pos.end()) {
+          auto reversed_nodes = nodes;
+          std::reverse(reversed_nodes.begin(), reversed_nodes.end());
+          cell_faces[it->second].push_back(reversed_nodes);
+        }
+      }
+    }
+    //
+    // build connectivity (unique points per cell) and offsets
+    //
+    vector<index_type> connectivity;
+    vector<index_type> offsets;
+    connectivity.reserve(points.size());
+    offsets.reserve(leaf_cells.size());
+    index_type conn_offset = 0;
+    for (const auto& faces : cell_faces) {
+      std::unordered_set<index_type> unique_nodes;
+      for (const auto& fn : faces) {
+        for (auto n : fn) {
+          unique_nodes.insert(n);
+        }
+      }
+      vector<index_type> nodes(unique_nodes.begin(), unique_nodes.end());
+      std::sort(nodes.begin(), nodes.end());
+      for (auto n : nodes) {
+        connectivity.push_back(n);
+      }
+      conn_offset += static_cast<index_type>(nodes.size());
+      offsets.push_back(conn_offset);
+    }
+    //
+    // build face stream and face offsets for VTK polyhedra
+    //
+    vector<index_type> face_stream;
+    vector<index_type> face_offsets;
+    face_stream.reserve(m_Faces.size() * 8);
+    face_offsets.reserve(leaf_cells.size());
+    index_type foffset = 0;
+    for (const auto& faces : cell_faces) {
+      face_stream.push_back(static_cast<index_type>(faces.size()));
+      for (const auto& fn : faces) {
+        face_stream.push_back(static_cast<index_type>(fn.size()));
+        for (auto n : fn) {
+          face_stream.push_back(n);
+        }
+      }
+      foffset += static_cast<index_type>(1); // num faces entry
+      for (const auto& fn : faces) {
+        foffset += static_cast<index_type>(1 + fn.size());
+      }
+      face_offsets.push_back(foffset);
+    }
+    //
+    std::ofstream file(file_name);
+    if (!file) {
+      throw std::runtime_error("AMRMesh: writeVtkMesh: unable to open VTU file");
+    }
+    auto num_cells  = leaf_cells.size();
+    auto num_points = points.size();
+    file << "<?xml version=\"1.0\"?>\n";
+    file << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
+    file << "  <UnstructuredGrid>\n";
+    file << "    <Piece NumberOfPoints=\"" << num_points << "\" NumberOfCells=\"" << num_cells << "\">\n";
+    file << "      <Points>\n";
+    file << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n";
+    for (const auto& p : points) {
+      file << "          " << p[0] << " " << p[1] << " " << p[2] << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "      </Points>\n";
+    file << "      <Cells>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n";
+    for (const auto& v : connectivity) {
+      file << "          " << v << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n";
+    for (const auto& v : offsets) {
+      file << "          " << v << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">\n";
+    for (size_t i = 0; i < num_cells; ++i) {
+      file << "          42\n";
+    }
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"faces\" format=\"ascii\">\n";
+    for (const auto& v : face_stream) {
+      file << "          " << v << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"faceoffsets\" format=\"ascii\">\n";
+    for (const auto& v : face_offsets) {
+      file << "          " << v << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "      </Cells>\n";
+    //
+    // point data: AMR indices
+    //
+    vector<int> point_i(points.size(), 0), point_j(points.size(), 0), point_k(points.size(), 0), point_level(points.size(), 0), point_outside(points.size(), 0);
+    for (const auto& it : m_Nodes) {
+      auto idx = it.first;
+      auto lin = it.second.linear_index;
+      point_i[lin] = static_cast<int>(idx.i());
+      point_j[lin] = static_cast<int>(idx.j());
+      point_k[lin] = static_cast<int>(idx.k());
+      point_level[lin] = static_cast<int>(idx.level());
+      point_outside[lin] = it.second.is_boundary ? 1 : 0;
+    }
+    file << "      <PointData Scalars=\"AMR-level\">\n";
+    file << "        <DataArray type=\"Int32\" Name=\"AMR-I\" format=\"ascii\">\n";
+    for (auto v : point_i) file << "          " << v << "\n";
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"AMR-J\" format=\"ascii\">\n";
+    for (auto v : point_j) file << "          " << v << "\n";
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"AMR-K\" format=\"ascii\">\n";
+    for (auto v : point_k) file << "          " << v << "\n";
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"AMR-level\" format=\"ascii\">\n";
+    for (auto v : point_level) file << "          " << v << "\n";
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"outside\" format=\"ascii\">\n";
+    for (auto v : point_outside) file << "          " << v << "\n";
+    file << "        </DataArray>\n";
+    file << "      </PointData>\n";
+    file << "      <CellData Scalars=\"level outside\">\n";
+    file << "        <DataArray type=\"Int32\" Name=\"level\" format=\"ascii\">\n";
+    for (auto level : cell_levels) {
+      file << "          " << level << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"outside\" format=\"ascii\">\n";
+    for (auto outside : cell_outside) {
+      file << "          " << outside << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"AMR-I\" format=\"ascii\">\n";
+    for (auto v : cell_i) {
+      file << "          " << v << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"AMR-J\" format=\"ascii\">\n";
+    for (auto v : cell_j) {
+      file << "          " << v << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"AMR-K\" format=\"ascii\">\n";
+    for (auto v : cell_k) {
+      file << "          " << v << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Int32\" Name=\"AMR-level\" format=\"ascii\">\n";
+    for (auto v : cell_levels) {
+      file << "          " << v << "\n";
+    }
+    file << "        </DataArray>\n";
+    file << "      </CellData>\n";
+    file << "    </Piece>\n";
+    file << "  </UnstructuredGrid>\n";
+    file << "</VTKFile>\n";
   }
 
   void writeFoamPointsFile(const std::string& file_name, std::vector<vector_type> X=std::vector<vector_type>()) const
@@ -1600,6 +1914,22 @@ TEST_CASE("AMRMesh_sphere_example")
     }
   }
   mesh.ensureSmoothTransition();
+  //
+  mesh.writeVtkMesh("test_sphere_1.vtu");
+  auto cells = mesh.getLeafCellIndices();
+  for (auto idx : cells) {
+    auto coords = mesh.getNodeCoordinatesOfCell(idx);
+    for (auto& coord : coords) {
+      if (coord[0]*coord[0] + coord[1]*coord[1] + coord[2]*coord[2] < 1) {
+        mesh.markCellAsOutside(idx);
+      }
+    }
+  }
+  //
+  mesh.writeVtkMesh("test_sphere_2.vtu");
+  mesh.markOutsideNodesFromCells();
+  //
+  mesh.writeVtkMesh("test_sphere_3.vtu");
 }
 
 TEST_CASE("AMRMesh_cell_neighbours_for_layers") 
