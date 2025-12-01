@@ -34,6 +34,18 @@ template <class T, unsigned int DIM> class StaticVector;
 
 #include "edl/doctest.h"
 
+#define DEBUG_UNIQUE_NAME2(base, line) base##line
+#define DEBUG_UNIQUE_NAME(base, line) DEBUG_UNIQUE_NAME2(base, line)
+
+#define DEBUG_NOP [[maybe_unused]] int DEBUG_UNIQUE_NAME(_debug_nop_dummy_, __LINE__) = 0
+#if defined(_WIN32)
+#define DEBUG_BREAK __debugbreak();
+#define DEBUG_BREAKIF(COND) if (COND) { __debugbreak(); }
+#else
+#define DEBUG_BREAK __builtin_debugtrap();
+#define DEBUG_BREAKIF(COND) if (COND) { DEBUG_BREAK; }
+#endif
+
 namespace EDL_NAMESPACE
 {
 #ifdef REAL_FLOAT

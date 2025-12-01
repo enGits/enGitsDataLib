@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
+#include <set>
 
 #include "edl/mathvector.h"
 
@@ -214,6 +215,50 @@ public:
       return false;
     }
     return true;
+  }
+
+  bool operator<(const AMRIndex& other) const
+  {
+    if (m_Level < other.level()) {
+      return true;
+    }
+    if (m_Level > other.level()) {
+      return false;
+    }
+    if (m_I < other.i()) {
+      return true;
+    }
+    if (m_I > other.i()) {
+      return false;
+    }
+    if (m_J < other.j()) {
+      return true;
+    }
+    if (m_J > other.j()) {
+      return false;
+    }
+    if (m_K < other.k()) {
+      return true;
+    }
+    if (m_K > other.k()) {
+      return false;
+    }
+    return false;
+  }
+
+  bool operator<=(const AMRIndex& other) const
+  {
+    return (*this < other) || (*this == other);
+  }
+
+  bool operator>(const AMRIndex& other) const
+  {
+    return !(*this <= other);
+  }
+
+  bool operator>=(const AMRIndex& other) const
+  {
+    return !(*this < other);
   }
 
   void operator+=(const AMRIndex& other)
@@ -702,6 +747,43 @@ private: // methods
     std::sort(m_Faces.begin(), m_Faces.end());
   }
 
+  void recalculateFacesIsBoundary()
+  {
+    using namespace std;
+    //
+    if (m_Faces.size() == 0) {
+      extractFaces();
+      return;
+    }
+    //
+    auto leaf_cells = getLeafCellIndices();
+    unordered_map<index_type, amr_index_type> index_map;
+    for (auto idx : leaf_cells) {
+      auto cell = m_Cells.at(idx);
+      index_map[cell.linear_index] = idx;
+    }
+    //
+    for (auto& face : m_Faces) {
+      face.is_boundary = false;
+      if (face.cell2 < 0) {
+        face.is_boundary = true;
+      } else {
+        if (index_map.find(face.cell1) == index_map.end()) {
+          throw std::runtime_error("AMRMesh: recalculateFacesIsBoundary: invalid cell mapping");
+        }
+        if (index_map.find(face.cell2) == index_map.end()) {
+          throw std::runtime_error("AMRMesh: recalculateFacesIsBoundary: invalid cell mapping");
+        }
+        auto idx1 = index_map.at(face.cell1);
+        auto idx2 = index_map.at(face.cell2);
+        auto cell1 = m_Cells.at(idx1);
+        auto cell2 = m_Cells.at(idx2);
+        if (cell1.is_outside != cell2.is_outside) {
+          face.is_boundary = true;
+        }
+      }
+    }
+  }
 
 
 public:
@@ -1075,7 +1157,7 @@ public:
     return corners;
   }
 
-  void markOutsideNodesFromCells()
+  void markBoundaryNodesFromCells()
   {
     // reset all boundary flags
     for (auto it : m_Nodes) {
@@ -1110,8 +1192,9 @@ public:
     }
   }
 
-  void markOutsideCellsFromNodes()
+  void cleanBoundaryTopology()
   {
+    using namespace std;
     // NOTE:
     // This iteration relies on markOutsideNodesFromCells tagging every corner
     // shared with outside cells. It does not tag against out-of-bounds neighbours
@@ -1119,32 +1202,128 @@ public:
     // so fine cells adjacent to outside/coarse or domain boundary regions may
     // never see all their corners marked and therefore stay inside.
     //
-    bool done = false;
+    bool done      = false;
+    int  N_outside = 0;
+    int  N_inside  = 0;
+    //
+    if (m_Faces.size() == 0) {
+      extractFaces();
+    }
+    //
+    // build maps:
+    //  - node -> face
+    //  - cell -> face
+    //
+    unordered_map<amr_index_type, set<size_t>> n2f;
+    unordered_map<index_type, set<size_t>>     cli2f;
+    for (size_t i_face = 0; i_face < m_Faces.size(); ++i_face) {
+      const auto& face = m_Faces[i_face];
+      for (const auto& node : face.nodes) {
+        n2f[node.reduced()].insert(i_face);
+      }
+      if (face.cell1 >= 0) {
+        cli2f[face.cell1].insert(i_face);
+      }
+      if (face.cell2 >= 0) {
+        cli2f[face.cell2].insert(i_face);
+      }
+    }
+    //
+    // find single inside/outside cells
+    // 
+    auto leaf_cells = getLeafCellIndices();
     while (!done) {
-      markOutsideNodesFromCells();
+      markBoundaryNodesFromCells();
       done = true;
-      for (auto it : m_Cells) {
-        auto idx  = it.first;
-        auto cell = it.second;
-        if (!cell.is_outside) {
-          auto corners = cellCornerIndices(idx);
-          bool is_outside = true;
-          for (const auto& cidx : corners) {
-            auto ridx = cidx.reduced();
-            auto node = m_Nodes.at(ridx);
-            if (!node.is_boundary) {
-              is_outside = false;
-              break;
-            }
+      for (auto cell_idx : leaf_cells) {
+        auto cell    = m_Cells.at(cell_idx);
+        auto corners = cellCornerIndices(cell_idx);
+        //
+        bool all_boundary = true;
+        //
+        for (const auto& cidx : corners) {
+          auto ridx = cidx.reduced();
+          auto node = m_Nodes.at(ridx);
+          if (!node.is_boundary) {
+            all_boundary = false;
+            break;
           }
-          if (is_outside) {
+        }
+        if (all_boundary) {
+          if (cell.is_outside) {
+            cell.is_outside = false;
+            m_Cells[cell_idx] = cell;
+            ++N_inside;
+            done = false;
+          } else {
             cell.is_outside = true;
-            m_Cells[idx] = cell;
+            m_Cells[cell_idx] = cell;
+            ++N_outside;
             done = false;
           }
         }
       }
     }
+    std::cout << "Marked " << N_outside << " outside cells from nodes." << std::endl;
+    std::cout << "Marked " << N_inside << " inside cells from nodes." << std::endl;
+    //
+    // find topological non-manifold edges
+    //
+    N_outside = 0;
+    done      = false;
+    while (!done) {
+      recalculateFacesIsBoundary();
+      done = true;
+      int N = 0;
+      for (auto cell_idx : leaf_cells) {
+        auto cell = m_Cells.at(cell_idx);
+        if (!cell.is_outside) {
+          //
+          // check for edges with more than 2 boundary faces
+          //
+          for (size_t i_face : cli2f[cell.linear_index]) {
+            bool found_non_manifold = false;
+            const auto& face = m_Faces[i_face];
+            for (int i_node = 0; i_node < face.nodes.size(); ++i_node) {
+              auto idx1 = face.nodes[i_node];
+              auto idx2 = face.nodes[(i_node + 1) % face.nodes.size()];
+              //
+              // collect boundary faces sharing this edge
+              //
+              set<size_t> edge_faces;
+              auto faces1 = n2f[idx1.reduced()];
+              auto faces2 = n2f[idx2.reduced()];
+              for (auto j_face : faces1) {
+                if (faces2.find(j_face) != faces2.end()) {
+                  if (m_Faces[j_face].is_boundary) {
+                    edge_faces.insert(j_face);
+                  }
+                }
+              }
+              if (edge_faces.size() == 2) {
+                DEBUG_NOP;
+              }
+              if (edge_faces.size() > 2) {
+                // mark cell as outside
+                cell.is_outside = true;
+                m_Cells[cell_idx] = cell;
+                ++N_outside;
+                done = false;
+                found_non_manifold = true;
+                ++N;
+                break;
+              }
+            }
+            if (found_non_manifold) {
+              break;
+            }
+          }
+        }
+      }
+      cout << "Marked " << N << " cells as outside in this iteration." << std::endl;
+    }
+    cout << "Marked " << N_outside << " outside cells from non-manifold edges." << std::endl;
+    recalculateFacesIsBoundary();
   }
 
   void writeVtkMesh(const std::string& file_name)
@@ -1925,11 +2104,13 @@ TEST_CASE("AMRMesh_sphere_example")
       }
     }
   }
-  //
   mesh.writeVtkMesh("test_sphere_2.vtu");
-  mesh.markOutsideNodesFromCells();
   //
+  mesh.markBoundaryNodesFromCells();
   mesh.writeVtkMesh("test_sphere_3.vtu");
+  //
+  mesh.cleanBoundaryTopology();
+  mesh.writeVtkMesh("test_sphere_4.vtu");
 }
 
 TEST_CASE("AMRMesh_cell_neighbours_for_layers") 
@@ -1996,6 +2177,172 @@ TEST_CASE("AMRMesh_single_cell_AMR_mesh")
   }
   //
   CHECK(mesh.numCells() == 1 + n*8);
+}
+
+TEST_CASE("AMRMesh_markCellsFromNodes_refinement_gap" * doctest::skip(true))
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<float,3>> vec3_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
+  typedef mesh_t::amr_index_type idx_t;
+  //
+  SUBCASE("single-level coarse-fine interface away from boundary")
+  {
+    mesh_t mesh(4, 4, 4, vec3_t(0,0,0), vec3_t(1,1,1));
+    idx_t refined_parent(1,1,1,0);
+    idx_t coarse_neigh  (2,1,1,0);
+    mesh.refineCell(refined_parent);
+    mesh.markCellAsOutside(coarse_neigh);
+    mesh.cleanBoundaryTopology();
+    idx_t fine_adjacent(2,2,2,1);
+    INFO("Known gap: fine cell next to outside coarse cell is still inside");
+    CHECK_FALSE(mesh.cellMarkedAsOutside(fine_adjacent));
+  }
+
+  SUBCASE("multi-level gap coarse to fine")
+  {
+    mesh_t mesh(4, 4, 4, vec3_t(0,0,0), vec3_t(1,1,1));
+    idx_t refined_parent(1,1,1,0);
+    idx_t coarse_neigh  (2,1,1,0);
+    mesh.refineCell(refined_parent);
+    // further refine one child to level 2
+    mesh.refineCell(idx_t(2,2,2,1));
+    mesh.markCellAsOutside(coarse_neigh);
+    mesh.cleanBoundaryTopology();
+    idx_t deep_child(4,4,4,2);
+    INFO("Known gap: level-2 child adjacent to outside coarse cell stays inside");
+    CHECK_FALSE(mesh.cellMarkedAsOutside(deep_child));
+  }
+
+  SUBCASE("boundary adjacency not tagged")
+  {
+    mesh_t mesh(3, 3, 3, vec3_t(0,0,0), vec3_t(1,1,1));
+    idx_t refined_parent(1,1,1,0);
+    mesh.refineCell(refined_parent);
+    idx_t boundary_outside(0,1,1,0); // on minus-x boundary
+    mesh.markCellAsOutside(boundary_outside);
+    mesh.cleanBoundaryTopology();
+    idx_t fine_adjacent(1,2,2,1); // child touching boundary face
+    INFO("Known gap: outside cell on boundary does not tag neighbours via out-of-bounds");
+    CHECK_FALSE(mesh.cellMarkedAsOutside(fine_adjacent));
+  }
+
+  SUBCASE("hanging-face corners not all tagged")
+  {
+    mesh_t mesh(4, 4, 4, vec3_t(0,0,0), vec3_t(1,1,1));
+    // refine two adjacent parents to create a split face; only coarse corners get tagged
+    idx_t parent_left (1,1,1,0);
+    idx_t parent_right(2,1,1,0);
+    mesh.refineCell(parent_left);
+    mesh.refineCell(idx_t(2,2,2,1)); // refine one child further on left side
+    mesh.markCellAsOutside(parent_right);
+    mesh.cleanBoundaryTopology();
+    idx_t hanging_child(2,2,2,1);
+    INFO("Known gap: cell with hanging nodes on a tagged face remains inside");
+    CHECK_FALSE(mesh.cellMarkedAsOutside(hanging_child));
+  }
+}
+
+TEST_CASE("AMRMesh_find_non_manifold_edges")
+{
+  using namespace edl;
+  //
+  typedef MathVector<StaticVector<float,3> > vec3_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
+  typedef mesh_t::amr_index_type idx_t;
+  //
+  int N = 10;
+  mesh_t mesh(N, N, N, vec3_t(-2,-2,-2), vec3_t(2,2,2));
+  //
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      for (int k = 0; k < N; ++k) {
+        if (k < N/2) {
+          mesh.markCellAsOutside(idx_t(i,j,k,0));
+        }
+      }
+    }
+  }
+  mesh.markCellAsOutside(idx_t(4,4,5,0));
+  mesh.markCellAsOutside(idx_t(5,5,5,0));
+  //mesh.cleanBoundaryTopology();
+  mesh.writeVtkMesh("test_non_manifold.vtu");
+}
+
+TEST_CASE("AMRMesh_edgesOfCell_basic_and_refined")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<float,3>> vec3_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
+  typedef mesh_t::amr_index_type idx_t;
+
+  SUBCASE("single cell edges")
+  {
+    /*
+    mesh_t mesh(1,1,1, vec3_t(0,0,0), vec3_t(1,1,1));
+    auto edges = mesh.edgesOfCell(idx_t(0,0,0,0));
+    CHECK(edges.size() == 12);
+    // check a couple of expected edges
+    bool has_edge_00_10 = false;
+    bool has_edge_00_01 = false;
+    for (const auto& e : edges) {
+      auto n1 = e.node1;
+      auto n2 = e.node2;
+      CHECK(e.faces.size() == 2); // each edge on a hex has 2 faces
+      if ((n1 == idx_t(0,0,0,0) && n2 == idx_t(1,0,0,0)) ||
+          (n2 == idx_t(0,0,0,0) && n1 == idx_t(1,0,0,0))) {
+        has_edge_00_10 = true;
+      }
+      if ((n1 == idx_t(0,0,0,0) && n2 == idx_t(0,0,1,0)) ||
+          (n2 == idx_t(0,0,0,0) && n1 == idx_t(0,0,1,0))) {
+        has_edge_00_01 = true;
+      }
+    }
+    CHECK(has_edge_00_10);
+    CHECK(has_edge_00_01);
+    */
+  }
+
+  SUBCASE("refined cell uses reduced corner indices")
+  {
+    /*
+    mesh_t mesh(2,2,2, vec3_t(0,0,0), vec3_t(1,1,1));
+    idx_t parent(0,0,0,0);
+    mesh.refineCell(parent);
+    idx_t child(0,0,0,1);
+    auto edges = mesh.edgesOfCell(child);
+    CHECK(edges.size() >= 12);
+    // corners should be reduced, i.e., level 1 indices reduced to level 0
+    idx_t reduced_corner = idx_t(0,0,0,0);
+    bool has_reduced_corner = false;
+    for (const auto& e : edges) {
+      if (e.node1 == reduced_corner || e.node2 == reduced_corner) {
+        has_reduced_corner = true;
+        break;
+      }
+    }
+    CHECK(has_reduced_corner);
+    */
+  }
+
+  SUBCASE("coarse-fine interface yields faces with extra nodes")
+  {
+    /*
+    mesh_t mesh(2,1,1, vec3_t(0,0,0), vec3_t(1,1,1));
+    mesh.refineCell(idx_t(0,0,0,0));
+    auto edges = mesh.edgesOfCell(idx_t(1,0,0,0)); // coarse neighbour
+    bool saw_extra = false;
+    for (const auto& e : edges) {
+      for (auto i_f : e.faces) {
+        const auto& f = mesh.faceFromIndex(i_f);
+        if (f.nodes.size() > 4) {
+          saw_extra = true;
+        }
+      }
+    }
+    CHECK(saw_extra);
+    */
+  }
 }
 
 
