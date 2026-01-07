@@ -36,12 +36,7 @@ template <typename VEC> struct SearchTreeVectorCheck
   typedef VEC item_type;
   static bool isInsideCartesianBox(const VEC& x, const VEC& x1, const VEC& x2)
   {
-    for (int dim = 0; dim < x.size(); ++dim) {
-      if (x[dim] <= x1[dim] || x[dim] >= x2[dim]) {
-        return false;
-      }
-    }
-    return true;
+    return edl::isInsideCartesianBox(x, x1, x2, 0.0);
   }
   static bool match(const VEC& x1, const VEC& x2)
   {

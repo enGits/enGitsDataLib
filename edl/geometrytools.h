@@ -205,7 +205,7 @@ bool intersectEdgeAndTriangle(const VEC& a, const VEC& b, const VEC& c,
   }
 
   // intersection outside of triangle?
-  if (!isInsideTriangle(vec2_t(ri[0],ri[1]),tol)) {
+  if (!isInsideTriangle(vec2_t(ri[0], ri[1]), tol)) {
     return false;
   }
   return true;
@@ -221,10 +221,11 @@ bool isInsideTriangle(VEC r, typename VEC::value_type tol=1e-4)
 }
 
 template <class VEC, class T = float>
-bool isInsideCartesianBox(VEC x, VEC x1, VEC x2, T tol = 1e-4)
+bool isInsideCartesianBox(const VEC& x, const VEC& x1, const VEC& x2, T tol = 1e-4)
 {
   for (int i = 0; i < x.size(); ++i) {
-    if (x[i] < (x1[i]-tol) || x[i] >= (x2[i]+tol)) {
+    tol *= x2[i] - x1[i];
+    if (x[i] < (x1[i]-tol) || x[i] > (x2[i]+tol)) {
       return false;
     }
   }
@@ -281,17 +282,6 @@ bool cartesianBoxesOverlap(const VEC &a1, const VEC &a2, const VEC &b1, const VE
 {
   for (int i = 0; i < a1.size(); ++i) {
     if (a1[i] > b2[i] || a2[i] < b1[i]) {
-      return false;
-    }
-  }
-  return true;
-}
-
-template <class VEC>
-bool pointIsInCartesianBox(const VEC& x, const VEC& x1, const VEC& x2)
-{
-  for (int i = 0; i < x.size(); ++i) {
-    if (x[i] < x1[i] || x[i] > x2[i]) {
       return false;
     }
   }
