@@ -143,6 +143,7 @@ edl/tsdimvar.h
 edl/tsparsetwodimarray.h
 edl/unit.h
 edl/varcontainer.h
+edl/teelogger.h
 edl/tgraph.h
 edl/tlsqgrad.h
 edl/tools.h
@@ -153,11 +154,11 @@ set(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
 edl/csvreader.cpp
 edl/edlerror.cpp
-edl/geometrytools.cpp
 edl/interpolationcurve.cpp
 edl/list.cpp
 edl/profile.cpp
 edl/sparsetwodimarray.cpp
+edl/teelogger.cpp
 edl/timewindow.cpp
 edl/unit.cpp
 edl/varcontainer.cpp
