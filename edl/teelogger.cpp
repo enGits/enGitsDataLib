@@ -13,8 +13,6 @@
 #include <iostream>
 
 #include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 
