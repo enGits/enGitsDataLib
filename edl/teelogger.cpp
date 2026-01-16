@@ -13,11 +13,39 @@
 #include <iostream>
 
 #include <fcntl.h>
-#include <unistd.h>
-
+#if defined(_WIN32)
+  #include <BaseTsd.h>
+  #include <io.h>
+  typedef SSIZE_T ssize_t;
+  #ifndef STDOUT_FILENO
+  #define STDOUT_FILENO 1
+  #endif
+  #ifndef STDERR_FILENO
+  #define STDERR_FILENO 2
+  #endif
+  #define dup _dup
+  #define dup2 _dup2
+  #define close _close
+  #define open _open
+  #define read _read
+  #define write _write
+#else
+  #include <unistd.h> 
+#endif
 
 namespace EDL_NAMESPACE
 {
+namespace
+{
+int createPipe(int pipefd[2])
+{
+#if defined(_WIN32)
+  return _pipe(pipefd, 4096, _O_BINARY);
+#else
+  return ::pipe(pipefd);
+#endif
+}
+} // namespace
 
 TeeLogger::TeeLogger(const std::string& path)
 {
@@ -69,7 +97,7 @@ bool TeeLogger::beginCapture()
   }
 
   int pipefd[2];
-  if (::pipe(pipefd) != 0) {
+  if (createPipe(pipefd) != 0) {
     return false;
   }
 
