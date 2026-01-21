@@ -299,6 +299,143 @@ bool pointIsInCartesianBox(const VEC& x, const VEC& x1, const VEC& x2)
 }
 
 template <class VEC>
+bool edgeIntersectsCartesianBox(VEC xe1, VEC xe2, VEC xb1, VEC xb2)
+{
+  typedef typename VEC::value_type real_t;
+  //
+  // ensure xb1 <= xb2 component-wise
+  //
+  for (int i = 0; i < xb1.size(); ++i) {
+    if (xb1[i] > xb2[i]) {
+      std::swap(xb1[i], xb2[i]);
+    }
+  }
+  //
+  // endpoints inside the box -> intersection
+  //
+  if (pointIsInCartesianBox(xe1, xb1, xb2) || pointIsInCartesianBox(xe2, xb1, xb2)) {
+    return true;
+  }
+  //
+  // Liang-Barsky style clipping against all box slabs
+  //
+  VEC d = xe2 - xe1;
+  real_t tmin = 0;
+  real_t tmax = 1;
+  const real_t eps = std::numeric_limits<real_t>::epsilon();
+  for (int i = 0; i < d.size(); ++i) {
+    if (std::abs(d[i]) < eps) {
+      // segment is parallel to this slab
+      if (xe1[i] < xb1[i] || xe1[i] > xb2[i]) {
+        return false;
+      }
+      continue;
+    }
+    real_t inv_d = real_t(1) / d[i];
+    real_t t1 = (xb1[i] - xe1[i]) * inv_d;
+    real_t t2 = (xb2[i] - xe1[i]) * inv_d;
+    if (t1 > t2) {
+      std::swap(t1, t2);
+    }
+    tmin = std::max(tmin, t1);
+    tmax = std::min(tmax, t2);
+    if (tmin > tmax) {
+      return false;
+    }
+  }
+  return (tmax >= 0) && (tmin <= 1);
+}
+
+template <class VEC>
+bool triangleIntersectsCartesianBox(VEC xt1, VEC xt2, VEC xt3, VEC xb1, VEC xb2)
+{
+  typedef typename VEC::value_type real_t;
+  //
+  // ensure xb1 <= xb2 component-wise
+  //
+  for (int i = 0; i < xb1.size(); ++i) {
+    if (xb1[i] > xb2[i]) {
+      std::swap(xb1[i], xb2[i]);
+    }
+  }
+  //
+  // quick accept tests: vertex in box or edge cutting box
+  //
+  if (pointIsInCartesianBox(xt1, xb1, xb2) || pointIsInCartesianBox(xt2, xb1, xb2) || pointIsInCartesianBox(xt3, xb1, xb2)) {
+    return true;
+  }
+  if (edgeIntersectsCartesianBox(xt1, xt2, xb1, xb2) ||
+      edgeIntersectsCartesianBox(xt2, xt3, xb1, xb2) ||
+      edgeIntersectsCartesianBox(xt3, xt1, xb1, xb2)) {
+    return true;
+  }
+  //
+  // Separating Axis Test (triangle vs. AABB)
+  //
+  VEC box_center = real_t(0.5)*(xb1 + xb2);
+  VEC box_half   = real_t(0.5)*(xb2 - xb1);
+  //
+  // move triangle into box-centred coordinate system
+  //
+  VEC v0 = xt1 - box_center;
+  VEC v1 = xt2 - box_center;
+  VEC v2 = xt3 - box_center;
+  VEC e0 = v1 - v0;
+  VEC e1 = v2 - v1;
+  VEC e2 = v0 - v2;
+  //
+  // 1) cross-product axes (triangle edges x box axes)
+  //
+  VEC axes[3];
+  axes[0] = VEC(1,0,0);
+  axes[1] = VEC(0,1,0);
+  axes[2] = VEC(0,0,1);
+  VEC edges[3] = {e0, e1, e2};
+  const real_t eps = std::numeric_limits<real_t>::epsilon();
+  for (int ie = 0; ie < 3; ++ie) {
+    for (int ia = 0; ia < 3; ++ia) {
+      VEC axis = edges[ie].cross(axes[ia]);
+      real_t axis_len2 = axis.abs2();
+      if (axis_len2 <= eps) {
+        continue; // parallel, skip
+      }
+      real_t p0 = v0*axis;
+      real_t p1 = v1*axis;
+      real_t p2 = v2*axis;
+      real_t min_p = std::min(p0, std::min(p1, p2));
+      real_t max_p = std::max(p0, std::max(p1, p2));
+      real_t r = box_half[0]*std::abs(axis[0]) + box_half[1]*std::abs(axis[1]) + box_half[2]*std::abs(axis[2]);
+      if (min_p > r || max_p < -r) {
+        return false;
+      }
+    }
+  }
+  //
+  // 2) test overlap along the box face normals (x,y,z)
+  //
+  for (int i = 0; i < 3; ++i) {
+    real_t min_t = std::min(v0[i], std::min(v1[i], v2[i]));
+    real_t max_t = std::max(v0[i], std::max(v1[i], v2[i]));
+    if (min_t > box_half[i] || max_t < -box_half[i]) {
+      return false;
+    }
+  }
+  //
+  // 3) triangle plane against the box
+  //
+  VEC normal = e0.cross(e1);
+  real_t norm_len2 = normal.abs2();
+  if (norm_len2 > eps) {
+    real_t dist = normal * v0;
+    real_t r = box_half[0]*std::abs(normal[0]) + box_half[1]*std::abs(normal[1]) + box_half[2]*std::abs(normal[2]);
+    if (std::abs(dist) > r) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <class VEC>
 bool tetraIsInsideCartesianBox(const std::vector<VEC>& tetra, const VEC& x1, const VEC& x2)
 {  
   typedef VEC vec_t;
@@ -1437,6 +1574,42 @@ TEST_CASE("makeAngularlySeparatedDirections_real_life_example")
 
   // All inputs are within ~0.1° of each other; with 5° threshold only one should remain
   CHECK(out.size() == 3);
+}
+
+TEST_CASE("geometrytools_edgeIntersectsCartesianBox")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> vec3_t;
+
+  vec3_t b1(-1, -1, -1);
+  vec3_t b2( 1,  1,  1);
+
+  // completely inside
+  CHECK(edgeIntersectsCartesianBox(vec3_t(0, 0, 0), vec3_t(0.5, 0, 0), b1, b2) == true);
+
+  // crosses the box from outside to outside
+  CHECK(edgeIntersectsCartesianBox(vec3_t(-2, 0, 0), vec3_t(2, 0, 0), b1, b2) == true);
+
+  // completely outside and parallel to a box face
+  CHECK(edgeIntersectsCartesianBox(vec3_t(2, 2, 2), vec3_t(3, 3, 3), b1, b2) == false);
+}
+
+TEST_CASE("triangleIntersectsCartesianBox")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> vec3_t;
+
+  vec3_t b1(-1, -1, -1);
+  vec3_t b2( 1,  1,  1);
+
+  // triangle fully inside
+  CHECK(triangleIntersectsCartesianBox(vec3_t(0, 0, 0), vec3_t(0.5, 0, 0), vec3_t(0, 0.5, 0), b1, b2) == true);
+
+  // triangle spans across the box with vertices outside
+  CHECK(triangleIntersectsCartesianBox(vec3_t(-2, 0, 0), vec3_t(2, 0, 0), vec3_t(0, 2, 0), b1, b2) == true);
+
+  // triangle completely outside
+  CHECK(triangleIntersectsCartesianBox(vec3_t(2, 2, 2), vec3_t(3, 2, 2), vec3_t(2, 3, 2), b1, b2) == false);
 }
 
 #endif
