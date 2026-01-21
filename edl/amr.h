@@ -17,12 +17,15 @@
 #include <ostream>
 #include <fstream>
 #include <vector>
+#include <array>
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
 #include <set>
 
 #include "edl/mathvector.h"
+#include "edl/quicktimer.h"
+#include "edl/geometrytools.h"
 
 namespace edl
 {
@@ -648,28 +651,54 @@ private: // methods
     return num_faces;
   }
 
-  void extractFaces(bool keep_outside=false)
+public:
+
+  std::vector<face_t> buildFaces(bool keep_outside, 
+                                 bool boundary_only, 
+                                 bool domain_boundary_is_boundary, 
+                                 const std::vector<amr_index_type>* leaf_cells_ptr)
   {
-    //
-    m_Faces.clear();
-    m_Faces.reserve(numPotentialFaces(keep_outside));
+    std::vector<face_t> faces;
     amr_index_type neighbours[6];
-    auto leaf_cells = getLeafCellIndices();
-    for (auto idx : leaf_cells) {
+    std::vector<amr_index_type> leaf_cells_local;
+    const std::vector<amr_index_type>* leaf_cells = leaf_cells_ptr;
+    if (!leaf_cells) {
+      leaf_cells_local = getLeafCellIndices();
+      leaf_cells = &leaf_cells_local;
+    }
+    faces.reserve((*leaf_cells).size() * 6);
+    //
+    // optional cache of neighbours for reuse when caller supplies a stable leaf_cells_ptr
+    static std::vector<std::array<amr_index_type,6>> neighbour_cache;
+    static const std::vector<amr_index_type>* cached_leaf_ptr = nullptr;
+    static size_t cached_leaf_size = 0;
+    bool cache_valid = (leaf_cells_ptr != nullptr) && (leaf_cells_ptr == cached_leaf_ptr) && (cached_leaf_size == leaf_cells->size());
+    if (!cache_valid) {
+      neighbour_cache.assign(leaf_cells->size(), {});
+      for (size_t ii = 0; ii < leaf_cells->size(); ++ii) {
+        auto idx = (*leaf_cells)[ii];
+        neighbour_cache[ii][0] = cellNeighbourIM(idx);
+        neighbour_cache[ii][1] = cellNeighbourIP(idx);
+        neighbour_cache[ii][2] = cellNeighbourJM(idx);
+        neighbour_cache[ii][3] = cellNeighbourJP(idx);
+        neighbour_cache[ii][4] = cellNeighbourKM(idx);
+        neighbour_cache[ii][5] = cellNeighbourKP(idx);
+      }
+      cached_leaf_ptr  = leaf_cells_ptr;
+      cached_leaf_size = leaf_cells->size();
+    }
+    for (size_t ii = 0; ii < leaf_cells->size(); ++ii) {
+      auto idx = (*leaf_cells)[ii];
       auto cell = m_Cells.at(idx);
-      neighbours[0] = cellNeighbourIM(idx);
-      neighbours[1] = cellNeighbourIP(idx);
-      neighbours[2] = cellNeighbourJM(idx);
-      neighbours[3] = cellNeighbourJP(idx);
-      neighbours[4] = cellNeighbourKM(idx);
-      neighbours[5] = cellNeighbourKP(idx);
+      for (int i = 0; i < 6; ++i) {
+        neighbours[i] = neighbour_cache[ii][i];
+      }
       //
       for (int i = 0; i < 6; ++i) {
         auto idx2 = neighbours[i];
         if (idx2.valid() || idx2.outOfBounds()) {
           bool use_face = true;
           face_t face;
-          face.nodes.resize(4);
           face.cell1 = cell.linear_index;          
           if (face.cell1 < 0) {
             throw std::runtime_error("AMRMesh: extractFaces: invalid cell mapping");
@@ -679,6 +708,7 @@ private: // methods
             if (cell.is_outside && !keep_outside) {
               use_face = false;
             }
+            face.is_boundary = domain_boundary_is_boundary;
           } else {
             auto cell2 = m_Cells.at(idx2);
             if (cell.is_outside != cell2.is_outside) {
@@ -695,7 +725,11 @@ private: // methods
               use_face = false;
             }
           }
+          if (boundary_only && !face.is_boundary) {
+            use_face = false;
+          }
           if (use_face) {
+            face.nodes.resize(4);
             switch (i) {
               case 0:
                 face.nodes[0] = idx;
@@ -738,51 +772,19 @@ private: // methods
               face.reverse();
             }
             completeFace(face);
-            m_Faces.push_back(face);
+            faces.push_back(face);
           }
         }
       }
     }
-    m_Faces.shrink_to_fit();
-    std::sort(m_Faces.begin(), m_Faces.end());
+    faces.shrink_to_fit();
+    std::sort(faces.begin(), faces.end());
+    return faces;
   }
 
-  void recalculateFacesIsBoundary()
+  void extractFaces(bool keep_outside=false)
   {
-    using namespace std;
-    //
-    if (m_Faces.size() == 0) {
-      extractFaces();
-      return;
-    }
-    //
-    auto leaf_cells = getLeafCellIndices();
-    unordered_map<index_type, amr_index_type> index_map;
-    for (auto idx : leaf_cells) {
-      auto cell = m_Cells.at(idx);
-      index_map[cell.linear_index] = idx;
-    }
-    //
-    for (auto& face : m_Faces) {
-      face.is_boundary = false;
-      if (face.cell2 < 0) {
-        face.is_boundary = true;
-      } else {
-        if (index_map.find(face.cell1) == index_map.end()) {
-          throw std::runtime_error("AMRMesh: recalculateFacesIsBoundary: invalid cell mapping");
-        }
-        if (index_map.find(face.cell2) == index_map.end()) {
-          throw std::runtime_error("AMRMesh: recalculateFacesIsBoundary: invalid cell mapping");
-        }
-        auto idx1 = index_map.at(face.cell1);
-        auto idx2 = index_map.at(face.cell2);
-        auto cell1 = m_Cells.at(idx1);
-        auto cell2 = m_Cells.at(idx2);
-        if (cell1.is_outside != cell2.is_outside) {
-          face.is_boundary = true;
-        }
-      }
-    }
+    m_Faces = buildFaces(keep_outside, false, false, nullptr);
   }
 
 
@@ -1192,7 +1194,92 @@ public:
     }
   }
 
-  void cleanBoundaryTopology()
+  int markCellsWithNonManifoldEdgesAsOutside(std::vector<amr_index_type>& leaf_cells)
+  {
+    using namespace std;
+    auto faces = buildFaces(true, true, false, &leaf_cells);
+    //
+    // create mapping
+    //  - node -> node
+    //  - node -> face index in faces vector
+    //  - node -> cell index in leaf_cells vector
+    //
+    unordered_map<amr_index_type, set<amr_index_type>> n2n;
+    unordered_map<amr_index_type, set<size_t>>         n2f;
+    unordered_map<amr_index_type, set<size_t>>         n2c;
+    for (int i_face = 0; i_face < faces.size(); ++i_face) {
+      const auto& face = faces[i_face];
+      for (int i_node = 0; i_node < face.nodes.size(); ++i_node) {
+        amr_index_type idx1 = face.nodes[i_node].reduced();
+        amr_index_type idx2 = face.nodes[(i_node + 1) % face.nodes.size()].reduced();
+        n2n[idx1].insert(idx2);
+        n2n[idx2].insert(idx1);
+        n2f[idx1].insert(i_face);
+        if (face.cell1 >= 0) {
+          n2c[idx1].insert(faces[i_face].cell1);
+        }
+        if (face.cell2 >= 0) {
+          n2c[idx1].insert(faces[i_face].cell2);
+        }
+      }
+    }    
+    //
+    // check if any n2n connection (edge) is shared by more than two faces
+    // and mark all cells with that edge as outside
+    //
+    int N_marked = 0;
+    for (auto it : n2n) {
+      amr_index_type idx1 = it.first;
+      for (const auto& idx2 : it.second) {
+        if (idx1 >= idx2) {
+          continue; // avoid double counting edges
+        }
+        //
+        // count faces sharing edge idx1 - idx2
+        // effectively the intersection of n2f[idx1] and n2f[idx2]
+        //
+        int N_faces_sharing_edge = 0;
+        for (const auto& f1 : n2f[idx1]) {
+          if (n2f[idx2].find(f1) != n2f[idx2].end()) {
+            ++N_faces_sharing_edge;
+          }
+        }
+        if (N_faces_sharing_edge > 2) {
+          //
+          // collect all cells sharing that edge as outside and determine the highest level
+          // effectively the intersection of n2c[idx1] and n2c[idx2]
+          //
+          vector<amr_index_type> cells_around_edge;
+          int highest_level = 0;
+          for (const auto& c1 : n2c[idx1]) {
+            if (n2c[idx2].find(c1) != n2c[idx2].end()) {
+              amr_index_type cell_idx = leaf_cells[c1];
+              if (!m_Cells[cell_idx].is_outside) {
+                cells_around_edge.push_back(cell_idx);
+                if (cell_idx.level() > highest_level) {
+                  highest_level = cell_idx.level();
+                }
+              }
+            }
+          }
+          for (const auto& cell_idx : cells_around_edge) {
+            if (cell_idx.level() == highest_level) {
+              m_Cells[cell_idx].is_outside = true;
+              ++N_marked;
+            }
+          }
+        }
+      }
+    }
+    return N_marked;
+  }
+
+  index_type maxLevel() const
+  {
+    return m_MaxLevel;
+  }
+
+  void cleanBoundaryTopology(bool clean_inside, bool clean_outside, bool clean_nonmanifold)
   {
     using namespace std;
     // NOTE:
@@ -1205,29 +1292,7 @@ public:
     bool done      = false;
     int  N_outside = 0;
     int  N_inside  = 0;
-    //
-    if (m_Faces.size() == 0) {
-      extractFaces();
-    }
-    //
-    // build maps:
-    //  - node -> face
-    //  - cell -> face
-    //
-    unordered_map<amr_index_type, set<size_t>> n2f;
-    unordered_map<index_type, set<size_t>>     cli2f;
-    for (size_t i_face = 0; i_face < m_Faces.size(); ++i_face) {
-      const auto& face = m_Faces[i_face];
-      for (const auto& node : face.nodes) {
-        n2f[node.reduced()].insert(i_face);
-      }
-      if (face.cell1 >= 0) {
-        cli2f[face.cell1].insert(i_face);
-      }
-      if (face.cell2 >= 0) {
-        cli2f[face.cell2].insert(i_face);
-      }
-    }
+    int  N_topo    = 0;
     //
     // find single inside/outside cells
     // 
@@ -1251,80 +1316,41 @@ public:
         }
         if (all_boundary) {
           if (cell.is_outside) {
-            cell.is_outside = false;
-            m_Cells[cell_idx] = cell;
-            ++N_inside;
-            done = false;
+            if (clean_inside) {
+              cell.is_outside = false;
+              m_Cells[cell_idx] = cell;
+              ++N_inside;
+              done = false;
+            }
           } else {
-            cell.is_outside = true;
-            m_Cells[cell_idx] = cell;
-            ++N_outside;
-            done = false;
-          }
-        }
-      }
-    }
-    std::cout << "Marked " << N_outside << " outside cells from nodes." << std::endl;
-    std::cout << "Marked " << N_inside << " inside cells from nodes." << std::endl;
-    //
-    // find topological non-manifold edges
-    //
-    N_outside = 0;
-    done      = false;
-    while (!done) {
-      recalculateFacesIsBoundary();
-      done = true;
-      int N = 0;
-      for (auto cell_idx : leaf_cells) {
-        auto cell = m_Cells.at(cell_idx);
-        if (!cell.is_outside) {
-          //
-          // check for edges with more than 2 boundary faces
-          //
-          for (size_t i_face : cli2f[cell.linear_index]) {
-            bool found_non_manifold = false;
-            const auto& face = m_Faces[i_face];
-            for (int i_node = 0; i_node < face.nodes.size(); ++i_node) {
-              auto idx1 = face.nodes[i_node];
-              auto idx2 = face.nodes[(i_node + 1) % face.nodes.size()];
-              //
-              // collect boundary faces sharing this edge
-              //
-              set<size_t> edge_faces;
-              auto faces1 = n2f[idx1.reduced()];
-              auto faces2 = n2f[idx2.reduced()];
-              for (auto j_face : faces1) {
-                if (faces2.find(j_face) != faces2.end()) {
-                  if (m_Faces[j_face].is_boundary) {
-                    edge_faces.insert(j_face);
-                  }
-                }
-              }
-              if (edge_faces.size() == 2) {
-                DEBUG_NOP;
-              }
-              if (edge_faces.size() > 2) {
-                // mark cell as outside
-                cell.is_outside = true;
-                m_Cells[cell_idx] = cell;
-                ++N_outside;
-                done = false;
-                found_non_manifold = true;
-                ++N;
-                break;
-              }
-            }
-            if (found_non_manifold) {
-              break;
+            if (clean_outside) {
+              cell.is_outside = true;
+              m_Cells[cell_idx] = cell;
+              ++N_outside;
+              done = false;
             }
           }
         }
       }
-      cout << "Marked " << N << " cells as outside in this iteration." << std::endl;
+      //
+      if (clean_nonmanifold) {
+        int n_topo = markCellsWithNonManifoldEdgesAsOutside(leaf_cells);
+        if (n_topo > 0) {
+          N_topo += n_topo;
+          done = false;
+        }
+      }
     }
-    cout << "Marked " << N_outside << " outside cells from non-manifold edges." << std::endl;
-    recalculateFacesIsBoundary();
-  }
+    if (clean_outside) {
+      std::cout << "Marked " << N_outside << " outside cells from nodes." << std::endl;
+    }
+    if (clean_inside) {
+      std::cout << "Marked " << N_inside << " inside cells from nodes." << std::endl;
+    }
+    if (clean_nonmanifold) {
+      std::cout << "Marked " << N_topo << " cells with non-manifold edges as outside." << std::endl;
+    }
+  } 
 
   void writeVtkMesh(const std::string& file_name)
   {
@@ -2109,7 +2135,7 @@ TEST_CASE("AMRMesh_sphere_example")
   mesh.markBoundaryNodesFromCells();
   mesh.writeVtkMesh("test_sphere_3.vtu");
   //
-  mesh.cleanBoundaryTopology();
+  mesh.cleanBoundaryTopology(true, true, true);
   mesh.writeVtkMesh("test_sphere_4.vtu");
 }
 
@@ -2193,7 +2219,7 @@ TEST_CASE("AMRMesh_markCellsFromNodes_refinement_gap" * doctest::skip(true))
     idx_t coarse_neigh  (2,1,1,0);
     mesh.refineCell(refined_parent);
     mesh.markCellAsOutside(coarse_neigh);
-    mesh.cleanBoundaryTopology();
+    mesh.cleanBoundaryTopology(true, true, true);
     idx_t fine_adjacent(2,2,2,1);
     INFO("Known gap: fine cell next to outside coarse cell is still inside");
     CHECK_FALSE(mesh.cellMarkedAsOutside(fine_adjacent));
@@ -2208,7 +2234,7 @@ TEST_CASE("AMRMesh_markCellsFromNodes_refinement_gap" * doctest::skip(true))
     // further refine one child to level 2
     mesh.refineCell(idx_t(2,2,2,1));
     mesh.markCellAsOutside(coarse_neigh);
-    mesh.cleanBoundaryTopology();
+    mesh.cleanBoundaryTopology(true, true, true);
     idx_t deep_child(4,4,4,2);
     INFO("Known gap: level-2 child adjacent to outside coarse cell stays inside");
     CHECK_FALSE(mesh.cellMarkedAsOutside(deep_child));
@@ -2221,7 +2247,7 @@ TEST_CASE("AMRMesh_markCellsFromNodes_refinement_gap" * doctest::skip(true))
     mesh.refineCell(refined_parent);
     idx_t boundary_outside(0,1,1,0); // on minus-x boundary
     mesh.markCellAsOutside(boundary_outside);
-    mesh.cleanBoundaryTopology();
+    mesh.cleanBoundaryTopology(true, true, true);
     idx_t fine_adjacent(1,2,2,1); // child touching boundary face
     INFO("Known gap: outside cell on boundary does not tag neighbours via out-of-bounds");
     CHECK_FALSE(mesh.cellMarkedAsOutside(fine_adjacent));
@@ -2236,7 +2262,7 @@ TEST_CASE("AMRMesh_markCellsFromNodes_refinement_gap" * doctest::skip(true))
     mesh.refineCell(parent_left);
     mesh.refineCell(idx_t(2,2,2,1)); // refine one child further on left side
     mesh.markCellAsOutside(parent_right);
-    mesh.cleanBoundaryTopology();
+    mesh.cleanBoundaryTopology(true, true, true);
     idx_t hanging_child(2,2,2,1);
     INFO("Known gap: cell with hanging nodes on a tagged face remains inside");
     CHECK_FALSE(mesh.cellMarkedAsOutside(hanging_child));
@@ -2263,10 +2289,68 @@ TEST_CASE("AMRMesh_find_non_manifold_edges")
       }
     }
   }
+  mesh.markCellAsOutside(idx_t(3,4,5,0));
   mesh.markCellAsOutside(idx_t(4,4,5,0));
+  mesh.markCellAsOutside(idx_t(3,3,5,0));
+  mesh.markCellAsOutside(idx_t(4,3,5,0));
   mesh.markCellAsOutside(idx_t(5,5,5,0));
-  //mesh.cleanBoundaryTopology();
-  mesh.writeVtkMesh("test_non_manifold.vtu");
+  mesh.markCellAsOutside(idx_t(5,6,5,0));
+  mesh.markCellAsOutside(idx_t(6,5,5,0));
+  mesh.markCellAsOutside(idx_t(6,6,5,0));
+  mesh.writeVtkMesh("test_non_manifold_0.vtu");
+  mesh.cleanBoundaryTopology(true, true, true);
+  mesh.writeVtkMesh("test_non_manifold_1.vtu");
+}
+
+TEST_CASE("AMRMesh_buildFaces_profile")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<float,3>> vec3_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
+  typedef mesh_t::amr_index_type idx_t;
+#ifdef EDL_DEBUG
+  int N = 12;
+#else
+  int N = 100;
+#endif
+  mesh_t mesh(N, N, N, vec3_t(-2,-2,-2), vec3_t(2,2,2));
+  //
+  for (int iter = 0; iter < 3; ++iter) {
+    auto cells = mesh.getLeafCellIndices();
+    for (auto idx : cells) {
+      auto coords = mesh.getNodeCoordinatesOfCell(idx);
+      bool pos    = false;
+      bool neg    = false;
+      for (auto& coord : coords) {
+        if (coord[0]*coord[0] + coord[1]*coord[1] + coord[2]*coord[2] < 1) {
+          neg = true;
+        } else {
+          pos = true;        
+        }
+      }
+      if (neg) {
+        mesh.markCellAsOutside(idx);
+        if (pos) {
+          mesh.refineCell(idx);
+        }
+      }
+    }
+  }
+  mesh.ensureSmoothTransition();
+  //
+  QuickTimer timer;
+  timer.start();
+  auto leaf = mesh.getLeafCellIndices();
+  timer.stop();
+  timer.print();
+  for (int i = 0; i < 3; ++i) {
+    timer.restart();
+    bool boundary_only = (i > 1);
+    auto faces = mesh.buildFaces(false, boundary_only, false, &leaf);
+    timer.stop();
+    timer.print();
+    CHECK(faces.size() > 0);
+  }
 }
 
 TEST_CASE("AMRMesh_edgesOfCell_basic_and_refined")
@@ -2342,6 +2426,189 @@ TEST_CASE("AMRMesh_edgesOfCell_basic_and_refined")
     }
     CHECK(saw_extra);
     */
+  }
+}
+
+TEST_CASE("AMRMesh_double_pyramid_mockup")
+{
+  using namespace std;
+  using namespace edl;
+  //
+  typedef float real_t;
+  typedef MathVector<StaticVector<real_t,3>> vec3_t;
+  typedef AMRMesh<std::int32_t, std::uint16_t, vec3_t> mesh_t;
+  typedef mesh_t::amr_index_type amr_idx_t;
+  typedef mesh_t::index_type idx_t;
+  //
+  real_t height   = 0.5;
+  real_t face_res = 0.01;
+  real_t edge_res = 0.001;
+  real_t init_res = 0.5;
+  real_t hw       = 2.0;
+  //
+  vector<vec3_t> nodes;
+  nodes.push_back(vec3_t(-1,-1,0));   // 0  
+  nodes.push_back(vec3_t( 1,-1,0));   // 1
+  nodes.push_back(vec3_t( 1, 1,0));   // 2
+  nodes.push_back(vec3_t(-1, 1,0));   // 3
+  nodes.push_back(vec3_t( 0, 0, height/2)); // 4
+  nodes.push_back(vec3_t( 0, 0,-height/2)); // 5
+  //
+  vector<tuple<int,int,int>> triangles;
+  // upper pyramid
+  triangles.push_back(make_tuple(0,1,4));
+  triangles.push_back(make_tuple(1,2,4));
+  triangles.push_back(make_tuple(2,3,4));
+  triangles.push_back(make_tuple(3,0,4));
+  // lower pyramid
+  triangles.push_back(make_tuple(1,0,5));
+  triangles.push_back(make_tuple(2,1,5));
+  triangles.push_back(make_tuple(3,2,5));
+  triangles.push_back(make_tuple(0,3,5));
+  //
+  vector<tuple<int,int>> edges;
+  // rim
+  edges.push_back(make_tuple(0,1));
+  edges.push_back(make_tuple(1,2));
+  edges.push_back(make_tuple(2,3));
+  edges.push_back(make_tuple(3,0));
+  // upper pyramid
+  edges.push_back(make_tuple(0,4));
+  edges.push_back(make_tuple(1,4));
+  edges.push_back(make_tuple(2,4));
+  edges.push_back(make_tuple(3,4));
+  // lower pyramid
+  edges.push_back(make_tuple(0,5));
+  edges.push_back(make_tuple(1,5));
+  edges.push_back(make_tuple(2,5));
+  edges.push_back(make_tuple(3,5));
+  //
+  // build and refine AMR mesh
+  //
+  idx_t sizeI = 4.0 / init_res;
+  idx_t sizeJ = 4.0 / init_res;
+  idx_t sizeK = 4.0 / init_res;
+  real_t angle_Z = deg2rad(30.0);
+  real_t angle_Y = deg2rad(50.0);
+  for (auto& x : nodes) {
+    x = rotate(x, vec3_t(0,0,1), angle_Z);
+    x = rotate(x, vec3_t(0,1,0), angle_Y);
+  }
+  mesh_t mesh(sizeI, sizeJ, sizeK, vec3_t(-2,-2,-2), vec3_t(2,2,2));
+  for (int i_config = 0; i_config < 1; ++i_config) {
+    idx_t AMR_voxels = 0;
+    idx_t VDB_voxels = 0;
+    {
+      //
+      // AMR evaluation
+      //
+      bool done        = false;
+      int  iterations  = 0;
+      int  refinements = 0;
+      while (!done) {
+        done = true;
+        auto cells = mesh.getLeafCellIndices();
+        for (auto idx : cells) {
+          auto coords = mesh.getNodeCoordinatesOfCell(idx);
+          vec3_t x1 = coords[0];
+          vec3_t x2 = coords[6];
+          vec3_t DX = x2 - x1;
+          vec3_t xc = 0.5 * (x1 + x2);
+          real_t dx = DX[0];
+          //
+          x1 = xc - 0.5*hw * DX;
+          x2 = xc + 0.5*hw * DX;
+          //
+          for (auto tri : triangles) {
+            vec3_t t1 = nodes[get<0>(tri)];
+            vec3_t t2 = nodes[get<1>(tri)];
+            vec3_t t3 = nodes[get<2>(tri)];
+            //
+            // check if cell intersects triangle
+            //
+            bool intersects = triangleIntersectsCartesianBox(t1, t2, t3, x1, x2);
+            if (intersects && dx > face_res) {
+              // refine cell
+              mesh.refineCell(idx);
+              done = false;
+              ++refinements;
+              break;
+            }
+          }
+          //
+          for (auto edge : edges) {
+            vec3_t e1 = nodes[get<0>(edge)];
+            vec3_t e2 = nodes[get<1>(edge)];
+            //
+            // check if cell intersects edge
+            //
+            bool intersects = edgeIntersectsCartesianBox(e1, e2, x1, x2);
+            if (intersects && dx > edge_res) {
+              // refine cell
+              mesh.refineCell(idx);
+              done = false;
+              ++refinements;
+              break;
+            }
+          }
+        }
+        ++iterations;
+        std::cout << "DoublePyramidMockup: iteration " << iterations << ", refinements = " << refinements << std::endl;
+      }
+      mesh.ensureSmoothTransition();
+      AMR_voxels = mesh.getLeafCellIndices().size();
+      //mesh.writeVtkMesh("double_pyramid_mockup.vtu");
+    }
+    {
+      //
+      // VDB evaluation
+      //
+      bool done        = false;
+      int  iterations  = 0;
+      int  refinements = 0;
+      while (!done) {
+        done = true;
+        auto cells = mesh.getLeafCellIndices();
+        for (auto idx : cells) {
+          auto coords = mesh.getNodeCoordinatesOfCell(idx);
+          vec3_t x1 = coords[0];
+          vec3_t x2 = coords[6];
+          vec3_t DX = x2 - x1;
+          vec3_t xc = 0.5 * (x1 + x2);
+          real_t dx = DX[0];
+          //
+          x1 = xc - 0.5*hw * DX;
+          x2 = xc + 0.5*hw * DX;
+          //
+          for (auto tri : triangles) {
+            vec3_t t1 = nodes[get<0>(tri)];
+            vec3_t t2 = nodes[get<1>(tri)];
+            vec3_t t3 = nodes[get<2>(tri)];
+            //
+            // check if cell intersects triangle
+            //
+            bool intersects = triangleIntersectsCartesianBox(t1, t2, t3, x1, x2);
+            if (intersects && dx > edge_res) {
+              // refine cell
+              mesh.refineCell(idx);
+              done = false;
+              ++refinements;
+              break;
+            }
+          }
+        }
+        ++iterations;
+        std::cout << "DoublePyramidMockup: iteration " << iterations << ", refinements = " << refinements << std::endl;
+      }
+      auto leaf_cells = mesh.getLeafCellIndices();
+      auto max_level = mesh.maxLevel();
+      for (auto I : leaf_cells) {
+        if (I.level() == max_level) {
+          ++VDB_voxels; 
+        }
+      }
+    }
+    std::cout << "DoublePyramidMockup: AMR voxels = " << AMR_voxels << ", VDB voxels = " << VDB_voxels << ", Ratio = " << (real_t)AMR_voxels / (real_t)VDB_voxels << std::endl;
   }
 }
 
