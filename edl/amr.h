@@ -1784,7 +1784,9 @@ public:
 
   void ensureSmoothTransition(int num_layers=1)
   {
-    bool done = false;
+    if (num_layers < 1) {
+      num_layers = 1;
+    }
     //
     // count leaf cells
     //
@@ -1797,35 +1799,77 @@ public:
       }
     }
     std::cout << "AMRMesh: ensureSmoothTransition: starting with " << num_leaf_cells << " cells" << std::endl;
-    amr_index_type neigh[6];
-    while (!done) {
-      done = true;
-      int N = 0;
-      //
-      // loop over all cells and check if they have a neighbour with a level that is more than one level higher
-      //
-      for (auto it : m_Cells) {
-        auto idx  = it.first;
-        auto cell = it.second;
-        if (cell.first_child.valid()) {
-          continue;
+    auto smooth_one_level = [&]() {
+      bool done = false;
+      amr_index_type neigh[6];
+      while (!done) {
+        done = true;
+        int N = 0;
+        //
+        // loop over all cells and check if they have a neighbour with a level that is more than one level higher
+        //
+        for (auto it : m_Cells) {
+          auto idx  = it.first;
+          auto cell = it.second;
+          if (cell.first_child.valid()) {
+            continue;
+          }
+          neigh[0] = cellNeighbourIM(idx);
+          neigh[1] = cellNeighbourIP(idx);
+          neigh[2] = cellNeighbourJM(idx);
+          neigh[3] = cellNeighbourJP(idx);
+          neigh[4] = cellNeighbourKM(idx);
+          neigh[5] = cellNeighbourKP(idx);
+          for (int i = 0; i < 6; ++i) {
+            auto idx2 = neigh[i];
+            if (idx2.valid() && idx2.level() < idx.level() - 1) {
+              refineCell(idx2);
+              done = false;
+              ++N;
+            }
+          }
         }
-        neigh[0] = cellNeighbourIM(idx);
-        neigh[1] = cellNeighbourIP(idx);
-        neigh[2] = cellNeighbourJM(idx);
-        neigh[3] = cellNeighbourJP(idx);
-        neigh[4] = cellNeighbourKM(idx);
-        neigh[5] = cellNeighbourKP(idx);
-        for (int i = 0; i < 6; ++i) {
-          auto idx2 = neigh[i];
-          if (idx2.valid() && idx2.level() < idx.level() - 1) {
+        std::cout << "AMRMesh: ensureSmoothTransition: added " << N << " cells" << std::endl;
+      }
+    };
+    smooth_one_level();
+    if (num_layers > 1) {
+      for (int layer = 1; layer < num_layers; ++layer) {
+        std::unordered_set<amr_index_type> refine_set;
+        amr_index_type neigh[6];
+        for (auto it : m_Cells) {
+          auto idx  = it.first;
+          auto cell = it.second;
+          if (cell.first_child.valid()) {
+            continue;
+          }
+          neigh[0] = cellNeighbourIM(idx);
+          neigh[1] = cellNeighbourIP(idx);
+          neigh[2] = cellNeighbourJM(idx);
+          neigh[3] = cellNeighbourJP(idx);
+          neigh[4] = cellNeighbourKM(idx);
+          neigh[5] = cellNeighbourKP(idx);
+          for (int i = 0; i < 6; ++i) {
+            auto idx2 = neigh[i];
+            if (idx2.valid() && idx2.level() < idx.level()) {
+              refine_set.insert(idx2);
+            }
+          }
+        }
+        int N = 0;
+        for (auto idx2 : refine_set) {
+          auto it2 = m_Cells.find(idx2);
+          if (it2 == m_Cells.end()) {
+            continue;
+          }
+          if (!it2->second.first_child.valid()) {
             refineCell(idx2);
-            done = false;
             ++N;
           }
         }
+        std::cout << "AMRMesh: ensureSmoothTransition: buffer layer " << layer << " added " << N << " cells" << std::endl;
+        smooth_one_level();
       }
-      std::cout << "AMRMesh: ensureSmoothTransition: added " << N << " cells" << std::endl;
     }
     //
     std::cout << "AMRMesh: ensureSmoothTransition: done" << std::endl;
