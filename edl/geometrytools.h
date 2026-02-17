@@ -618,7 +618,7 @@ typename VEC::value_type tetraVol(const VEC& x0, const VEC& x1, const VEC& x2, c
   typename VEC::value_type V = v1[0]*(v2[1]*v3[2]-v2[2]*v3[1]) + v1[1]*(v2[2]*v3[0]-v2[0]*v3[2]) + v1[2]*(v2[0]*v3[1]-v2[1]*v3[0]);
   V *= f16;
   if (!neg && (V < 0)) {
-    V = -1e99;
+    V = -std::numeric_limits<typename VEC::value_type>::infinity();
   }
   return V; //fabs(V);
 }

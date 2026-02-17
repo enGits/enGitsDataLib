@@ -43,12 +43,10 @@ public:
 
   inline void start()
   {
-    m_Mutex.lock();
+    std::lock_guard<std::mutex> lock(m_Mutex); // locks the mutex until it goes out of scope (unlock at end of start())
     if (!m_Running) {
       m_Start = std::chrono::high_resolution_clock::now();
       m_Running = true;
-    } else {
-      m_Mutex.unlock();
     }
   }
 
@@ -60,12 +58,12 @@ public:
 
   inline void stop()
   {
+    std::lock_guard<std::mutex> lock(m_Mutex); // locks the mutex until it goes out of scope (unlock at end of stop())
     if (m_Running) {
       auto stop = std::chrono::high_resolution_clock::now();
       m_TotalNanoSecs += std::chrono::duration_cast<std::chrono::nanoseconds>(stop - m_Start).count();
       m_Running = false;
     }
-    m_Mutex.unlock();
   }
 
   inline void reset()

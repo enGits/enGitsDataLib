@@ -609,12 +609,6 @@ public:
     // distribute the items to the potential children
     //
     std::vector<node_t> potential_children(8);
-    uint16_t ix1 = v1.m_Ix;
-    uint16_t iy1 = v1.m_Iy;
-    uint16_t iz1 = v1.m_Iz;
-    uint16_t ix2 = v2.m_Ix;
-    uint16_t iy2 = v2.m_Iy;
-    uint16_t iz2 = v2.m_Iz;
     potential_children[0] = node_t(*this, vertices[0], vc, node_index);
     potential_children[1] = node_t(*this, vertex_t(vertices[0], vertices[1]), vertex_t(vertices[1], vertices[7]), node_index);
     potential_children[2] = node_t(*this, vertex_t(vertices[0], vertices[2]), vertex_t(vertices[2], vertices[7]), node_index);
