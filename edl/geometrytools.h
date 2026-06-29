@@ -148,6 +148,38 @@ typename VEC::value_type intersection(VEC x_straight, VEC v_straight, VEC x_plan
   return intersection(x_straight,v_straight,x_plane,n);
 }
 
+/** Calculates the intersection between a line and a plane, guarding against a
+ * line that is parallel to (or lies in) the plane.
+ *
+ * Computes the line parameter k such that x_straight + k*v_straight lies on the
+ * plane through x_plane with normal n_plane. Unlike the scalar-returning
+ * overloads above this version never divides by (near-)zero: if the line is
+ * parallel to the plane (v_straight perpendicular to n_plane within machine
+ * precision, or a degenerate zero vector) it leaves @p k untouched and returns
+ * false instead of producing +/-Inf or NaN.
+ *
+ * @param k          Output: the line parameter (only written when true is returned).
+ * @param x_straight A point of the line.
+ * @param v_straight Direction of the line.
+ * @param x_plane    A point of the plane.
+ * @param n_plane    Normal of the plane (need not be normalised).
+ * @return true if a unique intersection exists, false if the line is parallel to the plane.
+ */
+template <class VEC>
+bool intersection(typename VEC::value_type &k,
+                  const VEC &x_straight, const VEC &v_straight,
+                  const VEC &x_plane, const VEC &n_plane)
+{
+  typedef typename VEC::value_type scalar_t;
+  const scalar_t denom = v_straight*n_plane;
+  const scalar_t scale = v_straight.abs()*n_plane.abs();
+  if (scale <= scalar_t(0) || fabs(denom) <= std::numeric_limits<scalar_t>::epsilon()*scale) {
+    return false;
+  }
+  k = (x_plane*n_plane - x_straight*n_plane)/denom;
+  return true;
+}
+
 /**
  * Calculates the intersection of a segment [x1,x2] with a triangle (a,b,c)
  * Note: (xi,ri) will always be set to the intersection of the line (x1,x2) with the plane (a,b,c) even if the segment does not intersect the triangle!
@@ -552,49 +584,188 @@ bool intersection (typename VEC::value_type &k1, typename VEC::value_type &k2, V
   }
 }
 
+/** Clip a convex polygon by a plane, keeping one side (Sutherland-Hodgman).
+ *
+ * Walks the polygon edges in order (so the winding of @p poly is preserved) and
+ * collects the vertices on the kept side together with the points where edges
+ * cross the plane. A vertex within @p eps of the plane is kept on BOTH sides,
+ * and crossing points are computed from the original signed distances, so the
+ * positive and negative clips of the same polygon share identical on-plane
+ * vertices and identical crossing coordinates (watertight by construction).
+ * Consecutive (and wrap-around) near-duplicate vertices are removed so the
+ * result carries no zero-length edges.
+ *
+ * @param poly Input polygon vertices, ordered.
+ * @param x    A point on the clipping plane.
+ * @param nrm  Unit normal of the clipping plane.
+ * @param eps  Distance tolerance used for the on-plane / crossing tests.
+ * @param keep +1 keeps the nrm-positive side, -1 keeps the nrm-negative side.
+ * @param out  Output: clipped polygon (may have fewer than 3 vertices).
+ */
 template <class VEC>
-void sliceTriangle(const std::vector<VEC> &Tin, VEC x, VEC n, std::vector<std::vector<VEC> > &Tout)
+void clipPolygonByPlane(const std::vector<VEC> &poly, const VEC &x, const VEC &nrm,
+                        typename VEC::value_type eps, int keep, std::vector<VEC> &out)
 {
-  VEC a = Tin[0];
-  VEC b = Tin[1];
-  VEC c = Tin[2];
-  typename VEC::value_type kab = intersection(a,b-a,x,n);
-  typename VEC::value_type kbc = intersection(b,c-b,x,n);
-  typename VEC::value_type kca = intersection(c,a-c,x,n);
-  bool ab_cut = ((kab >= 0) && (kab <= 1));
-  bool bc_cut = ((kbc >= 0) && (kbc <= 1));
-  bool ca_cut = ((kca >= 0) && (kca <= 1));
-  if (ab_cut && bc_cut && ca_cut) {
-    //std::cerr << "invalid triangle (SliceTriangle) A" << std::endl;
-    //exit(EXIT_FAILURE);
-    if      ((kab <= kbc) && (kab <= kca)) ab_cut = false;
-    else if ((kbc <= kab) && (kbc <= kca)) bc_cut = false;
-    else                                   ca_cut = false;
+  typedef typename VEC::value_type scalar_t;
+  out.clear();
+  const size_t m = poly.size();
+  if (m < 2) {
+    return;
   }
-  if (ab_cut && bc_cut) {
-    VEC ab = a + kab*(b-a);
-    VEC bc = b + kbc*(c-b);
-    Tout.resize(3, std::vector<VEC>(3));
-    clinit(Tout[0]) = a,ab,bc;
-    clinit(Tout[1]) = ab,b,bc;
-    clinit(Tout[2]) = bc,c,a;
-  } else if (bc_cut && ca_cut) {
-    VEC bc = b + kbc*(c-b);
-    VEC ca = c + kca*(a-c);
-    Tout.resize(3, std::vector<VEC>(3));
-    clinit(Tout[0]) = a,bc,ca;
-    clinit(Tout[1]) = a,b,bc;
-    clinit(Tout[2]) = bc,c,ca;
-  } else if (ca_cut && ab_cut) {
-    VEC ca = c + kca*(a-c);
-    VEC ab = a + kab*(b-a);
-    Tout.resize(3, std::vector<VEC>(3));
-    clinit(Tout[0]) = a,ab,ca;
-    clinit(Tout[1]) = ab,b,ca;
-    clinit(Tout[2]) = b,c,ca;
-  } else {
-    Tout.resize(1, std::vector<VEC>(3));
-    clinit(Tout[0]) = a,b,c;
+  for (size_t i = 0; i < m; ++i) {
+    const VEC &P = poly[i];
+    const VEC &Q = poly[(i + 1) % m];
+    const VEC  dPv = P - x;
+    const VEC  dQv = Q - x;
+    const scalar_t dP = dPv*nrm;
+    const scalar_t dQ = dQv*nrm;
+    if (scalar_t(keep)*dP >= -eps) {
+      out.push_back(P);
+    }
+    if ((dP > eps && dQ < -eps) || (dP < -eps && dQ > eps)) {
+      const scalar_t t = dP/(dP - dQ);
+      const VEC cut = P + t*(Q - P);
+      out.push_back(cut);
+    }
+  }
+  // drop consecutive (and wrap-around) duplicates to avoid zero-length edges
+  std::vector<VEC> cleaned;
+  cleaned.reserve(out.size());
+  for (size_t i = 0; i < out.size(); ++i) {
+    if (cleaned.empty() || (out[i] - cleaned.back()).abs() > eps) {
+      cleaned.push_back(out[i]);
+    }
+  }
+  if (cleaned.size() >= 2 && (cleaned.front() - cleaned.back()).abs() <= eps) {
+    cleaned.pop_back();
+  }
+  out.swap(cleaned);
+}
+
+/** Fan-triangulate a polygon, skipping (near-)zero-area triangles.
+ * Triangles are emitted as (poly[0], poly[i], poly[i+1]), preserving winding.
+ * @param poly Input polygon (ordered). Fewer than 3 vertices yields nothing.
+ * @param eps  Length tolerance; triangles with twice-area <= eps*eps are skipped.
+ * @param tris Output: triangles are appended (existing content is kept).
+ */
+template <class VEC>
+void fanTriangulate(const std::vector<VEC> &poly, typename VEC::value_type eps,
+                    std::vector<std::vector<VEC> > &tris)
+{
+  if (poly.size() < 3) {
+    return;
+  }
+  for (size_t i = 1; i + 1 < poly.size(); ++i) {
+    const VEC &p0 = poly[0];
+    const VEC &p1 = poly[i];
+    const VEC &p2 = poly[i + 1];
+    const VEC e1 = p1 - p0;
+    const VEC e2 = p2 - p0;
+    if ((e1.cross(e2)).abs() <= eps*eps) {
+      continue; // degenerate sliver
+    }
+    std::vector<VEC> t;
+    t.reserve(3);
+    t.push_back(p0);
+    t.push_back(p1);
+    t.push_back(p2);
+    tris.push_back(t);
+  }
+}
+
+/** Slice a triangle by a plane into the sub-triangles on each side.
+ *
+ * Robust replacement for the old edge-parameter scheme: the three vertices are
+ * classified by their signed distance to the plane (positive / negative / on,
+ * using a relative tolerance), the triangle is clipped to each half-space with
+ * clipPolygonByPlane(), and each clipped polygon is fan-triangulated. This
+ * handles vertices lying exactly on the plane (no zero-area output), never
+ * divides by zero, and preserves the input winding in every output triangle.
+ * A triangle coplanar with the plane is returned on the positive side by
+ * convention. The two sides share identical coordinates along the cut.
+ *
+ * @param Tin      Input triangle (exactly 3 vertices).
+ * @param x        A point on the cutting plane.
+ * @param n        Normal of the cutting plane (need not be normalised).
+ * @param Tout_pos Output: sub-triangles on the n-positive side (cleared first).
+ * @param Tout_neg Output: sub-triangles on the n-negative side (cleared first).
+ * @param tol      Relative tolerance (multiplied by the triangle size).
+ */
+template <class VEC>
+void sliceTriangle(const std::vector<VEC> &Tin, VEC x, VEC n,
+                   std::vector<std::vector<VEC> > &Tout_pos,
+                   std::vector<std::vector<VEC> > &Tout_neg,
+                   typename VEC::value_type tol = typename VEC::value_type(1e-6))
+{
+  typedef typename VEC::value_type scalar_t;
+  Tout_pos.clear();
+  Tout_neg.clear();
+  const VEC &a = Tin[0];
+  const VEC &b = Tin[1];
+  const VEC &c = Tin[2];
+  const scalar_t h    = std::max((b - a).abs(), std::max((c - b).abs(), (a - c).abs()));
+  const scalar_t nlen = n.abs();
+  if (h <= scalar_t(0) || nlen <= scalar_t(0)) {
+    return; // degenerate triangle or plane
+  }
+  const VEC nrm(n[0]/nlen, n[1]/nlen, n[2]/nlen); // unit normal -> true signed distances
+  const scalar_t eps = tol*h;
+  const VEC av = a - x;
+  const VEC bv = b - x;
+  const VEC cv = c - x;
+  const scalar_t da = av*nrm;
+  const scalar_t db = bv*nrm;
+  const scalar_t dc = cv*nrm;
+  const bool has_pos = (da > eps) || (db > eps) || (dc > eps);
+  const bool has_neg = (da < -eps) || (db < -eps) || (dc < -eps);
+  std::vector<VEC> tri;
+  tri.reserve(3);
+  tri.push_back(a);
+  tri.push_back(b);
+  tri.push_back(c);
+  if (!has_pos && !has_neg) {
+    Tout_pos.push_back(tri); // coplanar: assigned to the positive side by convention
+    return;
+  }
+  if (has_pos) {
+    std::vector<VEC> poly;
+    clipPolygonByPlane(tri, x, nrm, eps, +1, poly);
+    fanTriangulate(poly, eps, Tout_pos);
+  }
+  if (has_neg) {
+    std::vector<VEC> poly;
+    clipPolygonByPlane(tri, x, nrm, eps, -1, poly);
+    fanTriangulate(poly, eps, Tout_neg);
+  }
+}
+
+/** Slice a triangle by a plane, returning all sub-triangles in one list.
+ *
+ * Backward-compatible convenience wrapper around the two-sided sliceTriangle():
+ * the positive-side and negative-side sub-triangles are concatenated into
+ * @p Tout (a coplanar triangle appears once). Unlike the previous
+ * implementation this never produces NaN cut points or zero-area triangles.
+ *
+ * @param Tin  Input triangle (exactly 3 vertices).
+ * @param x    A point on the cutting plane.
+ * @param n    Normal of the cutting plane (need not be normalised).
+ * @param Tout Output: all sub-triangles (cleared first).
+ * @param tol  Relative tolerance (multiplied by the triangle size).
+ */
+template <class VEC>
+void sliceTriangle(const std::vector<VEC> &Tin, VEC x, VEC n,
+                   std::vector<std::vector<VEC> > &Tout,
+                   typename VEC::value_type tol = typename VEC::value_type(1e-6))
+{
+  std::vector<std::vector<VEC> > pos, neg;
+  sliceTriangle(Tin, x, n, pos, neg, tol);
+  Tout.clear();
+  Tout.reserve(pos.size() + neg.size());
+  for (size_t i = 0; i < pos.size(); ++i) {
+    Tout.push_back(pos[i]);
+  }
+  for (size_t i = 0; i < neg.size(); ++i) {
+    Tout.push_back(neg[i]);
   }
 }
 
@@ -1611,6 +1782,129 @@ TEST_CASE("triangleIntersectsCartesianBox")
 
   // triangle completely outside
   CHECK(triangleIntersectsCartesianBox(vec3_t(2, 2, 2), vec3_t(3, 2, 2), vec3_t(2, 3, 2), b1, b2) == false);
+}
+
+TEST_CASE("intersection_guarded")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> vec3_t;
+  double k = -12345.0;
+
+  // line crossing a plane: k is the parameter to reach the plane
+  CHECK(intersection(k, vec3_t(0,0,0), vec3_t(0,0,1), vec3_t(0,0,5), vec3_t(0,0,1)) == true);
+  CHECK(k == doctest::Approx(5.0));
+
+  // line parallel to the plane (direction perpendicular to the normal): no hit
+  k = -12345.0;
+  CHECK(intersection(k, vec3_t(0,0,0), vec3_t(1,0,0), vec3_t(0,0,5), vec3_t(0,0,1)) == false);
+  CHECK(k == -12345.0); // left untouched, no Inf/NaN
+
+  // line lying in the plane: also reported as no unique intersection
+  k = -12345.0;
+  CHECK(intersection(k, vec3_t(0,0,5), vec3_t(1,0,0), vec3_t(0,0,5), vec3_t(0,0,1)) == false);
+  CHECK(k == -12345.0);
+
+  // degenerate (zero) direction vector must not divide by zero
+  k = -12345.0;
+  CHECK(intersection(k, vec3_t(0,0,0), vec3_t(0,0,0), vec3_t(0,0,5), vec3_t(0,0,1)) == false);
+}
+
+TEST_CASE("sliceTriangle_no_cut")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> vec3_t;
+  std::vector<vec3_t> tri{vec3_t(0,0,0), vec3_t(1,0,0), vec3_t(0,1,0)};
+
+  // plane z = -1, normal +z: the whole triangle is strictly on the positive side
+  std::vector<std::vector<vec3_t>> pos, neg, all;
+  sliceTriangle(tri, vec3_t(0,0,-1), vec3_t(0,0,1), pos, neg);
+  CHECK(pos.size() == 1);
+  CHECK(neg.size() == 0);
+
+  sliceTriangle(tri, vec3_t(0,0,-1), vec3_t(0,0,1), all);
+  CHECK(all.size() == 1);
+}
+
+TEST_CASE("sliceTriangle_basic_cut")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> vec3_t;
+
+  auto area2 = [](const std::vector<vec3_t>& t)->double {
+    vec3_t e1 = t[1]-t[0];
+    vec3_t e2 = t[2]-t[0];
+    return e1.cross(e2).abs(); // twice the triangle area
+  };
+  auto totalArea2 = [&](const std::vector<std::vector<vec3_t>>& tris)->double {
+    double s = 0; for (size_t i=0;i<tris.size();++i) s += area2(tris[i]); return s;
+  };
+
+  std::vector<vec3_t> tri{vec3_t(0,0,0), vec3_t(2,0,0), vec3_t(0,2,0)};
+  const vec3_t x0(1,0,0), nu(1,0,0);
+
+  std::vector<std::vector<vec3_t>> pos, neg;
+  sliceTriangle(tri, x0, nu, pos, neg);
+
+  // b-corner on the positive side -> 1 triangle; the quad on the other side -> 2
+  CHECK(pos.size() == 1);
+  CHECK(neg.size() == 2);
+
+  // area is conserved across the cut
+  CHECK(totalArea2(pos) + totalArea2(neg) == doctest::Approx(area2(tri)));
+
+  // every positive vertex is on the + side, every negative vertex on the - side
+  for (size_t i=0;i<pos.size();++i) for (int j=0;j<3;++j) {
+    vec3_t d = pos[i][j]-x0; CHECK(double(d*nu) >= -1e-9);
+  }
+  for (size_t i=0;i<neg.size();++i) for (int j=0;j<3;++j) {
+    vec3_t d = neg[i][j]-x0; CHECK(double(d*nu) <= 1e-9);
+  }
+
+  // winding preserved: every output triangle keeps the input normal direction (+z)
+  for (size_t i=0;i<pos.size();++i) { vec3_t e1=pos[i][1]-pos[i][0], e2=pos[i][2]-pos[i][0]; CHECK(double(e1.cross(e2)*vec3_t(0,0,1)) > 0); }
+  for (size_t i=0;i<neg.size();++i) { vec3_t e1=neg[i][1]-neg[i][0], e2=neg[i][2]-neg[i][0]; CHECK(double(e1.cross(e2)*vec3_t(0,0,1)) > 0); }
+}
+
+TEST_CASE("sliceTriangle_vertex_on_plane")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> vec3_t;
+
+  auto area2 = [](const std::vector<vec3_t>& t)->double {
+    vec3_t e1 = t[1]-t[0];
+    vec3_t e2 = t[2]-t[0];
+    return e1.cross(e2).abs();
+  };
+
+  // c lies exactly on the cutting plane x = 0; the plane also crosses edge a-b.
+  // The old code would flag two edges cut at the shared vertex and emit a
+  // zero-area triangle; the new code must give exactly one clean triangle a side.
+  std::vector<vec3_t> tri{vec3_t(-1,0,0), vec3_t(1,0,0), vec3_t(0,2,0)};
+  std::vector<std::vector<vec3_t>> pos, neg;
+  sliceTriangle(tri, vec3_t(0,0,0), vec3_t(1,0,0), pos, neg);
+
+  CHECK(pos.size() == 1);
+  CHECK(neg.size() == 1);
+  CHECK(area2(pos[0]) + area2(neg[0]) == doctest::Approx(area2(tri)));
+  // no degenerate slivers
+  CHECK(area2(pos[0]) > 1e-9);
+  CHECK(area2(neg[0]) > 1e-9);
+}
+
+TEST_CASE("sliceTriangle_coplanar")
+{
+  using namespace edl;
+  typedef MathVector<StaticVector<double,3>> vec3_t;
+  std::vector<vec3_t> tri{vec3_t(0,0,0), vec3_t(1,0,0), vec3_t(0,1,0)};
+
+  // triangle lies in the cutting plane z = 0: returned once, on the positive side
+  std::vector<std::vector<vec3_t>> pos, neg, all;
+  sliceTriangle(tri, vec3_t(0,0,0), vec3_t(0,0,1), pos, neg);
+  CHECK(pos.size() == 1);
+  CHECK(neg.size() == 0);
+
+  sliceTriangle(tri, vec3_t(0,0,0), vec3_t(0,0,1), all);
+  CHECK(all.size() == 1);
 }
 
 #endif
