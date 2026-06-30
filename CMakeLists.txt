@@ -13,7 +13,10 @@ cmake_minimum_required(VERSION 3.10.0)
 # limit configuration types (must be done before project() statement)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited config" FORCE)
 
-project(enGitsDataLib)
+project(enGitsDataLib VERSION 0.1.0 LANGUAGES CXX)
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 # export build setup for development environment
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -75,10 +78,10 @@ else()
   set(CMAKE_VERBOSE_MAKEFILE off)
 endif()
 
-set(ENGITSDATALIB_MAJOR_VERSION 0)
-set(ENGITSDATALIB_MINOR_VERSION 1)
-set(ENGITSDATALIB_PATCH_VERSION 0)
-set(ENGITSDATALIB_VERSION ${ENGITSDATALIB_MAJOR_VERSION}.${ENGITSDATALIB_MINOR_VERSION}.${ENGITSDATALIB_PATCH_VERSION})
+set(ENGITSDATALIB_MAJOR_VERSION ${PROJECT_VERSION_MAJOR})
+set(ENGITSDATALIB_MINOR_VERSION ${PROJECT_VERSION_MINOR})
+set(ENGITSDATALIB_PATCH_VERSION ${PROJECT_VERSION_PATCH})
+set(ENGITSDATALIB_VERSION ${PROJECT_VERSION})
 
 # If windows, use cmath
 # If Visual Studio, export all symbols for dlls and compile in parallel
@@ -170,6 +173,13 @@ else(CREATE_STATIC_LIBRARY)
   add_library(engitsdatalib SHARED ${engitsdatalib_SOURCES})
 endif(CREATE_STATIC_LIBRARY)
 
+target_include_directories(engitsdatalib
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
 # If Visual Studio, generate export header to allow sharing of dll data..
 if(WIN32 AND MSVC)
   include(GenerateExportHeader)
@@ -184,13 +194,41 @@ endif()
 
 install(
   TARGETS engitsdatalib
-  LIBRARY DESTINATION lib${LIB_SUFFIX}
-  ARCHIVE DESTINATION lib${LIB_SUFFIX}
-  RUNTIME DESTINATION bin
+  EXPORT enGitsDataLibTargets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-install(FILES ${engitsdatalib_HEADERS} DESTINATION include/edl)
+install(FILES ${engitsdatalib_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/edl)
 if(WIN32 AND MSVC)
-  install(FILES ${PROJECT_BINARY_DIR}/engitsdatalib_export.h DESTINATION include/edl)
+  install(FILES ${PROJECT_BINARY_DIR}/engitsdatalib_export.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/edl)
 endif(WIN32 AND MSVC)
+
+install(
+  EXPORT enGitsDataLibTargets
+  NAMESPACE enGitsDataLib::
+  FILE enGitsDataLibTargets.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/enGitsDataLib
+)
+
+configure_package_config_file(
+  cmake/enGitsDataLibConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/enGitsDataLibConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/enGitsDataLib
+)
+
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/enGitsDataLibConfigVersion.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/enGitsDataLibConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/enGitsDataLibConfigVersion.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/enGitsDataLib
+)
 
 add_subdirectory(tests)

@@ -1,0 +1,21 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/enGitsDataLibTargets.cmake")
+
+if(TARGET enGitsDataLib::engitsdatalib)
+  if(NOT TARGET enGitsDataLib::enGitsDataLib)
+    add_library(enGitsDataLib::enGitsDataLib INTERFACE IMPORTED)
+    set_target_properties(enGitsDataLib::enGitsDataLib PROPERTIES
+      INTERFACE_LINK_LIBRARIES enGitsDataLib::engitsdatalib
+    )
+  endif()
+
+  if(NOT TARGET EDL::engitsdatalib)
+    add_library(EDL::engitsdatalib INTERFACE IMPORTED)
+    set_target_properties(EDL::engitsdatalib PROPERTIES
+      INTERFACE_LINK_LIBRARIES enGitsDataLib::engitsdatalib
+    )
+  endif()
+endif()
+
+check_required_components(enGitsDataLib)
