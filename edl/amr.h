@@ -902,6 +902,18 @@ public:
     return nodesInBetween(idx0, idx1);
   }
 
+  // Existing nodes strictly between two edge-aligned nodes, in order from idx0 to
+  // idx1 (indices reported on m_MaxLevel, exactly as the former unit-step walk did).
+  //
+  // MIDPOINT BISECTION instead of a unit-step walk on m_MaxLevel: octree cell
+  // corners lie on power-of-two fractions of the edge, and the segment midpoint is
+  // a grid point at EVERY deeper level, so any node strictly inside a segment
+  // implies the segment's midpoint node exists (the covering cells on the finer
+  // side must start or end there). Check the midpoint; absent -> nothing inside;
+  // present -> recurse into the two halves. O(found + 1) hash lookups per edge
+  // instead of O(2^(max_level - level)): on a deep AMR mesh, face extraction drops
+  // from minutes to seconds (a level-5 face edge under max level 9 paid 16 lookups
+  // per edge for typically zero hanging nodes).
   std::vector<amr_index_type> nodesInBetween(amr_index_type idx0, amr_index_type idx1) const
   {
     using std::vector;
@@ -914,15 +926,27 @@ public:
     }
     //
     vector<amr_index_type> nodes;
-    idx0 = idx0.indexOnLevel(m_MaxLevel);
-    amr_index_type idx(idx0.i() + di, idx0.j() + dj, idx0.k() + dk, idx0.level());
-    while (idx.reduced() != idx1.reduced()) {
-      if (m_Nodes.find(idx.reduced()) != m_Nodes.end()) { // if node idx exists
-        nodes.push_back(idx);
-      }
-      idx = amr_index_type(idx.i() + di, idx.j() + dj, idx.k() + dk, idx.level());
-    }
+    nodesInBetweenRec(idx0, idx1, nodes);
     return nodes;
+  }
+
+  void nodesInBetweenRec(const amr_index_type& idx0, const amr_index_type& idx1,
+                         std::vector<amr_index_type>& nodes) const
+  {
+    // invariant: idx0 and idx1 are exactly one unit apart at max(level0, level1)
+    index_type level = std::max(idx0.level(), idx1.level());
+    if (level >= m_MaxLevel) {
+      return; // no deeper node can exist
+    }
+    auto a = idx0.indexOnLevel(level + 1);
+    auto b = idx1.indexOnLevel(level + 1);
+    amr_index_type mid((a.i() + b.i())/2, (a.j() + b.j())/2, (a.k() + b.k())/2, level + 1);
+    if (m_Nodes.find(mid.reduced()) == m_Nodes.end()) {
+      return;
+    }
+    nodesInBetweenRec(idx0, mid, nodes);
+    nodes.push_back(mid.indexOnLevel(m_MaxLevel));
+    nodesInBetweenRec(mid, idx1, nodes);
   }
 
   amr_index_type cellNeighbourIP(const amr_index_type& idx) const
