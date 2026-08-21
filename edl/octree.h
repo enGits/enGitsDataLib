@@ -907,7 +907,7 @@ TEST_CASE("Octree__random_Items_search")
   // brute force loop to find the reference solution
   //
   timer.restart();
-  vector<int> nearest_item(num_tests);
+  vector<int> nearest_item(test_items.size());
   for (int i = 0; i < test_items.size(); ++i) {
     vec_t p = test_items[i];
     real  d_min = 1e10;
