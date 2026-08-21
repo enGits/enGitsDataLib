@@ -465,7 +465,7 @@ TEST_CASE("SearchTree__random_Items_search")
   // brute force loop to find the reference solution
   //
   timer.restart();
-  vector<int> nearest_item(num_tests);
+  vector<int> nearest_item(test_items.size());
   int N_found = 0;  
   for (int i = 0; i < test_items.size(); ++i) {
     vec_t p = test_items[i];
@@ -526,7 +526,7 @@ TEST_CASE("SearchTree__points_on_a_line_search")
     items[i] = vec_t(x,y,z);
     //
     real d = (x_to_snap - items[i]).abs();
-    if (d < min_dist || item_index < 0) {
+    if (item_index < 0 || d < min_dist) {
       min_dist   = d;
       item_index = i;
     }
