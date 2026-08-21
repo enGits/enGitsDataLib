@@ -26,6 +26,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <type_traits>
 #include "edl/edl.h"
 #include "edl/edlerror.h"
 #include "edl/mathvector.h"
@@ -104,33 +105,49 @@ protected: // methods
       //
       // compute Jacobian at the position x
       //
-      for (int i = 0; i < DIM; ++i) {
-        for (int j = 0; j < DIM; ++j) {
-          vector_t x_jp = x;
-          x_jp[j] += m_Delta2[j];
-          vector_t x_jm = x;
-          x_jm[j] -= m_Delta2[j];
-          //
-          vector_t x_jp_ip = x_jp;
-          x_jp_ip[i] += m_Delta2[i];
-          vector_t x_jp_im = x_jp;
-          x_jp_im[i] -= m_Delta2[i];
-          //
-          vector_t x_jm_ip = x_jm;
-          x_jm_ip[i] += m_Delta2[i];
-          vector_t x_jm_im = x_jm;
-          x_jm_im[i] -= m_Delta2[i];
-          //
-          value_t f_jp_ip = f(x_jp_ip);
-          value_t f_jp_im = f(x_jp_im);
-          value_t f_jm_ip = f(x_jm_ip);
-          value_t f_jm_im = f(x_jm_im);
-          //
-          value_t df_dxi_jp = (f_jp_ip - f_jp_im) / (2 * m_Delta2[i]);
-          value_t df_dxi_jm = (f_jm_ip - f_jm_im) / (2 * m_Delta2[i]);
-          //
-          J[i][j] = (f_jp_ip - f_jp_im - f_jm_ip + f_jm_im) / (4 * m_Delta2[i] * m_Delta2[j]);
+      bool valid_hessian = false;
+      for (int attempt = 0; attempt < 2; ++attempt) {
+        bool finite_hessian = true;
+        for (int i = 0; i < DIM; ++i) {
+          for (int j = 0; j < DIM; ++j) {
+            vector_t x_jp = x;
+            x_jp[j] += m_Delta2[j];
+            vector_t x_jm = x;
+            x_jm[j] -= m_Delta2[j];
+            //
+            vector_t x_jp_ip = x_jp;
+            x_jp_ip[i] += m_Delta2[i];
+            vector_t x_jp_im = x_jp;
+            x_jp_im[i] -= m_Delta2[i];
+            //
+            vector_t x_jm_ip = x_jm;
+            x_jm_ip[i] += m_Delta2[i];
+            vector_t x_jm_im = x_jm;
+            x_jm_im[i] -= m_Delta2[i];
+            //
+            value_t f_jp_ip = f(x_jp_ip);
+            value_t f_jp_im = f(x_jp_im);
+            value_t f_jm_ip = f(x_jm_ip);
+            value_t f_jm_im = f(x_jm_im);
+            //
+            value_t df_dxi_jp = (f_jp_ip - f_jp_im) / (2 * m_Delta2[i]);
+            value_t df_dxi_jm = (f_jm_ip - f_jm_im) / (2 * m_Delta2[i]);
+            //
+            J[i][j] = (f_jp_ip - f_jp_im - f_jm_ip + f_jm_im) / (4 * m_Delta2[i] * m_Delta2[j]);
+            finite_hessian = finite_hessian && std::isfinite(J[i][j]);
+          }
         }
+        const value_t determinant = finite_hessian ? J.det() : value_t(0);
+        valid_hessian = finite_hessian && std::isfinite(determinant) && determinant != value_t(0);
+        if (valid_hessian || !std::is_same_v<value_t,float>) {
+          break;
+        }
+        for (int i = 0; i < DIM; ++i) {
+          m_Delta2[i] *= value_t(4);
+        }
+      }
+      if (!valid_hessian) {
+        break;
       }
       auto JI = J.inverse();
       auto Dx = JI * nabla_f;
@@ -454,5 +471,45 @@ TEST_CASE("Optimise__double__2D_quadratic_cross__random")     { run_case_2d_cros
 TEST_CASE("Optimise__double__3D_quadratic_diagonal__random")  { run_case_3d_diag<double>(); }
 TEST_CASE("Optimise__double__3D_quadratic_coupled__random")   { run_case_3d_coupled<double>(); }
 TEST_CASE("Optimise__double__2D_exponential_bowl__random")    { run_case_2d_exp<double>(); }
+
+TEST_CASE("Optimise__float__3D_quadratic_diagonal__trial_535_regression")
+{
+  using vec3 = edl::MathVector<edl::StaticVector<float,3>>;
+  QuadND<3,float>::c = vec3(-0.000156972732f, 1.42605972f, 154.069366f);
+  QuadND<3,float>::Q = edl::SmallSquareMatrix<float,3>::zero();
+  QuadND<3,float>::Q[0][0] = 0.642530322f;
+  QuadND<3,float>::Q[1][1] = 7.84128857f;
+  QuadND<3,float>::Q[2][2] = 0.0533307344f;
+
+  edl::Optimiser<QuadND<3,float>,3,float> opt;
+  const auto x = opt.optimise(vec3(184.383179f, 1.38447082f, -0.993530273f), Tolerances<float>::eps);
+
+  CHECK(std::isfinite(x[0]));
+  CHECK(std::isfinite(x[1]));
+  CHECK(std::isfinite(x[2]));
+  CHECK(x[0] == doctest::Approx(QuadND<3,float>::c[0]).epsilon(Tolerances<float>::eps));
+  CHECK(x[1] == doctest::Approx(QuadND<3,float>::c[1]).epsilon(Tolerances<float>::eps));
+  CHECK(x[2] == doctest::Approx(QuadND<3,float>::c[2]).epsilon(Tolerances<float>::eps));
+}
+
+TEST_CASE("Optimise__float__3D_quadratic_diagonal__trial_961_regression")
+{
+  using vec3 = edl::MathVector<edl::StaticVector<float,3>>;
+  QuadND<3,float>::c = vec3(2.26213597e-05f, 0.477891922f, 134.20694f);
+  QuadND<3,float>::Q = edl::SmallSquareMatrix<float,3>::zero();
+  QuadND<3,float>::Q[0][0] = 1.50956392f;
+  QuadND<3,float>::Q[1][1] = 9.17730427f;
+  QuadND<3,float>::Q[2][2] = 0.021918688f;
+
+  edl::Optimiser<QuadND<3,float>,3,float> opt;
+  const auto x = opt.optimise(vec3(-32.1377029f, 0.489560574f, -1.34512329f), Tolerances<float>::eps);
+
+  CHECK(std::isfinite(x[0]));
+  CHECK(std::isfinite(x[1]));
+  CHECK(std::isfinite(x[2]));
+  CHECK(x[0] == doctest::Approx(QuadND<3,float>::c[0]).epsilon(Tolerances<float>::eps));
+  CHECK(x[1] == doctest::Approx(QuadND<3,float>::c[1]).epsilon(Tolerances<float>::eps));
+  CHECK(x[2] == doctest::Approx(QuadND<3,float>::c[2]).epsilon(Tolerances<float>::eps));
+}
 
 #endif // OPTIMISE_H
