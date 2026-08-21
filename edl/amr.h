@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <iostream>
 #include <ostream>
 #include <fstream>
@@ -2220,7 +2221,7 @@ TEST_CASE("AMRMesh_cell_neighbours_for_layers")
   //
   mesh.refineCell(idx_t(2,2,2,0));
   //
-  std::system("mkdir -p constant/polyMesh");
+  std::filesystem::create_directories("constant/polyMesh");
   mesh.writeFoamMesh("constant/polyMesh");
   std::ofstream file("test.foam");
   file.close();
