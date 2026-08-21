@@ -49,6 +49,9 @@ Makefile.*engrid*
 
 # CMake
 *.cmake
+!ports/**/portfile.cmake
+CMakeCache.txt
+CMakeFiles/
 build/
 build*/
 

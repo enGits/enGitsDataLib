@@ -10,66 +10,38 @@
 
 cmake_minimum_required(VERSION 3.10.0)
 
-# limit configuration types (must be done before project() statement)
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited config" FORCE)
-
-project(enGitsDataLib VERSION 0.1.0 LANGUAGES CXX)
+project(enGitsDataLib VERSION 1.0.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+include(CTest)
+include(TestBigEndian)
 
 # export build setup for development environment
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(A_DEBUG_BUILD OFF CACHE BOOL "Build a debug version?")
-if (${A_DEBUG_BUILD})
+option(A_DEBUG_BUILD "Build a debug version (deprecated; use CMAKE_BUILD_TYPE)." OFF)
+if(A_DEBUG_BUILD AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
-  add_definitions(-DEDL_DEBUG)
-else()
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+elseif(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build.")
+endif()
+if(NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
 endif()
 
-set(A_SINGLE_PRECISION CACHE BOOL "Use single precision floating point data?")
-if (${A_SINGLE_PRECISION})
-  add_definitions(-DREAL_FLOAT)
-endif()
-
-set(A_ENABLE_VAR3 ON CACHE BOOL "Enable var3_t")
-if (${A_ENABLE_VAR3})
-  add_definitions(-DWITH_VAR3)
-endif()
+option(A_SINGLE_PRECISION "Use single precision floating point data?" OFF)
+option(A_ENABLE_VAR3 "Enable var3_t" ON)
+option(EDL_ENABLE_EXPENSIVE_TESTS "Enable resource-intensive tests." OFF)
 
 option(CREATE_STATIC_LIBRARY "Create a static version of engitsdatalib." OFF)
 
-# Find Python interpreter
-find_package(PythonInterp 3 REQUIRED)
-
-# Run the Python script to check endianness
-execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/test_endianness.py
-  OUTPUT_VARIABLE ENDIANNESS
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-# Output the result
-message(STATUS "System Endianness: ${ENDIANNESS}")
-
-# Set a definition based on the endianness
-if(ENDIANNESS STREQUAL "little")
-  add_definitions(-DPLATFORM_LITTLE_ENDIAN)
-elseif(ENDIANNESS STREQUAL "big")
-  add_definitions(-DPLATFORM_BIG_ENDIAN)
+test_big_endian(PLATFORM_IS_BIG_ENDIAN)
+if(PLATFORM_IS_BIG_ENDIAN)
+  message(STATUS "System Endianness: big")
 else()
-  message(FATAL_ERROR "Endianness detection failed. The system endianness could not be determined.")
+  message(STATUS "System Endianness: little")
 endif()
-
-set(CMAKE_CXX_STANDARD 17)
-
-IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX $ENV{HOME}/local CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
-ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 set(A_VERBOSE_BUILD OFF CACHE BOOL "Verbose build?")
 if (${A_VERBOSE_BUILD})
@@ -83,20 +55,11 @@ set(ENGITSDATALIB_MINOR_VERSION ${PROJECT_VERSION_MINOR})
 set(ENGITSDATALIB_PATCH_VERSION ${PROJECT_VERSION_PATCH})
 set(ENGITSDATALIB_VERSION ${PROJECT_VERSION})
 
-# If windows, use cmath
 # If Visual Studio, export all symbols for dlls and compile in parallel
-if(WIN32)
-  add_compile_definitions(_USE_MATH_DEFINES)
-  if(MSVC)
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-    set(BUILD_SHARED_LIBS ON)
-    add_compile_options(/MP)
-  endif(MSVC)
-endif(WIN32)
-
-# set include directory, add src directories
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})  # This, according to the new CMake, shouldn't be needed...
+if(MSVC)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  add_compile_options(/MP)
+endif(MSVC)
 
 set(engitsdatalib_HEADERS
 edl/amr.h
@@ -106,7 +69,6 @@ edl/csvreader.h
 edl/doctest.h
 edl/edlerror.h
 edl/edl.h
-edl/edl.cpp
 edl/fastremovelist.h
 edl/geometrytools.h
 edl/interpolation.h
@@ -156,6 +118,7 @@ edl/weightedset.h
 set(engitsdatalib_SOURCES
 ${engitsdatalib_HEADERS}
 edl/csvreader.cpp
+edl/edl.cpp
 edl/edlerror.cpp
 edl/interpolationcurve.cpp
 edl/list.cpp
@@ -173,6 +136,18 @@ else(CREATE_STATIC_LIBRARY)
   add_library(engitsdatalib SHARED ${engitsdatalib_SOURCES})
 endif(CREATE_STATIC_LIBRARY)
 
+target_compile_features(engitsdatalib PUBLIC cxx_std_17)
+
+target_compile_definitions(engitsdatalib
+  PUBLIC
+    $<$<PLATFORM_ID:Windows>:_USE_MATH_DEFINES>
+    $<$<CONFIG:Debug>:EDL_DEBUG>
+    $<$<BOOL:${A_SINGLE_PRECISION}>:REAL_FLOAT>
+    $<$<BOOL:${A_ENABLE_VAR3}>:WITH_VAR3>
+    $<$<BOOL:${PLATFORM_IS_BIG_ENDIAN}>:PLATFORM_BIG_ENDIAN>
+    $<$<NOT:$<BOOL:${PLATFORM_IS_BIG_ENDIAN}>>:PLATFORM_LITTLE_ENDIAN>
+)
+
 target_include_directories(engitsdatalib
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -186,8 +161,12 @@ if(WIN32 AND MSVC)
   generate_export_header(engitsdatalib)
 endif(WIN32 AND MSVC)
 
-set_target_properties(engitsdatalib PROPERTIES MACOSX_RPATH 1)
-set_target_properties(engitsdatalib PROPERTIES VERSION ${ENGITSDATALIB_VERSION})
+set_target_properties(engitsdatalib PROPERTIES
+  DEBUG_POSTFIX d
+  MACOSX_RPATH 1
+  SOVERSION ${ENGITSDATALIB_MAJOR_VERSION}
+  VERSION ${ENGITSDATALIB_VERSION}
+)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   set_target_properties(engitsdatalib PROPERTIES COMPILE_FLAGS "-Wno-deprecated")
 endif()
@@ -198,7 +177,6 @@ install(
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 install(FILES ${engitsdatalib_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/edl)
 if(WIN32 AND MSVC)
@@ -231,4 +209,6 @@ install(
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/enGitsDataLib
 )
 
-add_subdirectory(tests)
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
