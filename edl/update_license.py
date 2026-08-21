@@ -19,6 +19,11 @@ PATTERNS = [
     ('CMakeLists.txt', '#'),
 ]
 
+# Vendored files retain their upstream copyright and licence notices.
+EXCLUDED_FILES = {
+    os.path.normpath('edl/doctest.h'),
+}
+
 with open('license_header.txt', 'r', encoding='utf-8') as f:
     LICENSE_HEADER = [line.rstrip() for line in f.readlines()]
 
@@ -63,6 +68,9 @@ def main():
             for filename in filenames:
                 if file_matches(filename, pattern):
                     file_path = os.path.join(dirpath, filename)
+                    relative_path = os.path.normpath(os.path.relpath(file_path, root))
+                    if relative_path in EXCLUDED_FILES:
+                        continue
                     updated = insert_license_header(file_path, comment_prefix)
                     if updated:
                         print(f"Updated: {file_path}")
