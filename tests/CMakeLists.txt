@@ -31,9 +31,6 @@ if(EDL_ENABLE_EXPENSIVE_TESTS)
 endif()
 
 if(WIN32 AND NOT CREATE_STATIC_LIBRARY)
-  if(CMAKE_VERSION VERSION_LESS 3.22)
-    message(FATAL_ERROR "Windows shared-library tests require CMake 3.22 or newer")
-  endif()
   set_tests_properties(${edl_tests} PROPERTIES
     ENVIRONMENT_MODIFICATION
       "PATH=path_list_prepend:$<TARGET_FILE_DIR:engitsdatalib>"
