@@ -2,7 +2,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO enGits/enGitsDataLib
     REF v1.0.0
-    SHA512 SHA512_TO_BE_FILLED_AFTER_TAGGING_V1_0_0
+    SHA512 7dc9c240b45bb3a768ea910c1a29c5aa885debd636b2aff49211ee1f4cef6ce2bc4803775e8afe5fc16c4ae8276cbcd3a0a56325da1930a395db57b1fa37dccf
     HEAD_REF master
 )
 
