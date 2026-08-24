@@ -34,6 +34,12 @@ template <class T, unsigned int DIM> class StaticVector;
 
 #include "edl/doctest.h"
 
+#if defined(_WIN32) && defined(_MSC_VER)
+#include "engitsdatalib_export.h"
+#else
+#define ENGITSDATALIB_EXPORT
+#endif
+
 #define DEBUG_UNIQUE_NAME2(base, line) base##line
 #define DEBUG_UNIQUE_NAME(base, line) DEBUG_UNIQUE_NAME2(base, line)
 
@@ -153,7 +159,7 @@ namespace EDL_NAMESPACE
 
   struct smartBreakPoint
   {
-    static std::map<std::string,uint64_t> all_hits;
+    static ENGITSDATALIB_EXPORT std::map<std::string,uint64_t> all_hits;
     std::string name;
     uint64_t hits;
     smartBreakPoint(std::string name, int64_t min_count=std::numeric_limits<int64_t>::max()) : name(name)

@@ -159,6 +159,9 @@ target_include_directories(engitsdatalib
 if(WIN32 AND MSVC)
   include(GenerateExportHeader)
   generate_export_header(engitsdatalib)
+  if(CREATE_STATIC_LIBRARY)
+    target_compile_definitions(engitsdatalib PUBLIC ENGITSDATALIB_STATIC_DEFINE)
+  endif()
 endif(WIN32 AND MSVC)
 
 set_target_properties(engitsdatalib PROPERTIES
