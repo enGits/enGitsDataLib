@@ -4,8 +4,8 @@
   "description": "C++ data structures, geometry, interpolation, and numerical utilities from enGits",
   "homepage": "https://github.com/enGits/enGitsDataLib",
   "license": "MIT",
-  "supports": "windows | linux | osx",
   "dependencies": [
+    "doctest",
     {
       "name": "vcpkg-cmake",
       "host": true
