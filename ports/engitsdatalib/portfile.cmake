@@ -2,7 +2,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO enGits/enGitsDataLib
     REF v1.0.1
-    SHA512 0
+    SHA512 bd1a59741d3286995e2fdeea03822f2a25f022c87938ccd77f41c97c29d9526dfa1a5d6f71c9fdf2c44c4d05ae580624d42cde51bc805f95bee152111f9bab97
     HEAD_REF master
     PATCHES
         use-system-doctest.patch
