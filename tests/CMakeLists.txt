@@ -13,6 +13,12 @@ target_link_libraries(geometrytools_test engitsdatalib)
 add_test(NAME geometrytools_test COMMAND geometrytools_test)
 set(edl_tests geometrytools_test)
 
+add_executable(amr_hash_searchtree_test amr_hash_searchtree_test.cpp)
+target_link_libraries(amr_hash_searchtree_test engitsdatalib)
+target_compile_definitions(amr_hash_searchtree_test PRIVATE DOCTEST_CONFIG_DISABLE)
+add_test(NAME amr_hash_searchtree_test COMMAND amr_hash_searchtree_test)
+list(APPEND edl_tests amr_hash_searchtree_test)
+
 add_executable(doctest_test doctest_test.cpp)
 target_link_libraries(doctest_test engitsdatalib)
 configure_file(sphere_test.mesh sphere_test.mesh COPYONLY)

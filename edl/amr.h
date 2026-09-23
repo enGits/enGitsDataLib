@@ -1983,15 +1983,19 @@ namespace std {
   {
     size_t operator()(const edl::AMRIndex<TIndex>& node) const
     {
-      // static const uint8_t p1 = 31;
-      // static const uint8_t p2 = 37;
-      // static const uint8_t p3 = 41;
-      // static const uint8_t p4 = 43;
-      static const uint64_t p1 = 1;
-      static const uint64_t p2 = 65536;
-      static const uint64_t p3 = 4294967296;
-      static const uint64_t p4 = 281474976710656;
-      return node.i()*p1 + node.j()*p2 + node.k()*p3 + node.level()*p4;
+      // Packing alone leaves the low bits independent of j/k/level. This
+      // creates long chains in power-of-two hash tables (notably MSVC).
+      // Unsigned arithmetic gives defined wraparound, including invalid indices.
+      uint64_t h = uint64_t(node.i()) + (uint64_t(node.j()) << 16)
+                 + (uint64_t(node.k()) << 32) + (uint64_t(node.level()) << 48);
+      // SplitMix64 finalizer: mix high coordinate bits into the low bits.
+      h = (h ^ (h >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
+      h = (h ^ (h >> 27)) * UINT64_C(0x94d049bb133111eb);
+      h ^= h >> 31;
+      if (sizeof(size_t) < sizeof(uint64_t)) {
+        h ^= h >> 32;
+      }
+      return static_cast<size_t>(h);
     }
   };
 }
