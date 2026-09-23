@@ -37,7 +37,7 @@ cmake --install build --config Release --prefix "/local"
 
 ## vcpkg
 
-A vcpkg port is prepared for v1.0.0. It will be finalized and submitted to the upstream registry after the release tag is published. Until then, use the normal CMake installation.
+A vcpkg port is prepared for v1.0.1. It will be submitted to the upstream registry after the release tag and port have been validated. Until then, use the overlay port in `ports/engitsdatalib` or the normal CMake installation.
 
 ## Licence
 
